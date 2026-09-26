@@ -69,3 +69,5 @@ class RunRecord(ContractModel):
     cost_usd: float
     started_at: datetime
     ended_at: datetime
+    chain: StrictStr | None = None
+    game_index: NonNegativeInt | None = None

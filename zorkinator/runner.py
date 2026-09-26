@@ -17,7 +17,7 @@ from .memory import TOOLS, ChatArchive
 from .models import MoveRecord, RunRecord
 from .prompts import INITIAL_PROMPTS, PromptName
 
-BASELINE_MODEL = "claude-opus-4-5-20251101"
+BASELINE_MODEL = "claude-haiku-4-5"
 MAX_SCORE = 350
 MAX_TOOL_ROUNDS = 3
 
@@ -26,6 +26,7 @@ PRICES: dict[str, tuple[float, float]] = {
     "claude-opus-4-5-20251101": (5.0, 25.0),
     "claude-sonnet-4-5-20250929": (3.0, 15.0),
     "claude-sonnet-5": (2.0, 10.0),
+    "claude-haiku-4-5": (1.0, 5.0),
 }
 
 EndReason = Literal["death", "won", "game_over", "gave_up", "cap", "usd_cap"]
@@ -200,6 +201,8 @@ def play(
     usd_cap: float = 15.0,
     story_file: str | Path = DEFAULT_STORY_FILE,
     archive: ChatArchive | None = None,
+    chain: str | None = None,
+    game_index: int | None = None,
 ) -> RunRecord:
     """Play one game and log every move. ``move_cap`` counts commands issued, as in the paper.
 
@@ -292,6 +295,8 @@ def play(
         cost_usd=float(usage.cost(chat.model)),
         started_at=started_at,
         ended_at=datetime.now(UTC),
+        chain=chain,
+        game_index=game_index,
     )
     sink.run(record)
     if archive is not None:
@@ -326,24 +331,45 @@ def _move(
     )
 
 
-def _play_one(job: tuple[int, int, str, str, float, str, str | None]) -> dict[str, object]:
-    seed, move_cap, prompt, model, usd_cap, out, chats = job
-    record = play(
-        "paper",
-        seed,
-        move_cap,
-        chat=AnthropicChat(model),
-        sink=JsonlSink(out),
-        prompt="advanced" if prompt == "advanced" else "basic",
-        usd_cap=usd_cap,
-        archive=ChatArchive(chats) if chats else None,
-    )
-    return record.model_dump(mode="json")
+def _play_chain(
+    job: tuple[int, int, int, int, str, str, float, float, str, str | None, str],
+) -> float:
+    """One chain: games run one after another; each sees every earlier game's chat in its chain."""
+    chain_i, games, seed, move_cap, prompt, model, usd_cap, chain_cap, out, chats, label = job
+    chain = f"{label}-chain{chain_i}"
+    archive = ChatArchive(Path(chats) / f"chain-{chain_i}") if chats else None
+    chat = AnthropicChat(model)
+    spent = 0.0
+    for game_index in range(games):
+        if spent >= chain_cap:
+            print(
+                f"[{chain}] stopping: ${spent:.2f} reached its ${chain_cap:.2f} share", flush=True
+            )
+            break
+        record = play(
+            "paper",
+            seed,
+            move_cap,
+            chat=chat,
+            sink=JsonlSink(out),
+            prompt="advanced" if prompt == "advanced" else "basic",
+            usd_cap=usd_cap,
+            archive=archive,
+            chain=chain,
+            game_index=game_index,
+        )
+        spent += record.cost_usd
+        print(
+            f"[{chain} game {game_index + 1}/{games}] score={record.score} moves={record.moves} "
+            f"end={record.end_reason} ${record.cost_usd:.2f} (chain total ${spent:.2f})",
+            flush=True,
+        )
+    return spent
 
 
-def play_batch(
-    runs: int,
-    parallel: int,
+def play_chains(
+    chains: int,
+    games: int,
     *,
     seed: int,
     move_cap: int,
@@ -353,27 +379,21 @@ def play_batch(
     total_usd_cap: float,
     out: str,
     chats: str | None,
-) -> list[dict[str, object]]:
-    """Run games in waves of ``parallel``. With ``chats``, each wave can see every earlier wave's
-    chats (games within a wave only see chats that finished before they looked)."""
+    label: str,
+) -> float:
+    """Run ``chains`` independent chains in parallel, each ``games`` long.
+
+    Chains never share chats, so they are separate trials of the same setup.
+    ``total_usd_cap`` is split evenly across chains.
+    """
     from concurrent.futures import ProcessPoolExecutor
 
-    done: list[dict[str, object]] = []
-    spent = 0.0
-    with ProcessPoolExecutor(max_workers=parallel) as pool:
-        while len(done) < runs:
-            if spent >= total_usd_cap:
-                print(f"Stopping: total ${spent:.2f} reached the ${total_usd_cap:.2f} cap.")
-                break
-            wave = min(parallel, runs - len(done))
-            jobs = [(seed, move_cap, prompt, model, usd_cap, out, chats)] * wave
-            for row in pool.map(_play_one, jobs):
-                done.append(row)
-                spent += float(str(row["cost_usd"]))
-                print(
-                    f"[{len(done)}/{runs}] score={row['score']} moves={row['moves']} "
-                    f"end={row['end_reason']} ${float(str(row['cost_usd'])):.2f} "
-                    f"(total ${spent:.2f})",
-                    flush=True,
-                )
-    return done
+    chain_cap = total_usd_cap / chains
+    jobs = [
+        (i, games, seed, move_cap, prompt, model, usd_cap, chain_cap, out, chats, label)
+        for i in range(chains)
+    ]
+    with ProcessPoolExecutor(max_workers=chains) as pool:
+        total = sum(pool.map(_play_chain, jobs))
+    print(f"Done: {chains} chains x {games} games, total ${total:.2f}")
+    return total
