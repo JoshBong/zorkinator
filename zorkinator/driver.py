@@ -11,7 +11,13 @@ from typing import Protocol
 from pydantic import JsonValue
 
 from . import db
-from .models import HarnessVersionRecord, MemoryEvent, ReflectionProposal, RunRecord
+from .models import (
+    HarnessVersionRecord,
+    MemoryEvent,
+    MemoryRevision,
+    ReflectionProposal,
+    RunRecord,
+)
 from .reflector import (
     ReflectionError,
     ReflectionModel,
@@ -71,10 +77,12 @@ class ReflectorProposalCreator:
         model: ReflectionModel,
         *,
         limits: ReflectorLimits | None = None,
+        manifest: Callable[[HarnessVersionRecord], Sequence[MemoryRevision]] | None = None,
     ) -> None:
         self._repository = repository
         self._model = model
         self._limits = limits
+        self._manifest = manifest
 
     def create(self, run_id: str, proposal_id: str) -> ReflectionProposal:
         reflector = Reflector(
@@ -82,6 +90,7 @@ class ReflectorProposalCreator:
             self._model,
             limits=self._limits,
             id_factory=lambda: proposal_id,
+            manifest=self._manifest,
         )
         return reflector.propose(run_id)
 

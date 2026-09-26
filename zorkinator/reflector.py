@@ -19,6 +19,7 @@ import anthropic
 from openai import OpenAI
 from pydantic import JsonValue, TypeAdapter, ValidationError
 
+from . import carryover
 from .models import (
     AddMemoryOperation,
     EvidenceRef,
@@ -27,9 +28,11 @@ from .models import (
     MemoryRevision,
     MoveRecord,
     ReflectionProposal,
+    RetireMemoryOperation,
     RuleDoc,
     RunRecord,
 )
+from .verifier import validate_when
 from .versions import DEFAULT_MAX_RULE_DIFF_BYTES, CommitError, validate_rule_diffs
 
 _MEMORY_OPERATIONS = TypeAdapter(list[MemoryOperation])
@@ -198,7 +201,12 @@ class Reflector:
         limits: ReflectorLimits | None = None,
         id_factory: Callable[[], str] | None = None,
         clock: Callable[[], datetime] | None = None,
+        manifest: Callable[[HarnessVersionRecord], Sequence[MemoryRevision]] | None = None,
     ) -> None:
+        """``manifest`` loads a version's complete memory set. With it, the fixed-code map
+        carry-over (``carryover.derive``) joins every proposal; without it, the Reflector's
+        own operations are the whole proposal."""
+        self._manifest = manifest
         self._repository = repository
         self._model = model
         self._limits = limits or ReflectorLimits()
@@ -222,7 +230,15 @@ class Reflector:
         moves = sorted(self._repository.get_moves(run_id), key=lambda move: move.n)
         self._validate_transcript(run, moves)
         selected_moves = _select_moves(moves, self._limits.max_moves)
+        carry = (
+            carryover.derive(run.run_id, moves, self._manifest(parent))
+            if self._manifest is not None
+            else None
+        )
         memories = list(self._repository.recall(run.version_id, limit=self._limits.max_memories))
+        if carry is not None:
+            # Room memories are maintained by code; the model sees feedback, not the map.
+            memories = [m for m in memories if m.memory_id not in carry.owned]
         selected_memory_ids = {memory.memory_id for memory in memories}
         omitted_memory_ids = [
             reference.memory_id
@@ -231,7 +247,7 @@ class Reflector:
         ]
         rules = list(self._repository.get_rules(parent.rule_ids))
         prompt = self._build_prompt(
-            run, parent, selected_moves, memories, omitted_memory_ids, rules
+            run, parent, selected_moves, memories, omitted_memory_ids, rules, carry
         )
         if len(prompt.encode("utf-8")) > self._limits.max_prompt_bytes:
             raise ReflectionError("bounded reflection prompt exceeds max_prompt_bytes")
@@ -264,12 +280,24 @@ class Reflector:
         if len(proposal.rule_diffs) > self._limits.max_rule_diffs:
             raise ReflectionError("reflection exceeds rule diff limit")
         visible_refs = {(move.run_id, move.n) for move in selected_moves}
+        if carry is not None:
+            visible_refs |= {
+                (run.run_id, f["n"]) for f in carry.feedback if isinstance(f["n"], int)
+            }
+            visible_refs |= {
+                (run.run_id, n)
+                for f in carry.rule_feedback
+                for n in (f["moves"] if isinstance(f["moves"], list) else [])
+                if isinstance(n, int)
+            }
         for operation in proposal.memory_ops:
             for evidence in operation.evidence:
                 if (evidence.run_id, evidence.n) not in visible_refs:
                     raise ReflectionError(
                         f"memory evidence {evidence.run_id}:{evidence.n} was not in the prompt"
                     )
+        if carry is not None:
+            proposal = _merge_carryover(proposal, carry)
         _validate_memory_targets(proposal, parent)
         for diff in proposal.rule_diffs:
             evidence_value = diff.get("evidence", [])
@@ -284,6 +312,7 @@ class Reflector:
                     raise ReflectionError(
                         f"rule evidence {evidence.run_id}:{evidence.n} was not in the prompt"
                     )
+        proposal = _demote_ungated_rules(proposal)
 
         try:
             validate_rule_diffs(
@@ -312,8 +341,9 @@ class Reflector:
         memories: Sequence[MemoryRevision],
         omitted_memory_ids: Sequence[str],
         rules: Sequence[RuleDoc],
+        carry: carryover.CarryOver | None = None,
     ) -> str:
-        packet = {
+        packet: dict[str, object] = {
             "run": {
                 "run_id": run.run_id,
                 "version_id": run.version_id,
@@ -336,6 +366,7 @@ class Reflector:
                     "died": move.died,
                     "expected": move.expected,
                     "surprise": move.surprise,
+                    "warnings": move.warnings,
                 }
                 for move in moves
             ],
@@ -360,6 +391,14 @@ class Reflector:
             "active_rules": [rule.model_dump(mode="json") for rule in rules],
             "allowed_parent": parent.version_id,
         }
+        if carry is not None:
+            packet["map"] = {
+                "maintained_by": "fixed code",
+                "rooms_known": carry.rooms,
+                "room_updates_this_game": len(carry.ops),
+            }
+            packet["memory_feedback"] = carry.feedback
+            packet["rule_feedback"] = carry.rule_feedback
         instructions = """You are the between-game Reflector for a Zork-playing harness.
 Use only the supplied human-visible transcript and existing advisory memory. Propose a small,
 evidence-cited change set that could help a later fresh game. Memories may describe maps, routes,
@@ -383,13 +422,32 @@ the transcript--never a range, string, or summary. A valid add looks exactly lik
 "evidence":[{"run_id":"the exact visible run id","n":7}],"rationale":"Move 7 ended badly."}.
 Moves carry the Player's own prediction ("expected") and whether the outcome surprised it
 ("surprise"): a surprise marks where its picture of the world was wrong, so prefer memories and
-rules that explain deaths and surprises. Rule diffs are separate objects; new rules must cite
-public evidence and are born soft. Empty arrays
-are valid. Use add {op,key,text,when,verdict,evidence}, revise
+rules that explain deaths and surprises. Empty arrays are valid.
+
+Knowledge vs rules. Memories are knowledge and suggestions: what is where, what worked, what to try
+("the mailbox at West of House holds a leaflet", "climbing the tree here reached a nest"). Set
+locations to the rooms a memory is about; the next game shows it only in those rooms. Rules are
+cautions about one risky action, checked mechanically before each command: "when" MUST include
+"command", a regex naming that action, and state fields only narrow it. A danger tied to a state
+still names the action that triggers it (moving while the room is dark: a movement-command regex
+with "room_is_dark": true). Rule text says what went wrong ("Attacking the troll unarmed got me
+killed"), never an instruction to do something. Positive advice is never a rule: a rule without
+a command is stored as a location-scoped memory instead. Rules are born soft (a caution shown to
+the player); only the fixed replay check can make one block. rule_feedback counts how often each
+active rule matched a command this game and what followed: retire or narrow rules that fire often
+with no harm, and cite a death a caution failed to prevent when proposing it as "block".
+The map (kind "room": exits, items, actions tried per room) is carried over by fixed code; never
+add, revise or retire "room" or "map_edge" memories. memory_feedback lists, per memory the game
+loaded, the moves where play confirmed or contradicted it: revise or retire contradicted memories
+(an item a thief moved is not a wrong memory). Write the shapes the next game loads into its
+notes: kind "objective" or "hypothesis" or "run_summary" with content {"text": ...}; kind "item"
+with content {"item": name, "text": what it does or needs} and locations [where it was found].
+Use other kinds (failure, strategy, advice, ...) with {"text": ...} and locations for anything else.
+Rule diffs use add {op,key,text,when,verdict,evidence}, revise
 {op,rule_id,key,text,when,verdict,evidence}, or retire {op,rule_id}. Never invent an evidence
 reference that is absent from the supplied transcript. For add/revise, when MUST be a JSON object
-using only these fields: command (regex), room, room_is_dark (true/false), carrying and
-not_carrying (lists of items); for example
+using only these fields: command (regex, required), room, room_is_dark (true/false), carrying
+and not_carrying (lists of items); for example
 {"command":"(kill|attack) troll.*","not_carrying":["sword"]}.
 verdict MUST be exactly "warn" or "block"; do not write natural-language strings for when
 or use "soft" as the verdict. Prefer an empty rule_diffs array when no precise
@@ -419,6 +477,93 @@ def propose(
     """Contract-shaped convenience entry point with explicit dependency injection."""
 
     return Reflector(repository, model, limits=limits).propose(run_id)
+
+
+def _demote_ungated_rules(proposal: ReflectionProposal) -> ReflectionProposal:
+    """A rule that names no action is knowledge, not a gate: keep it as a located memory.
+
+    Malformed diffs (no text/evidence, non-object when) are left for ``validate_rule_diffs``.
+    """
+    rules: list[dict[str, JsonValue]] = []
+    demoted: list[MemoryOperation] = []
+    for diff in proposal.rule_diffs:
+        when, text, evidence = diff.get("when"), diff.get("text"), diff.get("evidence")
+        if (
+            diff.get("op") not in {"add", "revise"}
+            or not isinstance(when, dict)
+            or not validate_when(when)
+            or not isinstance(text, str)
+            or not text.strip()
+            or not isinstance(evidence, list)
+            or not evidence
+        ):
+            rules.append(diff)
+            continue
+        room = when.get("room")
+        rooms = room if isinstance(room, list) else [room]
+        locations = [r for r in rooms if isinstance(r, str) and r.strip()]
+        demoted.append(
+            AddMemoryOperation(
+                op="add",
+                key=f"rule-as-memory:{diff.get('key') or len(demoted)}",
+                kind="caution",
+                subjects=locations or ["caution"],
+                locations=locations,
+                content={"text": text.strip()},
+                status="hypothesis",
+                evidence=[EvidenceRef.model_validate(ref) for ref in evidence],
+                rationale="Proposed as a rule but names no action; kept as located knowledge.",
+            )
+        )
+    if not demoted:
+        return proposal
+    try:
+        return ReflectionProposal(
+            proposal_id=proposal.proposal_id,
+            run_id=proposal.run_id,
+            parent_id=proposal.parent_id,
+            memory_ops=[*proposal.memory_ops, *demoted],
+            rule_diffs=rules,
+            summary=f"{proposal.summary} [{len(demoted)} rules without an action kept as memory]",
+        )
+    except ValidationError as exc:
+        raise ReflectionError(f"invalid reflection response: {exc}") from exc
+
+
+def _merge_carryover(
+    proposal: ReflectionProposal, carry: carryover.CarryOver
+) -> ReflectionProposal:
+    """Model operations that touch code-owned memory are dropped; code operations join.
+
+    Status upgrades apply only to memories the model left alone this time.
+    """
+    kept: list[MemoryOperation] = []
+    dropped = 0
+    for operation in proposal.memory_ops:
+        code_kind = not isinstance(operation, RetireMemoryOperation) and (
+            operation.kind in carryover.CODE_KINDS or operation.kind == "map_edge"
+        )
+        owned = not isinstance(operation, AddMemoryOperation) and operation.memory_id in carry.owned
+        if code_kind or owned:
+            dropped += 1
+            continue
+        kept.append(operation)
+    targeted = {op.memory_id for op in kept if not isinstance(op, AddMemoryOperation)}
+    upgrades = [op for op in carry.upgrades if op.memory_id not in targeted]
+    summary = proposal.summary
+    if carry.ops or upgrades or dropped:
+        summary += (
+            f" [map carry-over: {len(carry.ops)} room updates, {len(upgrades)} confirmed"
+            f" hypotheses, {dropped} model map ops dropped]"
+        )
+    return ReflectionProposal(
+        proposal_id=proposal.proposal_id,
+        run_id=proposal.run_id,
+        parent_id=proposal.parent_id,
+        memory_ops=[*kept, *carry.ops, *upgrades],
+        rule_diffs=proposal.rule_diffs,
+        summary=summary,
+    )
 
 
 def _validate_memory_targets(proposal: ReflectionProposal, parent: HarnessVersionRecord) -> None:

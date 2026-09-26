@@ -395,7 +395,7 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
                     "op": "add",
                     "key": "fatal",
                     "text": "Avoid fatal action.",
-                    "when": {"action": "fatal"},
+                    "when": {"command": "fatal"},
                     "verdict": "block",
                     "evidence": [{"run_id": "run_1", "n": 3}],
                 }
@@ -481,7 +481,7 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
                     "op": "add",
                     "key": "fatal",
                     "text": "Avoid the fatal action.",
-                    "when": {"action": "fatal"},
+                    "when": {"command": "fatal"},
                     "verdict": "block",
                     "evidence": [{"run_id": "run_1", "n": 3}],
                 }

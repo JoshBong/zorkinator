@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from .world import Exit, Step, WorldModel, direction_of
+from .world import Exit, Item, Step, WorldModel, direction_of
 
 OUTCOME_CHARS = 80
 _DIRECTION_WORDS = re.compile(
@@ -137,13 +137,27 @@ def update(
 
     if direction is not None and prev is not None:
         exits = world.room(prev).exits
+        old = exits.get(direction)
+        remembered = old if old is not None and old.source == "memory" else None
+        claim = f"{prev} {direction}"
         if obs.moved and state.room is not None:
             exits[direction] = Exit(direction, state.room, "known", n)
             world.fact(prev, f"exit_{direction}", state.room, n)
+            if remembered is not None:
+                held = remembered.status == "mentioned" or remembered.to == state.room
+                world.check_memory(
+                    remembered.memory_id, claim, n, held=held, detail=f"led to {state.room}"
+                )
         elif not obs.moved and not parsed.dark:
-            if direction not in exits or exits[direction].status != "known":
+            # A remembered exit that fails here is replaced by what this game saw.
+            if remembered is not None or old is None or old.status != "known":
                 exits[direction] = Exit(direction, None, "blocked", n, outcome)
                 world.fact(prev, f"blocked_{direction}", outcome, n)
+            if remembered is not None:
+                held = remembered.status == "blocked"
+                world.check_memory(
+                    remembered.memory_id, claim, n, held=held, detail=f"blocked: {outcome}"
+                )
 
     # Items the text mentions where we are now.
     if state.room is not None:
@@ -214,6 +228,7 @@ def _seen(world: WorldModel, name: str, room: str, n: int, obs: Observation) -> 
     item = world.item(name)
     if item.carried:
         return
+    _first_sighting(world, item, room, n)
     item.last_seen_room, item.source = room, "this_game"
     world.room(room).items_seen.add(name)
     if is_new:
@@ -224,7 +239,9 @@ def _seen(world: WorldModel, name: str, room: str, n: int, obs: Observation) -> 
 def _carry(world: WorldModel, name: str, carried: bool, n: int, obs: Observation) -> None:
     is_new = name not in world.items
     item = world.item(name)
-    item.carried = carried
+    if world.state.room:
+        _first_sighting(world, item, world.state.room, n)
+    item.carried, item.source = carried, "this_game"
     if world.state.room:
         item.last_seen_room = world.state.room
         seen = world.room(world.state.room).items_seen
@@ -235,6 +252,19 @@ def _carry(world: WorldModel, name: str, carried: bool, n: int, obs: Observation
     if is_new:
         obs.new_items.append(name)
     world.fact(name, "carried", carried, n)
+
+
+def _first_sighting(world: WorldModel, item: Item, room: str, n: int) -> None:
+    """The first time this game meets a remembered item, check where memory said it was."""
+    if item.source != "memory" or item.last_seen_room is None:
+        return
+    world.check_memory(
+        item.memory_id,
+        f"{item.name} in {item.last_seen_room}",
+        n,
+        held=item.last_seen_room == room,
+        detail=f"found in {room}",
+    )
 
 
 __all__ = ["Observation", "Parsed", "parse_stub", "update"]

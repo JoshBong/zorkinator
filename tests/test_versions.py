@@ -334,7 +334,7 @@ class VersionManagerTests(unittest.TestCase):
                     "op": "add",
                     "key": "fatal_action",
                     "text": "Avoid the fatal action.",
-                    "when": {"action": "fatal"},
+                    "when": {"command": "fatal"},
                     "verdict": "block",
                     "evidence": [{"run_id": "run_1", "n": 3}],
                 }

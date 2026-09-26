@@ -83,3 +83,50 @@ The outer loop will keep Atlas narrowly focused on correctness, retrieval, and d
 
 This refinement changes no LLM authority: memories remain advisory and only the fixed verifier promotion
 path may make a rule blocking. It also preserves the human-visible-information boundary.
+
+## 2026-09-26 — Outer loop learns from inner-loop evidence: fixed-code map carry-over (by Seb; Elliott to review)
+
+The inner loop hydrates `room`, `map_edge`, `item`, `objective`, `hypothesis` and `run_summary` memories into its
+working KBs (location, exits, items, and actions tried per room) and records, per loaded memory, whether play
+confirmed or contradicted it (shapes and fact format: [INNER_LOOP.md](INNER_LOOP.md#memory-shapes-and-feedback)).
+The inner loop writes evidence only; memories stay outer-loop-only, immutable, and published once per game.
+
+The outer loop closes the loop in `carryover.derive`, called inside `Reflector.propose` before the proposal is
+persisted:
+
+1. **Map carry-over by fixed code, not the LLM.** The run's public moves are replayed through the scribe on top of
+   the parent manifest. Every room this game touched becomes one `room` memory (exits, blocked exits, items first
+   seen there, up to 8 actions tried there with `[died]` / `[+N points]` tags), added or revised only when it
+   changed, citing the moves. The Reflector sees at most 120 moves and 20 ops, so an LLM-copied map loses rooms;
+   `room` ops do not count against the model's 20 and the CLI allows 150 per child.
+2. **Feedback drives memory status.** A `hypothesis` memory that play confirmed and never contradicted is revised
+   to `supported` (unless the model changed it). All confirmations/contradictions go into the Reflector's evidence
+   packet as `memory_feedback`; the model decides revise vs retire for non-map memories.
+3. **The Reflector owns interpretation.** It no longer sees or writes `room` memories; it writes objectives,
+   hypotheses, items, failures and strategies in the loadable `{text}` / `{item, room, text}` shapes.
+
+Known limit: rooms are keyed by name, so Zork's same-named rooms (several "Forest", two "Clearing") merge; their
+exits show up as contradictions.
+
+## 2026-09-26 — Rules gate actions; suggestions are located memories (by Seb, from Josh's testing)
+
+Josh's chain learned 7 rules; two were good ("moving in the dark gets you eaten", "on/off cycles drain the lantern")
+and the rest were advice phrased as rules with no command (`when = {"room": "West of House"}`: "attempt to open the
+mailbox"). They fired on every command in the room and re-prompted the Player, which obeyed and opened the mailbox
+again and again. Nothing Zork-specific is hardcoded; the split is:
+
+| | Names an action? | Where the Player sees it | Can block? |
+|---|---|---|---|
+| **Hard rule** | required (`when.command`) | "Cautions" line (blocked), and the retry reason | yes, only after mechanical promotion |
+| **Soft rule** (caution) | required | "Cautions" line when its state conditions hold; "your last command matched" after | never; logged in `moves.warnings` |
+| **Memory** (knowledge, suggestion) | no | "Notes for this room" when `locations` match; otherwise the notes/manifest | never |
+
+1. `verifier.validate_when` requires a command pattern that names a specific action; `versions.validate_rule_diffs`
+   enforces it at commit, and an invalid legacy rule never matches and is dropped from the prompt. A danger tied to a
+   state still names its trigger (movement commands with `room_is_dark: true`).
+2. The Reflector is told rules are cautions about one action and advice goes in memory_ops with `locations`
+   (Elliott's locality field). A rule it proposes without an action is converted into a `caution` memory located at
+   `when.room`, not dropped, so the knowledge survives and the rest of the proposal still commits.
+3. Soft rules no longer re-prompt (one Player call per move). The Player sees applicable cautions before choosing.
+4. Evidence: `carryover.derive` reports per-rule `rule_feedback` (warned, blocked, deaths after a warning) to the
+   Reflector, which retires noisy cautions and cites deaths a caution failed to prevent when proposing `block`.

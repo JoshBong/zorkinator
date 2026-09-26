@@ -58,8 +58,12 @@ B  builder.build_prompt(run_id, n, version) -> str               # state from At
 B  player.propose(prompt, feedback=None) -> cmd
 B  scribe.update(run_id, n, text, parsed) -> None                # world_facts upserts
 J  verifier.check(cmd, state, version) -> {ok, rule_id, reason, hard}
-       soft -> warning appended to prompt, never blocks (ZorkGPT: LLM critic 88% wrong)
+       soft -> never blocks, never re-prompts; logged in moves.warnings, shown next prompt
+               (ZorkGPT: LLM critic 88% wrong)
        hard -> block, Player retries (max 3 total)
+       rule.when MUST include command (a regex naming one action; ".*"-like patterns rejected);
+       validate_when enforces it at commit, and an invalid rule never matches
+J  verifier.applies(rule, state) -> bool                         # state conditions only: prompt cautions
 C  reflector.propose(run_id) -> ReflectionProposal              # once per game
 J  verifier.promote(rule, runs) -> "hard"|"soft"                 # death replay + false-positive replay over logged moves
 C  versions.commit(parent_id, proposal, run_id) -> version_id    # calls verifier.promote
@@ -78,6 +82,10 @@ Add/revise payloads include optional `locations: [str]`, the rooms or areas wher
 recall filters on locations as well as subjects/kinds, and scored recall applies the same filter before
 returning Atlas-ranked results.
 All memory is advisory. Only verifier.promote can grant blocking authority to a rule.
+Memory kind `room` is written only by fixed code (`carryover.derive`, merged into every proposal when the
+Reflector gets a `manifest` loader); model-proposed `room`/`map_edge` ops are dropped. Loadable content shapes:
+docs/INNER_LOOP.md "Memory shapes and feedback".
+C  carryover.derive(run_id, moves, parent_memories) -> CarryOver{ops, upgrades, feedback, owned, rooms}
 
 `driver.run` is the sequential harness boundary. Its `play_game(version_id, game_index)` callback must
 persist and return a completed harness `RunRecord` with that exact `version_id`, the driver's `chain`, and a

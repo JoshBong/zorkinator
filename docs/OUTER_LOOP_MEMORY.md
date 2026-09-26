@@ -200,6 +200,11 @@ existing runs, committed memory events, and published versions into per-game sco
 diff counts. An optional `retrieval_query` adds live vector scores from each game's exact played version without
 persisting a second current-knowledge store.
 
+Learning from inner-loop evidence: `carryover.derive` replays each finished game's public moves over the parent
+manifest and adds code-written `room` memories (map, items, per-room actions) plus confirmed-hypothesis upgrades to
+the proposal, and gives the Reflector per-memory `memory_feedback`. See DECISIONS.md "Outer loop learns from
+inner-loop evidence".
+
 Still required before claiming the complete self-improving harness:
 
 1. Integrate rule promotion through Josh's fixed verifier; memory content remains advisory until then.
