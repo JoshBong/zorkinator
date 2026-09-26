@@ -19,6 +19,7 @@ import anthropic
 from pydantic import JsonValue, TypeAdapter, ValidationError
 
 from .models import (
+    AddMemoryOperation,
     EvidenceRef,
     HarnessVersionRecord,
     MemoryOperation,
@@ -28,6 +29,7 @@ from .models import (
     RuleDoc,
     RunRecord,
 )
+from .versions import DEFAULT_MAX_RULE_DIFF_BYTES, CommitError, validate_rule_diffs
 
 _MEMORY_OPERATIONS = TypeAdapter(list[MemoryOperation])
 _JSON_FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
@@ -122,6 +124,7 @@ class ReflectorLimits:
     max_rule_diffs: int = 10
     max_prompt_bytes: int = 128 * 1024
     max_response_bytes: int = 64 * 1024
+    max_rule_diff_bytes: int = DEFAULT_MAX_RULE_DIFF_BYTES
 
     def __post_init__(self) -> None:
         if (
@@ -132,6 +135,7 @@ class ReflectorLimits:
                 self.max_rule_diffs,
                 self.max_prompt_bytes,
                 self.max_response_bytes,
+                self.max_rule_diff_bytes,
             )
             < 1
         ):
@@ -221,6 +225,7 @@ class Reflector:
                     raise ReflectionError(
                         f"memory evidence {evidence.run_id}:{evidence.n} was not in the prompt"
                     )
+        _validate_memory_targets(proposal, parent)
         for diff in proposal.rule_diffs:
             evidence_value = diff.get("evidence", [])
             if not isinstance(evidence_value, list):
@@ -234,6 +239,16 @@ class Reflector:
                     raise ReflectionError(
                         f"rule evidence {evidence.run_id}:{evidence.n} was not in the prompt"
                     )
+
+        try:
+            validate_rule_diffs(
+                proposal.rule_diffs,
+                parent.rule_ids,
+                proposal.proposal_id,
+                max_rule_diff_bytes=self._limits.max_rule_diff_bytes,
+            )
+        except CommitError as exc:
+            raise ReflectionError(f"invalid rule diff: {exc}") from exc
 
         self._repository.record_proposal(
             proposal,
@@ -347,6 +362,18 @@ def propose(
     """Contract-shaped convenience entry point with explicit dependency injection."""
 
     return Reflector(repository, model, limits=limits).propose(run_id)
+
+
+def _validate_memory_targets(proposal: ReflectionProposal, parent: HarnessVersionRecord) -> None:
+    active = {reference.memory_id: reference.revision_id for reference in parent.memory_refs}
+    for operation in proposal.memory_ops:
+        if isinstance(operation, AddMemoryOperation):
+            continue
+        revision_id = active.get(operation.memory_id)
+        if revision_id is None:
+            raise ReflectionError(f"memory is not active in parent: {operation.memory_id}")
+        if revision_id != operation.expected_revision_id:
+            raise ReflectionError(f"stale expected revision for memory {operation.memory_id}")
 
 
 def _select_moves(moves: Sequence[MoveRecord], limit: int) -> list[MoveRecord]:

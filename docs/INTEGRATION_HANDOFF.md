@@ -93,15 +93,10 @@ harness branch in `runner.py`. Coordinate changes to shared contract models or `
 
 ## Outer-loop work that remains
 
-### P0: validate the complete proposal before persistence
-
-Memory operations are validated before `record_proposal`, but rule diffs currently receive their strongest
-validation during `VersionManager.commit`. A malformed rule diff can therefore be recorded as the deterministic
-proposal and rejected on every restart. Move/share the version manager's rule-diff shape validation so invalid
-`op`, `when`, `verdict`, evidence, and revision targets are rejected before the `proposed` event is written.
-
-Preserve the audit and idempotency rules: never mutate a persisted proposal and never silently ask the model for
-a different answer under the same proposal ID.
+Completed: memory revision targets are checked against the exact parent manifest, and rule-diff shape and
+parent-target validation is shared by the Reflector and Version Manager. Invalid `op`, `when`, `verdict`,
+evidence, revision targets, duplicate generated IDs, oversize diffs, and unknown fields are rejected before the
+deterministic `proposed` event is written, so restart recovery cannot be wedged by a malformed persisted proposal.
 
 ### P0: connect the fixed promotion implementation
 
@@ -139,8 +134,8 @@ This is version metadata; it must not influence verifier authority or leak futur
 - The integrated harness has a code parser/scribe and stuck monitor; verifier checks, retry feedback, and
   structured hydration of version memory into the working map/item/objective dataclasses remain.
 - The production CLI keeps every proposed rule soft until the fixed promoter is integrated.
-- Anthropic structured output is not used for the open-ended memory JSON payload; strict local validation remains
-  mandatory, and proposal validation must be completed before unattended runs.
+- Anthropic structured output is not used for the open-ended memory JSON payload. Strict local validation remains
+  mandatory and now rejects malformed memory/rule operations before proposal persistence.
 - The successful smoke run demonstrated persistence and memory isolation, not score improvement; both games
   scored zero with the minimal move loop.
 

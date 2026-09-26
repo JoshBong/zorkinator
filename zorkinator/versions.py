@@ -33,6 +33,9 @@ class CommitError(ValueError):
     """A proposal is invalid for its requested parent/source run."""
 
 
+DEFAULT_MAX_RULE_DIFF_BYTES = 16 * 1024
+
+
 class VersionStore(Protocol):
     def get_version(self, version_id: str) -> HarnessVersionRecord | None: ...
 
@@ -74,7 +77,7 @@ class VersionLimits:
     max_active_memories: int = 250
     max_memory_bytes: int = 256 * 1024
     max_content_bytes: int = 16 * 1024
-    max_rule_diff_bytes: int = 16 * 1024
+    max_rule_diff_bytes: int = DEFAULT_MAX_RULE_DIFF_BYTES
     max_ancestry_depth: int = 1_000
 
     def __post_init__(self) -> None:
@@ -301,6 +304,12 @@ class VersionManager:
         child_id: str,
         cited_runs: Mapping[str, RunRecord],
     ) -> tuple[list[str], list[RuleDoc]]:
+        validate_rule_diffs(
+            proposal.rule_diffs,
+            parent.rule_ids,
+            proposal.proposal_id,
+            max_rule_diff_bytes=self._limits.max_rule_diff_bytes,
+        )
         rule_ids = list(parent.rule_ids)
         staged: list[RuleDoc] = []
         for rule_id in rule_ids:
@@ -484,6 +493,63 @@ def commit(
     return VersionManager(store, evidence, rules, promoter, limits=limits).commit(
         parent_id, proposal, run_id
     )
+
+
+def validate_rule_diffs(
+    rule_diffs: Sequence[Mapping[str, JsonValue]],
+    parent_rule_ids: Sequence[str],
+    proposal_id: str,
+    *,
+    max_rule_diff_bytes: int = DEFAULT_MAX_RULE_DIFF_BYTES,
+) -> None:
+    """Validate rule-diff shape and parent targets without writing state."""
+    active = list(parent_rule_ids)
+    generated_ids: set[str] = set()
+    for raw in rule_diffs:
+        if len(_canonical_json(raw)) > max_rule_diff_bytes:
+            raise CommitError("rule diff exceeds size limit")
+        op = raw.get("op")
+        if op == "retire":
+            _reject_unknown_rule_fields(raw, {"op", "rule_id"})
+            rule_id = _required_string(raw, "rule_id")
+            if rule_id not in active:
+                raise CommitError(f"rule is not active in parent: {rule_id}")
+            active.remove(rule_id)
+            continue
+        if op not in {"add", "revise"}:
+            raise CommitError("rule diff op must be add, revise, or retire")
+
+        allowed = {"op", "key", "text", "when", "verdict", "evidence"}
+        old_rule_id: str | None = None
+        if op == "revise":
+            allowed.add("rule_id")
+            old_rule_id = _required_string(raw, "rule_id")
+            if old_rule_id not in active:
+                raise CommitError(f"rule is not active in parent: {old_rule_id}")
+        _reject_unknown_rule_fields(raw, allowed)
+        key = _required_string(raw, "key")
+        _required_string(raw, "text")
+        if not isinstance(raw.get("when"), dict):
+            raise CommitError("rule when must be an object")
+        if raw.get("verdict") not in {"warn", "block"}:
+            raise CommitError("rule verdict must be warn or block")
+        if not _parse_rule_evidence(raw.get("evidence", [])):
+            raise CommitError("new or revised rules require evidence")
+
+        generated_id = _stable_id("rule", proposal_id, key)
+        if generated_id in generated_ids or generated_id in active:
+            raise CommitError(f"generated duplicate rule id: {generated_id}")
+        generated_ids.add(generated_id)
+        if old_rule_id is None:
+            active.append(generated_id)
+        else:
+            active[active.index(old_rule_id)] = generated_id
+
+
+def _reject_unknown_rule_fields(raw: Mapping[str, JsonValue], allowed: set[str]) -> None:
+    unknown = sorted(set(raw) - allowed)
+    if unknown:
+        raise CommitError(f"rule diff has unknown fields: {', '.join(unknown)}")
 
 
 def _stable_id(kind: str, *parts: str) -> str:
