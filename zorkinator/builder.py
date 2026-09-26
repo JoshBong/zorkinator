@@ -24,8 +24,7 @@ a second line "Goal: <one sentence>" saying what you are trying to do next; it i
 back to you until you change it. Add a line "Expect: <one sentence>" predicting what the game \
 will say after this command. When you are shown what you expected last move, also add \
 "Surprise: yes" or "Surprise: no": did the game's output match your prediction?
-Prefer actions you have not tried yet: follow up exits the game mentioned, examine and use \
-objects, test ideas. Notes marked "from earlier games" may be wrong; check them."""
+Notes marked "from earlier games" may be wrong; check them."""
 
 
 @dataclass

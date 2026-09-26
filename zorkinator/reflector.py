@@ -261,7 +261,8 @@ class Reflector:
             rule_diffs = _rule_diffs(payload.get("rule_diffs", []))
             summary = payload.get("summary")
             if not isinstance(summary, str) or not summary.strip():
-                raise ReflectionError("model response summary must be a non-empty string")
+                # Haiku sometimes omits it; a missing summary must not void valid memory ops.
+                summary = "(no summary given)"
             proposal = ReflectionProposal(
                 proposal_id=self._id_factory(),
                 run_id=run.run_id,

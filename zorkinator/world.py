@@ -15,7 +15,7 @@ from pydantic import JsonValue
 
 from .models import MemoryRevision, WorldFactDoc
 
-RECENT_MOVES = 5
+RECENT_MOVES = 20  # enough to notice a loop; 5 hid fifteen "east"s in a row
 
 DIRECTIONS: dict[str, str] = {
     "n": "north",
