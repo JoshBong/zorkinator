@@ -143,6 +143,8 @@ class AddMemoryOperation(ContractModel):
     key: NonEmptyStr
     kind: NonEmptyStr
     subjects: list[NonEmptyStr]
+    # Rooms or areas where this memory applies. A memory may span multiple locations.
+    locations: list[NonEmptyStr] = []
     content: dict[StrictStr, JsonValue]
     status: Literal["hypothesis", "supported", "contradicted"]
     evidence: Annotated[list[EvidenceRef], Field(min_length=1)]
@@ -157,6 +159,8 @@ class ReviseMemoryOperation(ContractModel):
     expected_revision_id: NonEmptyStr
     kind: NonEmptyStr
     subjects: list[NonEmptyStr]
+    # Rooms or areas where this memory applies. A memory may span multiple locations.
+    locations: list[NonEmptyStr] = []
     content: dict[StrictStr, JsonValue]
     status: Literal["hypothesis", "supported", "contradicted"]
     evidence: Annotated[list[EvidenceRef], Field(min_length=1)]
@@ -215,6 +219,8 @@ class MemoryRevision(ContractModel):
     supersedes_revision_id: NonEmptyStr | None
     kind: NonEmptyStr
     subjects: list[NonEmptyStr]
+    # Rooms or areas where this memory applies. Optional for backwards-compatible old revisions.
+    locations: list[NonEmptyStr] = []
     content: dict[StrictStr, JsonValue]
     status: Literal["hypothesis", "supported", "contradicted"]
     evidence: Annotated[list[EvidenceRef], Field(min_length=1)]

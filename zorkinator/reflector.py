@@ -345,6 +345,7 @@ class Reflector:
                     "revision_id": memory.revision_id,
                     "kind": memory.kind,
                     "subjects": memory.subjects,
+                    "locations": memory.locations,
                     "content": memory.content,
                     "status": memory.status,
                 }
@@ -367,10 +368,13 @@ location as current in a future game. Do not emit SAVE, RESTORE, RESTART, walkth
 game internals, valid-action lists, object trees, RAM, or world-state hashes.
 
 Return exactly one JSON object with keys memory_ops, rule_diffs, and summary. memory_ops use:
-add {op,key,kind,subjects,content,status,evidence:[{run_id,n}],rationale};
-revise {op,memory_id,expected_revision_id,kind,subjects,content,status,evidence,rationale};
+add {op,key,kind,subjects,locations,content,status,evidence:[{run_id,n}],rationale};
+revise {op,memory_id,expected_revision_id,kind,subjects,locations,content,status,evidence,
+rationale};
 retire {op,memory_id,expected_revision_id,rationale,evidence}. Revisions are complete replacements.
-For every add/revise: content MUST be a JSON object (for example {"text":"The trap killed me"});
+For every add/revise: locations MUST be an array of room or area names where the memory applies;
+use [] when the memory is not location-specific. content MUST be a JSON object (for example
+{"text":"The trap killed me"});
 status MUST be exactly "hypothesis", "supported", or "contradicted"; subjects MUST be an array of
 strings. Every evidence item MUST contain one run_id string and one integer move n that appears in
 the transcript--never a range, string, or summary. A valid add looks exactly like

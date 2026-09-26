@@ -188,6 +188,7 @@ def build_version_context(
                 "revision_id": memory.revision_id,
                 "kind": memory.kind,
                 "subjects": memory.subjects,
+                "locations": memory.locations,
                 "content": memory.content,
                 "status": memory.status,
             }

@@ -49,11 +49,12 @@ memories.recall(
     query: str | None = None,
     subjects: list[str] | None = None,
     kinds: list[str] | None = None,
+    locations: list[str] | None = None,
     limit: int = 10,
 ) -> list[MemoryRevision]
 ```
 
-The service resolves experiment scope from the trusted version/run records and enforces a configured maximum `limit` and total serialized byte/token budget. Query text is plain text, never a Mongo query or executable expression. Recall searches only the exact revisions active in that version. `recall()` itself stays a plain subject/kind/bounded-text scan (unchanged, no live index required). Real semantic ranking is `db.MongoOuterLoopStore.recall_scored(version_id, query, ...)` (Hiamil): Atlas Vector Search with Automated Embedding on `memories.content.text` — Atlas calls a Voyage AI model to embed both the indexed text and the query itself at query time, so there is no embedding pipeline or API key in this codebase. Results keep `vectorSearchScore` (0-1) for display. `ensure_indexes()` creates and idempotently re-creates the index (`memories_vector`); verified live against a seeded 3-memory manifest, where a query sharing no keywords with the correct memory still ranked it first.
+The service resolves experiment scope from the trusted version/run records and enforces a configured maximum `limit` and total serialized byte/token budget. Query text is plain text, never a Mongo query or executable expression. Recall searches only the exact revisions active in that version. `recall()` itself stays a plain subject/kind/location/bounded-text scan (unchanged, no live index required). Real semantic ranking is `db.MongoOuterLoopStore.recall_scored(version_id, query, ...)` (Hiamil): Atlas Vector Search with Automated Embedding on `memories.content.text`, with an exact `locations` filter when supplied — Atlas calls a Voyage AI model to embed both the indexed text and the query itself at query time, so there is no embedding pipeline or API key in this codebase. Results keep `vectorSearchScore` (0-1) for display. `ensure_indexes()` creates and idempotently re-creates the index (`memories_vector`); verified live against a seeded 3-memory manifest, where a query sharing no keywords with the correct memory still ranked it first.
 
 `ReflectionProposal` has this logical shape:
 
@@ -69,9 +70,9 @@ summary              short explanation of what changed and why
 Operations:
 
 ```text
-Add     {op: "add", key, kind, subjects, content, status, evidence, rationale}
+Add     {op: "add", key, kind, subjects, locations, content, status, evidence, rationale}
 Revise  {op: "revise", memory_id, expected_revision_id,
-         kind, subjects, content, status, evidence, rationale}
+         kind, subjects, locations, content, status, evidence, rationale}
 Retire  {op: "retire", memory_id, expected_revision_id, rationale, evidence}
 ```
 
@@ -80,6 +81,8 @@ Retire  {op: "retire", memory_id, expected_revision_id, rationale, evidence}
 - `expected_revision_id` must equal the revision in the parent manifest.
 - At most one operation per existing memory per batch; no add-then-revise chains.
 - `kind` is an agent-chosen label, not a closed enum. `subjects` are explicit retrieval tags.
+- `locations` is an optional list of rooms or areas where the memory applies; it may contain more
+  than one location for routes or map edges. Recall can filter by these locations.
 - `content` is a bounded JSON object; free prose goes in a `text` property. No executable content is evaluated.
 - `status` is `hypothesis`, `supported`, or `contradicted`. These describe epistemic claims, not enforcement or verified causal truth. Retirement is a separate lifecycle operation.
 - Every add/revise has at least one valid public evidence reference. Evidence existence is mechanically checked; whether it actually supports the claim remains a separate question.
@@ -104,6 +107,7 @@ Use one document per revision, not a mutable “current memory” document. A lo
   "supersedes_revision_id": null,
   "kind": "map_edge",
   "subjects": ["room_a", "room_b"],
+  "locations": ["room_a", "room_b"],
   "content": {"from": "room_a", "direction": "north", "to": "room_b"},
   "status": "supported",
   "evidence": [{"run_id": "run_02", "n": 17}],

@@ -11,6 +11,7 @@ import anthropic
 from openai import OpenAI
 
 from zorkinator.models import (
+    AddMemoryOperation,
     HarnessVersionRecord,
     MemoryRef,
     MemoryRevision,
@@ -220,6 +221,7 @@ class ReflectorTests(unittest.TestCase):
                         "key": "death_lesson",
                         "kind": "failure",
                         "subjects": ["Public Room"],
+                        "locations": ["Public Room"],
                         "content": {"text": "command 2 was fatal"},
                         "status": "supported",
                         "evidence": [{"run_id": "run_2", "n": 2}],
@@ -243,6 +245,9 @@ class ReflectorTests(unittest.TestCase):
         self.assertEqual(repository.recorded[0][0], proposal)
         self.assertEqual(repository.recorded[0][1]["experiment_id"], "exp_1")
         self.assertEqual(repository.recorded[0][1]["usage"], {"tokens": 12})
+        operation = proposal.memory_ops[0]
+        assert isinstance(operation, AddMemoryOperation)
+        self.assertEqual(operation.locations, ["Public Room"])
         prompt = model.prompts[0]
         self.assertIn("visible output 2", prompt)
         self.assertNotIn("PRIVATE PROPOSAL", prompt)

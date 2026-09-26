@@ -210,6 +210,7 @@ def add_proposal(
                 key="new_fact",
                 kind="fact",
                 subjects=["room"],
+                locations=["West of House"],
                 content={"text": "new"},
                 status="supported",
                 evidence=[EvidenceRef(run_id="run_1", n=evidence_n)],
@@ -241,6 +242,9 @@ class VersionManagerTests(unittest.TestCase):
         self.assertEqual(child.parent_id, "v1")
         self.assertEqual(len(child.memory_refs), 2)
         self.assertEqual(child.context_policy, {"recent_moves": 5})
+        self.assertEqual(
+            self.store.revisions[child.memory_refs[1].revision_id].locations, ["West of House"]
+        )
         self.assertEqual(child.scores, [])
         self.assertEqual(self.store.publish_calls, 1)
         self.assertIn("proposal_1:validated", self.store.events)
