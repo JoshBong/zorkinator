@@ -7,7 +7,7 @@ import argparse
 from dotenv import load_dotenv
 
 from .adapter import GameAdapter
-from .runner import BASELINE_MODEL, AnthropicChat, JsonlSink, play
+from .runner import BASELINE_MODEL, AnthropicChat, JsonlSink, play, play_batch
 
 
 def manual(seed: int) -> int:
@@ -64,12 +64,33 @@ def main() -> int:
     baseline_parser.add_argument("--model", default=BASELINE_MODEL)
     baseline_parser.add_argument("--usd-cap", type=float, default=15.0)
     baseline_parser.add_argument("--out", default="runs")
+    baseline_parser.add_argument("--runs", type=int, default=1, help="number of games")
+    baseline_parser.add_argument("--parallel", type=int, default=1, help="games per wave")
+    baseline_parser.add_argument(
+        "--chats", default=None, help="past-chat archive dir; omit for no memory between games"
+    )
+    baseline_parser.add_argument("--total-usd-cap", type=float, default=100.0)
     args = parser.parse_args()
 
     if args.command == "manual":
         return manual(args.seed)
     if args.command == "baseline":
-        return baseline(args.seed, args.moves, args.prompt, args.model, args.usd_cap, args.out)
+        if args.runs == 1 and not args.chats:
+            return baseline(args.seed, args.moves, args.prompt, args.model, args.usd_cap, args.out)
+        load_dotenv()
+        play_batch(
+            args.runs,
+            args.parallel,
+            seed=args.seed,
+            move_cap=args.moves,
+            prompt=args.prompt,
+            model=args.model,
+            usd_cap=args.usd_cap,
+            total_usd_cap=args.total_usd_cap,
+            out=args.out,
+            chats=args.chats,
+        )
+        return 0
     parser.error(f"unknown command: {args.command}")
 
 

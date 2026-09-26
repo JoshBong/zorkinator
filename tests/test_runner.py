@@ -4,6 +4,7 @@ from pathlib import Path
 
 from anthropic.types import MessageParam
 
+from zorkinator.memory import ChatArchive
 from zorkinator.prompts import BASIC
 from zorkinator.runner import ChatReply, JsonlSink, Usage, extract_command, play
 
@@ -17,9 +18,12 @@ class ScriptedChat:
         self.replies = replies
         self.calls: list[list[MessageParam]] = []
 
-    def complete(self, messages: list[MessageParam]) -> ChatReply:
+    def complete(
+        self, messages: list[MessageParam], archive: ChatArchive | None = None
+    ) -> ChatReply:
         self.calls.append(list(messages))
-        return ChatReply(self.replies.pop(0), Usage(input=100, output=5))
+        text = self.replies.pop(0)
+        return ChatReply(text, Usage(input=100, output=5), [{"role": "assistant", "content": text}])
 
 
 class ExtractCommandTest(unittest.TestCase):
@@ -44,6 +48,24 @@ class PaperModeTest(unittest.TestCase):
         self.assertEqual(record.moves, 3)
         self.assertEqual(len(moves), 3)
         self.assertEqual(record.tokens_in, 400)
+
+    def test_chat_archive_saves_and_searches(self) -> None:
+        chat = ScriptedChat(["ready", "open mailbox", "I give up"])
+        with tempfile.TemporaryDirectory() as out:
+            archive = ChatArchive(Path(out) / "chats")
+            record = play(
+                "paper",
+                0,
+                5,
+                chat=chat,
+                sink=JsonlSink(out),
+                story_file=STORY_FILE,
+                archive=archive,
+            )
+            saved = (Path(out) / "chats" / f"{record.run_id}.txt").read_text()
+            self.assertIn("Assistant: open mailbox", saved)
+            self.assertIn("leaflet", archive.search("mailbox leaflet"))
+            self.assertIn(record.run_id, archive.recent(1))
 
     def test_move_cap(self) -> None:
         chat = ScriptedChat(["ready"] + ["look"] * 3)

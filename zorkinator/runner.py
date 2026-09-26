@@ -4,20 +4,22 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 import anthropic
 from anthropic.types import MessageParam
 
 from .adapter import DEFAULT_STORY_FILE, GameAdapter
+from .memory import TOOLS, ChatArchive
 from .models import MoveRecord, RunRecord
 from .prompts import INITIAL_PROMPTS, PromptName
 
 BASELINE_MODEL = "claude-opus-4-5-20251101"
 MAX_SCORE = 350
+MAX_TOOL_ROUNDS = 3
 
 # (input, output) USD per million tokens. Cache writes bill at 1.25x input, reads at 0.1x.
 PRICES: dict[str, tuple[float, float]] = {
@@ -56,12 +58,17 @@ class Usage:
 class ChatReply:
     text: str
     usage: Usage
+    # Messages to append to history: tool rounds (if any) plus the final assistant turn.
+    transcript: list[MessageParam] = field(default_factory=list)
+    tool_calls: list[str] = field(default_factory=list)
 
 
 class Chat(Protocol):
     model: str
 
-    def complete(self, messages: list[MessageParam]) -> ChatReply: ...
+    def complete(
+        self, messages: list[MessageParam], archive: ChatArchive | None = None
+    ) -> ChatReply: ...
 
 
 class AnthropicChat:
@@ -73,25 +80,75 @@ class AnthropicChat:
         self.model = model
         self._client = client or anthropic.Anthropic()
 
-    def complete(self, messages: list[MessageParam]) -> ChatReply:
+    def complete(
+        self, messages: list[MessageParam], archive: ChatArchive | None = None
+    ) -> ChatReply:
+        """One model turn. With an archive, past-chat tool rounds happen inside the turn."""
+        usage = Usage()
+        transcript: list[MessageParam] = []
+        tool_calls: list[str] = []
+        for round_ in range(MAX_TOOL_ROUNDS + 1):
+            last = round_ == MAX_TOOL_ROUNDS
+            response = self._create(messages + transcript, archive, allow_tools=not last)
+            u = response.usage
+            usage.add(
+                Usage(
+                    input=u.input_tokens,
+                    output=u.output_tokens,
+                    cache_write=u.cache_creation_input_tokens or 0,
+                    cache_read=u.cache_read_input_tokens or 0,
+                )
+            )
+            text = "".join(block.text for block in response.content if block.type == "text")
+            uses = [block for block in response.content if block.type == "tool_use"]
+            if archive is None or not uses:
+                transcript.append({"role": "assistant", "content": text or "(no reply)"})
+                return ChatReply(text, usage, transcript, tool_calls)
+
+            assistant_blocks: list[Any] = []
+            if text:
+                assistant_blocks.append({"type": "text", "text": text})
+            results: list[Any] = []
+            for use in uses:
+                tool_input = dict(use.input) if isinstance(use.input, dict) else {}
+                tool_calls.append(f"{use.name}({json.dumps(tool_input)})")
+                assistant_blocks.append(
+                    {"type": "tool_use", "id": use.id, "name": use.name, "input": tool_input}
+                )
+                results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": use.id,
+                        "content": archive.run_tool(use.name, tool_input),
+                    }
+                )
+            transcript.append({"role": "assistant", "content": assistant_blocks})
+            transcript.append({"role": "user", "content": results})
+
+        # Tool budget spent with no command: an empty turn, which the runner treats as blocked.
+        transcript.append({"role": "assistant", "content": "(no reply)"})
+        return ChatReply("", usage, transcript, tool_calls)
+
+    def _create(
+        self, messages: list[MessageParam], archive: ChatArchive | None, allow_tools: bool = True
+    ) -> anthropic.types.Message:
         # Full history is resent every move; caching the growing prefix keeps a
         # 500-move game at roughly a tenth of the uncached input cost.
-        response = self._client.messages.create(
+        if archive is None:
+            return self._client.messages.create(
+                model=self.model,
+                max_tokens=1024,
+                messages=messages,
+                cache_control={"type": "ephemeral"},
+            )
+        return self._client.messages.create(
             model=self.model,
             max_tokens=1024,
             messages=messages,
+            tools=TOOLS,
+            # After MAX_TOOL_ROUNDS lookups the model must answer with a command.
+            tool_choice={"type": "auto"} if allow_tools else {"type": "none"},
             cache_control={"type": "ephemeral"},
-        )
-        text = "".join(block.text for block in response.content if block.type == "text")
-        u = response.usage
-        return ChatReply(
-            text=text,
-            usage=Usage(
-                input=u.input_tokens,
-                output=u.output_tokens,
-                cache_write=u.cache_creation_input_tokens or 0,
-                cache_read=u.cache_read_input_tokens or 0,
-            ),
         )
 
 
@@ -142,20 +199,26 @@ def play(
     prompt: PromptName = "basic",
     usd_cap: float = 15.0,
     story_file: str | Path = DEFAULT_STORY_FILE,
+    archive: ChatArchive | None = None,
 ) -> RunRecord:
-    """Play one game and log every move. ``move_cap`` counts commands issued, as in the paper."""
+    """Play one game and log every move. ``move_cap`` counts commands issued, as in the paper.
+
+    With ``archive``, the model can look up earlier games' chats (the paper's app setting), and this
+    game's chat is added to the archive when it ends.
+    """
     if mode != "paper":
         raise NotImplementedError("Harness mode is not built yet.")
 
     started_at = datetime.now(UTC)
-    run_id = f"{mode}-{prompt}-{chat.model}-s{seed}-{started_at:%Y%m%dT%H%M%S}"
+    tag = "-chats" if archive else ""
+    run_id = f"{mode}-{prompt}{tag}-{chat.model}-s{seed}-{started_at:%Y%m%dT%H%M%S%f}"
     usage = Usage()
 
     # Paper protocol: initial prompt, model replies "ready", then game output each turn.
     messages: list[MessageParam] = [{"role": "user", "content": INITIAL_PROMPTS[prompt]}]
-    ack = chat.complete(messages)
+    ack = chat.complete(messages, archive)
     usage.add(ack.usage)
-    messages.append({"role": "assistant", "content": ack.text or "(no reply)"})
+    messages.extend(ack.transcript)
 
     score = 0
     moves = 0
@@ -172,14 +235,15 @@ def play(
                 break
 
             t0 = time.monotonic()
-            reply = chat.complete(messages)
+            reply = chat.complete(messages, archive)
             latency_ms = int((time.monotonic() - t0) * 1000)
             usage.add(reply.usage)
-            messages.append({"role": "assistant", "content": reply.text or "(no reply)"})
+            messages.extend(reply.transcript)
             moves = n
+            proposals = [*reply.tool_calls, reply.text]
 
             if gave_up(reply.text):
-                give_up = _move(run_id, n, "I give up", reply.text, "", score, 0, False, latency_ms)
+                give_up = _move(run_id, n, "I give up", proposals, "", score, 0, False, latency_ms)
                 sink.move(give_up)
                 end_reason = "gave_up"
                 break
@@ -190,7 +254,7 @@ def play(
             except ValueError as exc:
                 # Blocked (save/restore/restart/empty): the model sees why; the game doesn't move.
                 text = f"[Not allowed: {exc}]"
-                sink.move(_move(run_id, n, command, reply.text, text, score, 0, False, latency_ms))
+                sink.move(_move(run_id, n, command, proposals, text, score, 0, False, latency_ms))
                 messages.append({"role": "user", "content": text})
                 continue
 
@@ -198,7 +262,7 @@ def play(
             delta = result["score"] - score
             score = result["score"]
             died = result["done"] and "you have died" in text.casefold()
-            sink.move(_move(run_id, n, command, reply.text, text, score, delta, died, latency_ms))
+            sink.move(_move(run_id, n, command, proposals, text, score, delta, died, latency_ms))
             messages.append({"role": "user", "content": text or "(no output)"})
 
             if result["done"]:
@@ -230,6 +294,8 @@ def play(
         ended_at=datetime.now(UTC),
     )
     sink.run(record)
+    if archive is not None:
+        archive.save(run_id, messages)
     return record
 
 
@@ -237,7 +303,7 @@ def _move(
     run_id: str,
     n: int,
     command: str,
-    reply: str,
+    proposals: list[str],
     text: str,
     score: int,
     delta: int,
@@ -249,7 +315,7 @@ def _move(
         n=n,
         room=None,  # filled by the parser once it exists
         command=command,
-        proposals=[reply],
+        proposals=proposals,
         rejections=[],
         text=text,
         score=score,
@@ -258,3 +324,56 @@ def _move(
         latency_ms=latency_ms,
         ts=datetime.now(UTC),
     )
+
+
+def _play_one(job: tuple[int, int, str, str, float, str, str | None]) -> dict[str, object]:
+    seed, move_cap, prompt, model, usd_cap, out, chats = job
+    record = play(
+        "paper",
+        seed,
+        move_cap,
+        chat=AnthropicChat(model),
+        sink=JsonlSink(out),
+        prompt="advanced" if prompt == "advanced" else "basic",
+        usd_cap=usd_cap,
+        archive=ChatArchive(chats) if chats else None,
+    )
+    return record.model_dump(mode="json")
+
+
+def play_batch(
+    runs: int,
+    parallel: int,
+    *,
+    seed: int,
+    move_cap: int,
+    prompt: str,
+    model: str,
+    usd_cap: float,
+    total_usd_cap: float,
+    out: str,
+    chats: str | None,
+) -> list[dict[str, object]]:
+    """Run games in waves of ``parallel``. With ``chats``, each wave can see every earlier wave's
+    chats (games within a wave only see chats that finished before they looked)."""
+    from concurrent.futures import ProcessPoolExecutor
+
+    done: list[dict[str, object]] = []
+    spent = 0.0
+    with ProcessPoolExecutor(max_workers=parallel) as pool:
+        while len(done) < runs:
+            if spent >= total_usd_cap:
+                print(f"Stopping: total ${spent:.2f} reached the ${total_usd_cap:.2f} cap.")
+                break
+            wave = min(parallel, runs - len(done))
+            jobs = [(seed, move_cap, prompt, model, usd_cap, out, chats)] * wave
+            for row in pool.map(_play_one, jobs):
+                done.append(row)
+                spent += float(str(row["cost_usd"]))
+                print(
+                    f"[{len(done)}/{runs}] score={row['score']} moves={row['moves']} "
+                    f"end={row['end_reason']} ${float(str(row['cost_usd'])):.2f} "
+                    f"(total ${spent:.2f})",
+                    flush=True,
+                )
+    return done
