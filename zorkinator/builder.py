@@ -19,7 +19,9 @@ HARNESS_PROTOCOL = """\
 [Harness] The game is already running; do not reply "ready". Each turn you get your notes \
 and the game's latest output. Reply with the next command on the first line. You may add \
 a second line "Goal: <one sentence>" saying what you are trying to do next; it is shown \
-back to you until you change it.
+back to you until you change it. Add a line "Expect: <one sentence>" predicting what the game \
+will say after this command. When you are shown what you expected last move, also add \
+"Surprise: yes" or "Surprise: no": did the game's output match your prediction?
 Prefer actions you have not tried yet: follow up exits the game mentioned, examine and use \
 objects, test ideas. Notes marked "from earlier games" may be wrong; check them."""
 
@@ -48,7 +50,13 @@ def build_prefix(world: WorldModel, version_context: str = "", prompt: PromptNam
     )
 
 
-def build_tail(world: WorldModel, n: int, last_output: str, status: Status = "ok") -> str:
+def build_tail(
+    world: WorldModel,
+    n: int,
+    last_output: str,
+    status: Status = "ok",
+    expected: str | None = None,
+) -> str:
     state = world.state
     here = world.here
     lines = [f"Move {n}. Score {state.score}."]
@@ -104,6 +112,8 @@ def build_tail(world: WorldModel, n: int, last_output: str, status: Status = "ok
             "Note: you just repeated a command here with the same result. Try something new."
         )
 
+    if expected:
+        lines.append(f"Last move you expected: {expected}")
     lines.append(f"Game output:\n{last_output.strip() or '(no output)'}")
     return "\n".join(lines)
 
@@ -116,9 +126,11 @@ def build_prompt(
     *,
     version_context: str = "",
     prompt: PromptName = "basic",
+    expected: str | None = None,
 ) -> PromptParts:
     return PromptParts(
-        build_prefix(world, version_context, prompt), build_tail(world, n, last_output, status)
+        build_prefix(world, version_context, prompt),
+        build_tail(world, n, last_output, status, expected),
     )
 
 

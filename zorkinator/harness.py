@@ -17,10 +17,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, TextIO
 
-from . import builder, player, scribe
+from . import builder, player, scribe, verifier
 from .adapter import DEFAULT_STORY_FILE, GameAdapter
 from .builder import PromptRepository
-from .models import HarnessVersionRecord, MoveRecord, RunRecord, WorldFactDoc
+from .models import HarnessVersionRecord, MoveRecord, RuleDoc, RunRecord, WorldFactDoc
 from .monitor import STUCK_AFTER, Monitor
 from .progress import ConsoleProgress
 from .prompts import PromptName
@@ -40,6 +40,9 @@ from .world import WorldModel
 EndReason = Literal["death", "won", "game_over", "gave_up", "cap", "usd_cap", "stuck40"]
 FactWriter = Callable[[WorldFactDoc], None]
 DEFAULT_TEST_MODEL = OPENAI_DEV_MODEL  # smoke tests; the benchmark model is BASELINE_MODEL
+
+
+MAX_REJECTIONS = 2  # verifier rejections per move before the move is skipped
 
 
 @dataclass
@@ -116,8 +119,11 @@ def play_game(
             raise ValueError("an exact version manifest requires its repository")
         version_id = spec.version.version_id
         version_context = builder.build_version_context(run_id, spec.version, repository=repository)
+        rules: list[RuleDoc] = repository.get_rules(list(spec.version.rule_ids))
     else:
         version_context = ""
+        rules = []
+    expected: str | None = None  # the Player's prediction for the previous move
     world = spec.world or WorldModel.empty(run_id)
     world.run_id = run_id
     monitor = Monitor(stuck_after=spec.stuck_after)
@@ -156,17 +162,54 @@ def play_game(
                 status,
                 version_context=version_context,
                 prompt=spec.prompt,
+                expected=expected,
             )
             t0 = time.monotonic()
             proposal = player.propose(chat, move_prompt)
-            latency_ms = int((time.monotonic() - t0) * 1000)
             usage.add(proposal.usage)
+            # Hard rules block and the Player retries with the reason (max 3 tries);
+            # soft rules already reach the prompt through the version context.
+            rejections: list[dict[str, str]] = []
+            here = verifier.State(
+                room=world.state.room,
+                inventory=frozenset(item.casefold() for item in world.inventory),
+                room_is_dark=world.state.in_dark,
+            )
+            while not proposal.gave_up and len(rejections) < MAX_REJECTIONS:
+                verdict = verifier.check(proposal.command, here, rules)
+                if verdict.ok:
+                    break
+                rejections.append(
+                    {
+                        "cmd": proposal.command,
+                        "rule_id": verdict.rule_id or "",
+                        "reason": verdict.reason or "",
+                    }
+                )
+                proposal = player.propose(chat, move_prompt, feedback=verdict.reason)
+                usage.add(proposal.usage)
+            latency_ms = int((time.monotonic() - t0) * 1000)
             moves = n
+            surprise = proposal.surprise if expected else None
+            expected = proposal.expect
             if proposal.goal:
                 world.state.goal = proposal.goal
 
             if proposal.gave_up:
-                sink.move(_move(world, n, "I give up", proposal.raw, "", 0, False, latency_ms))
+                sink.move(
+                    _move(
+                        world,
+                        n,
+                        "I give up",
+                        proposal.raw,
+                        "",
+                        0,
+                        False,
+                        latency_ms,
+                        rejections=rejections,
+                        surprise=surprise,
+                    )
+                )
                 if trace is not None:
                     trace.move(n, move_prompt.tail, proposal.raw, "")
                 if progress is not None:
@@ -175,12 +218,42 @@ def play_game(
                 break
 
             room_before = world.state.room
+            if not verifier.check(proposal.command, here, rules).ok:
+                output = "[Blocked: a proven rule forbids this; try something else]"
+                sink.move(
+                    _move(
+                        world,
+                        n,
+                        proposal.command,
+                        proposal.raw,
+                        output,
+                        0,
+                        False,
+                        latency_ms,
+                        rejections=rejections,
+                        expected=expected,
+                        surprise=surprise,
+                    )
+                )
+                continue
             try:
                 result = game.step(proposal.command)
             except ValueError as exc:
                 output = f"[Not allowed: {exc}]"
                 sink.move(
-                    _move(world, n, proposal.command, proposal.raw, output, 0, False, latency_ms)
+                    _move(
+                        world,
+                        n,
+                        proposal.command,
+                        proposal.raw,
+                        output,
+                        0,
+                        False,
+                        latency_ms,
+                        rejections=rejections,
+                        expected=expected,
+                        surprise=surprise,
+                    )
                 )
                 if trace is not None:
                     trace.move(n, move_prompt.tail, proposal.raw, output)
@@ -217,6 +290,9 @@ def play_game(
                     died,
                     latency_ms,
                     room_before,
+                    rejections=rejections,
+                    expected=expected,
+                    surprise=surprise,
                 )
             )
             if trace is not None:
@@ -328,20 +404,26 @@ def _move(
     died: bool,
     latency_ms: int,
     room: str | None = None,
+    *,
+    rejections: list[dict[str, str]] | None = None,
+    expected: str | None = None,
+    surprise: bool | None = None,
 ) -> MoveRecord:
     return MoveRecord(
         run_id=world.run_id,
         n=n,
         room=room if room is not None else world.state.room,
         command=command,
-        proposals=[raw],
-        rejections=[],
+        proposals=[r["cmd"] for r in rejections or []] + [raw],
+        rejections=rejections or [],
         text=text,
         score=world.state.score,
         score_delta=delta,
         died=died,
         latency_ms=latency_ms,
         ts=datetime.now(UTC),
+        expected=expected,
+        surprise=surprise,
     )
 
 

@@ -186,11 +186,14 @@ class JsonlSink:
             f.write(json.dumps(row) + "\n")
 
 
+ANNOTATIONS = ("goal:", "expect:", "surprise:")
+
+
 def extract_command(reply: str) -> str:
     """First non-empty line, minus quotes, backticks, and a leading prompt marker."""
     for line in reply.splitlines():
         command = line.strip().strip("`\"'“”").removeprefix(">").strip()
-        if command:
+        if command and not command.casefold().startswith(ANNOTATIONS):
             return command
     return ""
 

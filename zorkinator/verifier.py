@@ -10,6 +10,7 @@ Two jobs:
 A rule's ``when`` may only use the fields in ``WHEN_FIELDS``, all human-visible:
 
     command       regex, full match, case-insensitive, e.g. "(kill|attack) troll.*"
+                  (``command_pattern`` is accepted as the same field)
     room          room name or list of names (case-insensitive)
     room_is_dark  true/false: the current room's text said it is pitch black
     carrying      items that must all be carried (substring match)
@@ -25,7 +26,9 @@ from typing import Any, Literal
 
 from .models import MoveRecord, RuleDoc, RunRecord
 
-WHEN_FIELDS = frozenset({"command", "room", "room_is_dark", "carrying", "not_carrying"})
+WHEN_FIELDS = frozenset(
+    {"command", "command_pattern", "room", "room_is_dark", "carrying", "not_carrying"}
+)
 
 
 @dataclass(frozen=True)
@@ -51,9 +54,12 @@ def validate_when(when: Mapping[str, Any]) -> list[str]:
     errors = [f"unknown field {key!r}" for key in when if key not in WHEN_FIELDS]
     if not when:
         errors.append("empty when: the rule would match every move")
-    if "command" in when:
+    if "command" in when and "command_pattern" in when:
+        errors.append("use command or command_pattern, not both")
+    pattern = when.get("command", when.get("command_pattern"))
+    if pattern is not None:
         try:
-            re.compile(str(when["command"]))
+            re.compile(str(pattern))
         except re.error as exc:
             errors.append(f"bad command regex: {exc}")
     if "room_is_dark" in when and not isinstance(when["room_is_dark"], bool):
@@ -68,9 +74,8 @@ def matches(rule: RuleDoc, command: str, state: State) -> bool:
     when = rule.when
     if validate_when(when):
         return False
-    if "command" in when and not re.fullmatch(
-        str(when["command"]), command.strip(), flags=re.IGNORECASE
-    ):
+    pattern = when.get("command", when.get("command_pattern"))
+    if pattern is not None and not re.fullmatch(str(pattern), command.strip(), flags=re.IGNORECASE):
         return False
     if "room" in when:
         rooms = when["room"] if isinstance(when["room"], list) else [when["room"]]
@@ -125,8 +130,14 @@ class Promoter:
        Killing the troll scores nothing but opens the way on, so "the move scored" is too weak.
     """
 
-    def __init__(self, moves_for: Callable[[str], Sequence[MoveRecord]]) -> None:
+    def __init__(
+        self,
+        moves_for: Callable[[str], Sequence[MoveRecord]],
+        history: Callable[[], Sequence[RunRecord]] | None = None,
+    ) -> None:
+        """``history`` adds more logged games to the false-positive check than the cited ones."""
         self._moves_for = moves_for
+        self._history = history
 
     def promote(self, rule: RuleDoc, runs: Sequence[RunRecord]) -> Literal["hard", "soft"]:
         if rule.verdict != "block" or validate_when(rule.when):
@@ -144,7 +155,10 @@ class Promoter:
         )
         if not prevented_death:
             return "soft"
-        blocks_progress = any(_led_to_progress(rule, replays[run.run_id]) for run in runs)
+        checked = {run.run_id for run in [*runs, *(self._history() if self._history else [])]}
+        for run_id in checked - replays.keys():
+            replays[run_id] = self._replay(run_id)
+        blocks_progress = any(_led_to_progress(rule, replays[run_id]) for run_id in checked)
         return "soft" if blocks_progress else "hard"
 
     def _replay(self, run_id: str) -> dict[int, tuple[MoveRecord, State]]:

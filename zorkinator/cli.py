@@ -4,15 +4,12 @@ from __future__ import annotations
 
 import argparse
 import os
-from collections.abc import Sequence
-from typing import Literal
 
 from dotenv import load_dotenv
 
-from . import db
+from . import db, verifier
 from .adapter import GameAdapter
 from .driver import BetweenGameDriver, MongoRunRepository, ReflectorProposalCreator
-from .models import RuleDoc, RunRecord
 from .openai_chat import OpenAIChat
 from .reflector import OpenAIReflectionModel
 from .runner import (
@@ -25,13 +22,6 @@ from .runner import (
     play_harness_chain,
 )
 from .versions import VersionManager
-
-
-class _SoftOnlyPromoter:
-    """Safe integration default until the fixed replay verifier is wired."""
-
-    def promote(self, rule: RuleDoc, runs: Sequence[RunRecord]) -> Literal["hard", "soft"]:
-        return "soft"
 
 
 def manual(seed: int) -> int:
@@ -94,7 +84,9 @@ def harness(
         store.ensure_indexes()
         run_repository = MongoRunRepository()
         proposals = ReflectorProposalCreator(store, OpenAIReflectionModel(resolved_model))
-        versions = VersionManager(store, store, store, _SoftOnlyPromoter())
+        # Soft -> hard only by replay: cited runs plus every logged harness game.
+        promoter = verifier.Promoter(db.get_moves, history=lambda: db.get_runs("harness"))
+        versions = VersionManager(store, store, store, promoter)
         driver = BetweenGameDriver(chain, store, run_repository, proposals, versions)
         cursor = play_harness_chain(
             games,

@@ -17,18 +17,33 @@ class Proposal:
     gave_up: bool
     raw: str
     usage: Usage
+    expect: str | None = None
+    surprise: bool | None = None
 
 
 def parse_goal(reply: str) -> str | None:
-    for line in reply.splitlines()[1:]:
+    return _tag(reply, "goal:")
+
+
+def parse_surprise(reply: str) -> bool | None:
+    value = (_tag(reply, "surprise:") or "").casefold()
+    if value.startswith("yes"):
+        return True
+    if value.startswith("no"):
+        return False
+    return None
+
+
+def _tag(reply: str, tag: str) -> str | None:
+    for line in reply.splitlines():
         stripped = line.strip()
-        if stripped.casefold().startswith("goal:"):
-            return stripped[5:].strip() or None
+        if stripped.casefold().startswith(tag):
+            return stripped[len(tag) :].strip() or None
     return None
 
 
 def propose(chat: Chat, prompt: PromptParts, feedback: str | None = None) -> Proposal:
-    """``feedback`` is a verifier rejection reason to retry with (verifier not built yet)."""
+    """``feedback`` is a verifier rejection reason to retry with."""
     tail = prompt.tail if feedback is None else f"{prompt.tail}\n\nRejected: {feedback}"
     prefix_block: TextBlockParam = {
         "type": "text",
@@ -45,4 +60,6 @@ def propose(chat: Chat, prompt: PromptParts, feedback: str | None = None) -> Pro
         gave_up=gave_up(reply.text),
         raw=reply.text,
         usage=reply.usage,
+        expect=_tag(reply.text, "expect:"),
+        surprise=parse_surprise(reply.text),
     )
