@@ -228,6 +228,28 @@ class BetweenGameDriverTests(unittest.TestCase):
         with self.assertRaisesRegex(DriverError, "used 'foreign'"):
             driver.recover()
 
+    def test_run_accepts_bson_normalized_persisted_timestamps(self) -> None:
+        driver, state, _, _ = self.make_driver()
+
+        def play(version_id: str, game_index: int) -> RunRecord:
+            run = completed_run("run-0", driver.chain, game_index, version_id).model_copy(
+                update={
+                    "started_at": NOW.replace(microsecond=123456),
+                    "ended_at": NOW.replace(microsecond=654321),
+                }
+            )
+            state.runs[run.run_id] = run.model_copy(
+                update={
+                    "started_at": run.started_at.replace(tzinfo=None, microsecond=123000),
+                    "ended_at": run.ended_at.replace(tzinfo=None, microsecond=654000),
+                }
+            )
+            return run
+
+        cursor = driver.run(1, play)
+
+        self.assertEqual(cursor.game_index, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

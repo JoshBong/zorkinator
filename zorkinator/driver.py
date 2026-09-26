@@ -223,7 +223,9 @@ class BetweenGameDriver:
         while game_index < games:
             played = play_game(version_id, game_index)
             persisted = self._runs.get_run(played.run_id)
-            if persisted != played:
+            if persisted is None or _canonical_persisted_run(persisted) != _canonical_persisted_run(
+                played
+            ):
                 raise DriverError("play_game must persist the completed run before returning")
             if (
                 played.mode != "harness"
@@ -322,3 +324,16 @@ def _event_cost_usd(event: MemoryEvent) -> float:
         + values["cache_read_input_tokens"] * price_in * 0.1
         + values["output_tokens"] * price_out
     ) / 1_000_000
+
+
+def _canonical_persisted_run(run: RunRecord) -> dict[str, object]:
+    """Match MongoDB's BSON datetime normalization for persistence verification."""
+    data: dict[str, object] = run.model_dump()
+    for field in ("started_at", "ended_at"):
+        value = data[field]
+        if not isinstance(value, datetime):
+            raise DriverError(f"persisted run has invalid {field}")
+        if value.tzinfo is not None:
+            value = value.astimezone(UTC).replace(tzinfo=None)
+        data[field] = value.replace(microsecond=(value.microsecond // 1000) * 1000)
+    return data

@@ -123,7 +123,7 @@ class FakeModel:
 
 
 class ReflectorTests(unittest.TestCase):
-    def test_anthropic_transport_requests_json_and_normalizes_usage(self) -> None:
+    def test_anthropic_transport_normalizes_usage_without_sampling_overrides(self) -> None:
         client = MagicMock()
         response = MagicMock()
         response.content = [MagicMock(type="text", text='{"summary":"ok"}')]
@@ -152,7 +152,7 @@ class ReflectorTests(unittest.TestCase):
         self.assertEqual(kwargs["model"], "test-model")
         self.assertEqual(kwargs["max_tokens"], 321)
         self.assertEqual(kwargs["messages"], [{"role": "user", "content": "reflect this"}])
-        self.assertEqual(kwargs["output_config"]["format"]["type"], "json_schema")
+        self.assertNotIn("output_config", kwargs)
         self.assertNotIn("temperature", kwargs)
 
     def test_anthropic_transport_rejects_empty_content(self) -> None:

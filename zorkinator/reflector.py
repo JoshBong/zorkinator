@@ -31,16 +31,6 @@ from .models import (
 
 _MEMORY_OPERATIONS = TypeAdapter(list[MemoryOperation])
 _JSON_FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
-_REFLECTION_OUTPUT_SCHEMA: dict[str, object] = {
-    "type": "object",
-    "properties": {
-        "memory_ops": {"type": "array", "items": {"type": "object"}},
-        "rule_diffs": {"type": "array", "items": {"type": "object"}},
-        "summary": {"type": "string"},
-    },
-    "required": ["memory_ops", "rule_diffs", "summary"],
-    "additionalProperties": False,
-}
 
 
 class ReflectionError(ValueError):
@@ -108,7 +98,6 @@ class AnthropicReflectionModel:
             model=self.model,
             max_tokens=self._max_tokens,
             messages=[{"role": "user", "content": prompt}],
-            output_config={"format": {"type": "json_schema", "schema": _REFLECTION_OUTPUT_SCHEMA}},
         )
         content = "".join(block.text for block in response.content if block.type == "text")
         if not content:
@@ -319,10 +308,20 @@ Return exactly one JSON object with keys memory_ops, rule_diffs, and summary. me
 add {op,key,kind,subjects,content,status,evidence:[{run_id,n}],rationale};
 revise {op,memory_id,expected_revision_id,kind,subjects,content,status,evidence,rationale};
 retire {op,memory_id,expected_revision_id,rationale,evidence}. Revisions are complete replacements.
+For every add/revise: content MUST be a JSON object (for example {"text":"The trap killed me"});
+status MUST be exactly "hypothesis", "supported", or "contradicted"; subjects MUST be an array of
+strings. Every evidence item MUST contain one run_id string and one integer move n that appears in
+the transcript--never a range, string, or summary. A valid add looks exactly like
+{"op":"add","key":"trap","kind":"failure","subjects":["trap"],
+"content":{"text":"Entering the trap was fatal"},"status":"supported",
+"evidence":[{"run_id":"the exact visible run id","n":7}],"rationale":"Move 7 ended badly."}.
 Rule diffs are separate objects; new rules must cite public evidence and are born soft. Empty arrays
 are valid. Use add {op,key,text,when,verdict,evidence}, revise
 {op,rule_id,key,text,when,verdict,evidence}, or retire {op,rule_id}. Never invent an evidence
-reference that is absent from the supplied transcript.
+reference that is absent from the supplied transcript. For add/revise, when MUST be a JSON object
+(for example {"command_pattern":"ready"}) and verdict MUST be exactly "warn" or "block"; do not
+write natural-language strings for when or use "soft" as the verdict. Prefer an empty rule_diffs
+array when no precise machine-checkable condition follows directly from the evidence.
 """
         return f"{instructions}\nEVIDENCE_PACKET\n{json.dumps(packet, sort_keys=True)}"
 

@@ -3,11 +3,32 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
+from typing import Literal
 
 from dotenv import load_dotenv
 
+from . import db
 from .adapter import GameAdapter
-from .runner import BASELINE_MODEL, AnthropicChat, JsonlSink, play, play_chains
+from .driver import BetweenGameDriver, MongoRunRepository, ReflectorProposalCreator
+from .models import RuleDoc, RunRecord
+from .reflector import AnthropicReflectionModel
+from .runner import (
+    BASELINE_MODEL,
+    AnthropicChat,
+    JsonlSink,
+    play,
+    play_chains,
+    play_harness_chain,
+)
+from .versions import VersionManager
+
+
+class _SoftOnlyPromoter:
+    """Safe integration default until the fixed replay verifier is wired."""
+
+    def promote(self, rule: RuleDoc, runs: Sequence[RunRecord]) -> Literal["hard", "soft"]:
+        return "soft"
 
 
 def manual(seed: int) -> int:
@@ -52,6 +73,46 @@ def baseline(seed: int, moves: int, prompt: str, model: str, usd_cap: float, out
     return 0
 
 
+def harness(
+    chain: str,
+    games: int,
+    seed: int,
+    moves: int,
+    prompt: str,
+    model: str,
+    usd_cap: float,
+) -> int:
+    """Run or resume one Atlas-backed sequential harness chain."""
+    load_dotenv()
+    db.ensure_indexes()
+    store = db.MongoOuterLoopStore.from_env()
+    try:
+        store.ensure_indexes()
+        run_repository = MongoRunRepository()
+        proposals = ReflectorProposalCreator(store, AnthropicReflectionModel(model))
+        versions = VersionManager(store, store, store, _SoftOnlyPromoter())
+        driver = BetweenGameDriver(chain, store, run_repository, proposals, versions)
+        cursor = play_harness_chain(
+            games,
+            driver=driver,
+            repository=store,
+            chat=AnthropicChat(model),
+            sink=db.MongoSink(),
+            seed=seed,
+            move_cap=moves,
+            prompt="advanced" if prompt == "advanced" else "basic",
+            usd_cap=usd_cap,
+        )
+        print(
+            f"Harness chain {chain!r}: completed {cursor.game_index}/{games} games; "
+            f"next version {cursor.version_id}"
+        )
+    finally:
+        store.close()
+        db.close()
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="zorkinator")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -71,6 +132,16 @@ def main() -> int:
     )
     baseline_parser.add_argument("--label", default=None, help="chain name prefix in run records")
     baseline_parser.add_argument("--total-usd-cap", type=float, default=100.0)
+    harness_parser = subparsers.add_parser("harness", help="Atlas-backed sequential harness chain")
+    harness_parser.add_argument(
+        "--chain", required=True, help="stable chain name (resumes by name)"
+    )
+    harness_parser.add_argument("--games", type=int, default=2, help="total games in the chain")
+    harness_parser.add_argument("--seed", type=int, default=0)
+    harness_parser.add_argument("--moves", type=int, default=20)
+    harness_parser.add_argument("--prompt", choices=["basic", "advanced"], default="basic")
+    harness_parser.add_argument("--model", default=BASELINE_MODEL)
+    harness_parser.add_argument("--usd-cap", type=float, default=5.0)
     args = parser.parse_args()
 
     if args.command == "manual":
@@ -93,6 +164,16 @@ def main() -> int:
             label=args.label or ("chats" if args.chats else "nomem"),
         )
         return 0
+    if args.command == "harness":
+        return harness(
+            args.chain,
+            args.games,
+            args.seed,
+            args.moves,
+            args.prompt,
+            args.model,
+            args.usd_cap,
+        )
     parser.error(f"unknown command: {args.command}")
 
 

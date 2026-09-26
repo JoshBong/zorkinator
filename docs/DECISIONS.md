@@ -31,7 +31,7 @@ Inner loop builds map/facts/notes from scratch each game (`world_facts` keyed by
 
 The latest outer-loop discussion permits storing whatever human-visible knowledge the agent finds useful across games, including maps, routes, hypotheses, and procedures. This revises the intended general-only/no-room-name direction above. Memory remains advisory; hard blocking still requires the fixed promotion procedure. Atlas stores evidence separately from versioned memory interpretations, and cold experiments must not inherit prior experiment memories.
 
-The proposed interface, immutable revision schema, version manifests, and implementation plan are documented in [OUTER_LOOP_MEMORY.md](OUTER_LOOP_MEMORY.md). Those concrete schema/signature changes require coordination with Josh, Himali, and Seb and an accompanying `CONTRACTS.md` amendment before implementation; this decision entry does not silently change the current shared contract.
+The immutable revision schema, version manifests, and implementation status are documented in [OUTER_LOOP_MEMORY.md](OUTER_LOOP_MEMORY.md), and the shared shapes/signatures are now in `CONTRACTS.md`. Durable Reflector, versioning, Atlas access, the restart-safe between-game driver, exact-manifest prompt construction, and the Atlas smoke chain are implemented. Remaining outer/inner integration work is tracked in [INTEGRATION_HANDOFF.md](INTEGRATION_HANDOFF.md).
 
 ## 2026-09-26 — Benchmark model = Claude Haiku 4.5; 10 chains x 10 games (by Josh Huang)
 

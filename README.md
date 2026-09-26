@@ -75,5 +75,6 @@ Coding agents: start at [`AGENTS.md`](AGENTS.md).
 - [`docs/CONTRACTS.md`](docs/CONTRACTS.md): Mongo shapes and function signatures (authority)
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): what's decided and what's still proposed
 - [`docs/ARCHITECTURE_MAP.md`](docs/ARCHITECTURE_MAP.md): components, data flow, rule format, team split
+- [`docs/INTEGRATION_HANDOFF.md`](docs/INTEGRATION_HANDOFF.md): outer-loop next work and inner-loop integration boundary
 - [`docs/DESIGN.md`](docs/DESIGN.md): claim, ground rules, results to show
 - [`docs/PRIOR_ART.md`](docs/PRIOR_ART.md): ZorkGPT and jev-zork, and what we learned from them
