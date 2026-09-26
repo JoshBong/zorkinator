@@ -56,12 +56,20 @@ be killed with the elvish sword; treasures go in the trophy case (egg 5, torch 1
 |---|---|---|---|---|---|
 | 1 (scripted) | 60 | 19 | 0 | 63 | cap |
 | 2 (Haiku, seeded) | 48 | 13 | 6 | **25** | died to the troll |
+| 3 (Haiku, + game 2's lessons) | **13** | 5 | 0 | **25** | died to a grue |
 | unseeded Haiku games (12, chains `haiku-short-01/02`) | 100 | 7–11 | 19–52 | **0–10** | cap / stuck |
 
 Game 2's key commands, in order: `open window` (13), `get lantern` (29), `move rug` (30), `light lantern`
 (31), `open trapdoor` (33), `down` (34), `get sword` (45), then it fought the troll and died at 48. Every one
 of those is a fact from the seeded version; the route to the house (via the forest and the Clearing) was its
 own. Unseeded games reached 5–10 points in 100 moves and never opened the trap door.
+
+Game 3 played the version reflected from game 2's death. That reflection had written "the elvish sword hangs
+above the trophy case in the Living Room, not in the Troll Room; get it first", a strategy for the troll, and
+two leads. Game 3: `get sword` at move 6, `move rug` at 10, `open trap door` at 11, down, and a grue at 13 — the
+same 25 points in 13 moves instead of 48. The reflection after game 3 proposed a soft rule, "moving in darkness
+without the brass lantern or torch results in a grue", and a lead to take the lantern first. Each death became
+one thing the next game knew.
 
 Reading: the model uses learned world knowledge when it has it; what the unseeded chains lacked was
 knowledge worth acting on, not the ability to act on it. The frontier (`lead` memories, idle → explore) is
