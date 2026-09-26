@@ -356,6 +356,8 @@ def _event_cost_usd(event: MemoryEvent) -> float:
     if isinstance(explicit, int | float) and not isinstance(explicit, bool) and explicit >= 0:
         return float(explicit)
 
+    if event.model.startswith("scripted"):
+        return 0.0  # a scripted game's reflection is not charged to the chain's budget
     price = PRICES.get(event.model)
     token_keys = {
         "input_tokens": 0,
