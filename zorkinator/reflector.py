@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from typing import Protocol
 from uuid import uuid4
 
+import anthropic
 from pydantic import JsonValue, TypeAdapter, ValidationError
 
 from .models import (
@@ -30,6 +31,16 @@ from .models import (
 
 _MEMORY_OPERATIONS = TypeAdapter(list[MemoryOperation])
 _JSON_FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
+_REFLECTION_OUTPUT_SCHEMA: dict[str, object] = {
+    "type": "object",
+    "properties": {
+        "memory_ops": {"type": "array", "items": {"type": "object"}},
+        "rule_diffs": {"type": "array", "items": {"type": "object"}},
+        "summary": {"type": "string"},
+    },
+    "required": ["memory_ops", "rule_diffs", "summary"],
+    "additionalProperties": False,
+}
 
 
 class ReflectionError(ValueError):
@@ -72,6 +83,46 @@ class ReflectionModel(Protocol):
     model: str
 
     def generate(self, prompt: str) -> ReflectionModelResponse: ...
+
+
+class AnthropicReflectionModel:
+    """One-shot, JSON-constrained Anthropic transport for between-game reflection."""
+
+    def __init__(
+        self,
+        model: str,
+        *,
+        client: anthropic.Anthropic | None = None,
+        max_tokens: int = 4096,
+    ) -> None:
+        if not model:
+            raise ValueError("model must be non-empty")
+        if max_tokens < 1:
+            raise ValueError("max_tokens must be positive")
+        self.model = model
+        self._client = client or anthropic.Anthropic(max_retries=8)
+        self._max_tokens = max_tokens
+
+    def generate(self, prompt: str) -> ReflectionModelResponse:
+        response = self._client.messages.create(
+            model=self.model,
+            max_tokens=self._max_tokens,
+            messages=[{"role": "user", "content": prompt}],
+            output_config={"format": {"type": "json_schema", "schema": _REFLECTION_OUTPUT_SCHEMA}},
+        )
+        content = "".join(block.text for block in response.content if block.type == "text")
+        if not content:
+            raise ReflectionError("reflection model returned no text content")
+        usage = response.usage
+        return ReflectionModelResponse(
+            content=content,
+            usage={
+                "input_tokens": usage.input_tokens,
+                "output_tokens": usage.output_tokens,
+                "cache_creation_input_tokens": usage.cache_creation_input_tokens or 0,
+                "cache_read_input_tokens": usage.cache_read_input_tokens or 0,
+            },
+        )
 
 
 @dataclass(frozen=True)

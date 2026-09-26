@@ -16,8 +16,11 @@ from zorkinator.models import (
     HarnessVersionRecord,
     MemoryRef,
     MemoryRevision,
+    MoveRecord,
     ReflectionProposal,
     RetireMemoryOperation,
+    RuleDoc,
+    RunRecord,
 )
 
 NOW = datetime(2026, 9, 26, tzinfo=UTC)
@@ -72,6 +75,81 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
         self.store = MongoOuterLoopStore(
             cast(Database[dict[str, Any]], self.database), max_recall_limit=10
         )
+
+    def test_reflection_repository_reads_run_moves_and_manifest_rules(self) -> None:
+        run = RunRecord(
+            run_id="run_1",
+            version_id="v1",
+            mode="harness",
+            prompt="basic",
+            model="test-model",
+            seed=1,
+            move_cap=10,
+            score=0,
+            moves=1,
+            died=False,
+            death_move=None,
+            end_reason="cap",
+            tokens_in=0,
+            tokens_out=0,
+            tokens_cache_write=0,
+            tokens_cache_read=0,
+            cost_usd=0,
+            started_at=NOW,
+            ended_at=NOW,
+        )
+        move = MoveRecord(
+            run_id="run_1",
+            n=1,
+            room="West of House",
+            command="look",
+            proposals=["look"],
+            rejections=[],
+            text="You are west of a white house.",
+            score=0,
+            score_delta=0,
+            died=False,
+            latency_ms=1,
+            ts=NOW,
+        )
+        first = RuleDoc(
+            id="r1",
+            text="First.",
+            when={"action": "x"},
+            verdict="warn",
+            status="soft",
+            born_version="v1",
+        )
+        second = first.model_copy(update={"id": "r2", "text": "Second."})
+        run_document = run.model_dump(mode="python")
+        run_document["_id"] = run.run_id
+        self.database.runs.find_one.return_value = run_document
+        self.database.moves.find.return_value.sort.return_value = [move.model_dump(mode="python")]
+        self.database.rules.find.return_value = [
+            mongo_document(second, "id"),
+            mongo_document(first, "id"),
+        ]
+
+        self.assertEqual(self.store.get_run("run_1"), run)
+        self.assertEqual(self.store.get_moves("run_1"), [move])
+        self.assertEqual(self.store.get_rules(["r1", "r2"]), [first, second])
+        self.database.rules.find.assert_called_once_with({"_id": {"$in": ["r1", "r2"]}})
+
+    def test_run_evidence_checks_exact_move_identity(self) -> None:
+        self.database.moves.find_one.side_effect = [{"_id": "move"}, None]
+
+        self.assertTrue(self.store.has_move("run_1", 3))
+        self.assertFalse(self.store.has_move("run_1", 4))
+        self.assertEqual(
+            self.database.moves.find_one.call_args_list[0].args,
+            ({"run_id": "run_1", "n": 3}, {"_id": 1}),
+        )
+
+    def test_manifest_rule_lookup_rejects_missing_rule(self) -> None:
+        self.database.rules.find.return_value = []
+
+        with self.assertRaisesRegex(ValueError, "missing rules: r_missing"):
+            self.store.get_rules(["r_missing"])
 
     def test_read_resolves_only_revision_in_requested_manifest(self) -> None:
         active_revision = revision()
