@@ -354,9 +354,11 @@ class MongoOuterLoopStore:
         try:
             self._database.memories.create_search_index(model)
         except OperationFailure as exc:
-            if (
-                "already exists" not in str(exc).casefold()
-                and "duplicate" not in str(exc).casefold()
+            # Atlas says "already exists" or, when the definition changed, "already defined"
+            # (code 68, IndexAlreadyExists). Either way the index is there: carry on.
+            message = str(exc).casefold()
+            if exc.code != 68 and not any(
+                phrase in message for phrase in ("already exists", "already defined", "duplicate")
             ):
                 raise
 
