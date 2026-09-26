@@ -1,0 +1,226 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * GRUE LAB design system — retro CRT phosphor terminal meets modern lab UI.
+ * All colors are oklch semantic tokens. Never hardcode colors in components.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  /* domain tokens */
+  --color-phosphor: var(--phosphor);
+  --color-phosphor-dim: var(--phosphor-dim);
+  --color-harness: var(--harness);
+  --color-baseline: var(--baseline);
+  --color-guard: var(--guard);
+  --color-lesson: var(--lesson);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+
+  --color-chart-1: var(--harness);
+  --color-chart-2: var(--baseline);
+  --color-chart-3: var(--guard);
+  --color-chart-4: var(--lesson);
+  --color-chart-5: var(--phosphor-dim);
+
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.16 0.014 250);
+  --foreground: oklch(0.94 0.008 250);
+  --card: oklch(0.2 0.016 252);
+  --card-foreground: oklch(0.94 0.008 250);
+  --popover: oklch(0.2 0.016 252);
+  --popover-foreground: oklch(0.94 0.008 250);
+  --primary: oklch(0.82 0.21 145);
+  --primary-foreground: oklch(0.17 0.02 150);
+  --secondary: oklch(0.26 0.018 252);
+  --secondary-foreground: oklch(0.94 0.008 250);
+  --muted: oklch(0.25 0.016 252);
+  --muted-foreground: oklch(0.68 0.018 250);
+  --accent: oklch(0.29 0.03 200);
+  --accent-foreground: oklch(0.94 0.008 250);
+  --destructive: oklch(0.6 0.19 25);
+  --destructive-foreground: oklch(0.97 0.01 25);
+  --border: oklch(0.31 0.02 250);
+  --input: oklch(0.31 0.02 250);
+  --ring: oklch(0.82 0.21 145);
+
+  --surface: oklch(0.2 0.016 252);
+  --surface-2: oklch(0.24 0.018 252);
+  --phosphor: oklch(0.87 0.19 148);
+  --phosphor-dim: oklch(0.62 0.11 150);
+  --harness: oklch(0.82 0.21 145);
+  --baseline: oklch(0.6 0.16 22);
+  --guard: oklch(0.82 0.16 78);
+  --lesson: oklch(0.82 0.14 200);
+
+  --glow-phosphor: 0 0 12px oklch(0.87 0.19 148 / 0.35);
+  --glow-lesson: 0 0 24px oklch(0.82 0.14 200 / 0.35);
+  --glow-guard: 0 0 24px oklch(0.82 0.16 78 / 0.35);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* --- CRT treatment -------------------------------------------------- */
+
+@utility crt {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      oklch(0 0 0 / 0) 0px,
+      oklch(0 0 0 / 0) 2px,
+      oklch(0 0 0 / 0.22) 3px,
+      oklch(0 0 0 / 0.22) 4px
+    );
+    z-index: 2;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at center,
+      oklch(0.87 0.19 148 / 0.05) 0%,
+      oklch(0 0 0 / 0.35) 100%
+    );
+    z-index: 3;
+  }
+}
+
+@utility phosphor-text {
+  color: var(--color-phosphor);
+  text-shadow: var(--glow-phosphor);
+}
+
+@utility panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+@utility panel-title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+@utility glow-lesson {
+  box-shadow: var(--glow-lesson);
+}
+
+@utility glow-guard {
+  box-shadow: var(--glow-guard);
+}
+
+/* --- presenter mode -------------------------------------------------- */
+
+.presenter {
+  font-size: 1.2rem;
+}
+
+.presenter .presenter-hide {
+  display: none !important;
+}
+
+/* --- animations ------------------------------------------------------ */
+
+@keyframes cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@utility caret {
+  animation: cursor-blink 1s steps(1) infinite;
+}
+
+@keyframes pulse-room {
+  0%,
+  100% {
+    r: 9;
+    opacity: 1;
+  }
+  50% {
+    r: 13;
+    opacity: 0.55;
+  }
+}
+
+@utility room-pulse {
+  animation: pulse-room 1.6s ease-in-out infinite;
+}
+
+@keyframes guard-flash {
+  0% {
+    background-color: oklch(0.82 0.16 78 / 0.45);
+  }
+  100% {
+    background-color: oklch(0.82 0.16 78 / 0.08);
+  }
+}
+
+@utility guard-flash {
+  animation: guard-flash 0.9s ease-out;
+}
