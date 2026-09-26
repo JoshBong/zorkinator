@@ -124,6 +124,12 @@ cp .env.example .env                # then fill in keys
 `OPENAI_API_KEY` and optionally `OPENAI_TEST_MODEL` (default: `gpt-5.6-luna`). Keep credentials only in `.env`;
 never commit or print them. The recorded benchmark model is separate: see [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
+The harness command uses the OpenAI adapter for both player and reflection calls:
+
+```bash
+python -m zorkinator harness --chain dev-smoke --games 2 --moves 20 --seed 0
+```
+
 ### Run
 
 ```bash

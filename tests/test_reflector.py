@@ -8,6 +8,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 import anthropic
+from openai import OpenAI
 
 from zorkinator.models import (
     HarnessVersionRecord,
@@ -20,6 +21,7 @@ from zorkinator.models import (
 )
 from zorkinator.reflector import (
     AnthropicReflectionModel,
+    OpenAIReflectionModel,
     ReflectionError,
     ReflectionModelResponse,
     Reflector,
@@ -161,6 +163,49 @@ class ReflectorTests(unittest.TestCase):
         response.content = []
         client.messages.create.return_value = response
         model = AnthropicReflectionModel("test-model", client=cast(anthropic.Anthropic, client))
+
+        with self.assertRaisesRegex(ReflectionError, "no text content"):
+            model.generate("reflect this")
+
+    def test_openai_transport_normalizes_usage_without_sampling_overrides(self) -> None:
+        client = MagicMock()
+        response = MagicMock()
+        response.output_text = '{"summary":"ok"}'
+        response.usage.input_tokens = 13
+        response.usage.output_tokens = 5
+        response.usage.input_tokens_details.cache_write_tokens = 2
+        response.usage.input_tokens_details.cached_tokens = 7
+        client.responses.create.return_value = response
+        model = OpenAIReflectionModel(
+            "gpt-5.6-luna", client=cast(OpenAI, client), max_output_tokens=654
+        )
+
+        result = model.generate("reflect this")
+
+        self.assertEqual(result.content, '{"summary":"ok"}')
+        self.assertEqual(
+            result.usage,
+            {
+                "input_tokens": 13,
+                "output_tokens": 5,
+                "cache_creation_input_tokens": 2,
+                "cache_read_input_tokens": 7,
+            },
+        )
+        kwargs = client.responses.create.call_args.kwargs
+        self.assertEqual(kwargs["model"], "gpt-5.6-luna")
+        self.assertEqual(kwargs["input"], "reflect this")
+        self.assertEqual(kwargs["max_output_tokens"], 654)
+        self.assertEqual(kwargs["reasoning"], {"effort": "none"})
+        self.assertFalse(kwargs["store"])
+        self.assertNotIn("temperature", kwargs)
+
+    def test_openai_transport_rejects_empty_content(self) -> None:
+        client = MagicMock()
+        response = MagicMock()
+        response.output_text = ""
+        client.responses.create.return_value = response
+        model = OpenAIReflectionModel("gpt-5.6-luna", client=cast(OpenAI, client))
 
         with self.assertRaisesRegex(ReflectionError, "no text content"):
             model.generate("reflect this")

@@ -16,6 +16,7 @@ from typing import Protocol
 from uuid import uuid4
 
 import anthropic
+from openai import OpenAI
 from pydantic import JsonValue, TypeAdapter, ValidationError
 
 from .models import (
@@ -112,6 +113,50 @@ class AnthropicReflectionModel:
                 "output_tokens": usage.output_tokens,
                 "cache_creation_input_tokens": usage.cache_creation_input_tokens or 0,
                 "cache_read_input_tokens": usage.cache_read_input_tokens or 0,
+            },
+        )
+
+
+class OpenAIReflectionModel:
+    """One-shot OpenAI Responses API transport for between-game reflection."""
+
+    def __init__(
+        self,
+        model: str,
+        *,
+        client: OpenAI | None = None,
+        max_output_tokens: int = 4096,
+    ) -> None:
+        if not model:
+            raise ValueError("model must be non-empty")
+        if max_output_tokens < 1:
+            raise ValueError("max_output_tokens must be positive")
+        self.model = model
+        self._client = client or OpenAI(max_retries=8)
+        self._max_output_tokens = max_output_tokens
+
+    def generate(self, prompt: str) -> ReflectionModelResponse:
+        response = self._client.responses.create(
+            model=self.model,
+            input=prompt,
+            max_output_tokens=self._max_output_tokens,
+            reasoning={"effort": "none"},
+            store=False,
+        )
+        content = response.output_text
+        if not content:
+            raise ReflectionError("reflection model returned no text content")
+        usage = response.usage
+        details = None if usage is None else usage.input_tokens_details
+        return ReflectionModelResponse(
+            content=content,
+            usage={
+                "input_tokens": 0 if usage is None else usage.input_tokens,
+                "output_tokens": 0 if usage is None else usage.output_tokens,
+                "cache_creation_input_tokens": (
+                    0 if details is None else details.cache_write_tokens
+                ),
+                "cache_read_input_tokens": 0 if details is None else details.cached_tokens,
             },
         )
 

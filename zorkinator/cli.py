@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from collections.abc import Sequence
 from typing import Literal
 
@@ -12,9 +13,11 @@ from . import db
 from .adapter import GameAdapter
 from .driver import BetweenGameDriver, MongoRunRepository, ReflectorProposalCreator
 from .models import RuleDoc, RunRecord
-from .reflector import AnthropicReflectionModel
+from .openai_chat import OpenAIChat
+from .reflector import OpenAIReflectionModel
 from .runner import (
     BASELINE_MODEL,
+    OPENAI_DEV_MODEL,
     AnthropicChat,
     JsonlSink,
     play,
@@ -79,24 +82,25 @@ def harness(
     seed: int,
     moves: int,
     prompt: str,
-    model: str,
+    model: str | None,
     usd_cap: float,
 ) -> int:
     """Run or resume one Atlas-backed sequential harness chain."""
     load_dotenv()
+    resolved_model = model or os.getenv("OPENAI_TEST_MODEL") or OPENAI_DEV_MODEL
     db.ensure_indexes()
     store = db.MongoOuterLoopStore.from_env()
     try:
         store.ensure_indexes()
         run_repository = MongoRunRepository()
-        proposals = ReflectorProposalCreator(store, AnthropicReflectionModel(model))
+        proposals = ReflectorProposalCreator(store, OpenAIReflectionModel(resolved_model))
         versions = VersionManager(store, store, store, _SoftOnlyPromoter())
         driver = BetweenGameDriver(chain, store, run_repository, proposals, versions)
         cursor = play_harness_chain(
             games,
             driver=driver,
             repository=store,
-            chat=AnthropicChat(model),
+            chat=OpenAIChat(resolved_model),
             sink=db.MongoSink(),
             seed=seed,
             move_cap=moves,
@@ -141,7 +145,11 @@ def main() -> int:
     harness_parser.add_argument("--seed", type=int, default=0)
     harness_parser.add_argument("--moves", type=int, default=20)
     harness_parser.add_argument("--prompt", choices=["basic", "advanced"], default="basic")
-    harness_parser.add_argument("--model", default=BASELINE_MODEL)
+    harness_parser.add_argument(
+        "--model",
+        default=None,
+        help=f"OpenAI model (default: OPENAI_TEST_MODEL or {OPENAI_DEV_MODEL})",
+    )
     harness_parser.add_argument("--usd-cap", type=float, default=5.0)
     args = parser.parse_args()
 

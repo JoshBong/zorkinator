@@ -2,12 +2,16 @@ import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
+from unittest.mock import MagicMock
 
 from anthropic.types import MessageParam
+from openai import OpenAI
 
 from zorkinator.driver import ChainCursor
 from zorkinator.memory import ChatArchive
 from zorkinator.models import HarnessVersionRecord, MemoryRevision, MoveRecord, RuleDoc, RunRecord
+from zorkinator.openai_chat import OpenAIChat
 from zorkinator.prompts import BASIC
 from zorkinator.runner import (
     ChatReply,
@@ -41,6 +45,49 @@ class ExtractCommandTest(unittest.TestCase):
         self.assertEqual(extract_command("`open mailbox`\nbecause"), "open mailbox")
         self.assertEqual(extract_command("\n> north"), "north")
         self.assertEqual(extract_command("   "), "")
+
+
+class OpenAIChatTest(unittest.TestCase):
+    def test_responses_transport_converts_text_blocks_and_normalizes_usage(self) -> None:
+        client = MagicMock()
+        response = MagicMock()
+        response.output_text = "open mailbox"
+        response.usage.input_tokens = 11
+        response.usage.output_tokens = 7
+        response.usage.input_tokens_details.cache_write_tokens = 2
+        response.usage.input_tokens_details.cached_tokens = 3
+        client.responses.create.return_value = response
+        chat = OpenAIChat("gpt-5.6-luna", client=cast(OpenAI, client), max_output_tokens=321)
+        messages: list[MessageParam] = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "prefix", "cache_control": {"type": "ephemeral"}},
+                    {"type": "text", "text": "tail"},
+                ],
+            }
+        ]
+
+        result = chat.complete(messages)
+
+        self.assertEqual(result.text, "open mailbox")
+        self.assertEqual(result.usage, Usage(input=11, output=7, cache_write=2, cache_read=3))
+        self.assertEqual(result.transcript, [{"role": "assistant", "content": "open mailbox"}])
+        kwargs = client.responses.create.call_args.kwargs
+        self.assertEqual(kwargs["model"], "gpt-5.6-luna")
+        self.assertEqual(kwargs["input"], [{"role": "user", "content": "prefix\n\ntail"}])
+        self.assertEqual(kwargs["max_output_tokens"], 321)
+        self.assertEqual(kwargs["reasoning"], {"effort": "none"})
+        self.assertFalse(kwargs["store"])
+
+    def test_rejects_past_chat_archive(self) -> None:
+        client = MagicMock()
+        chat = OpenAIChat("gpt-5.6-luna", client=cast(OpenAI, client))
+        with tempfile.TemporaryDirectory() as out:
+            archive = ChatArchive(Path(out))
+            with self.assertRaisesRegex(ValueError, "does not support past-chat archives"):
+                chat.complete([{"role": "user", "content": "hello"}], archive)
+        client.responses.create.assert_not_called()
 
 
 class MemorySink:

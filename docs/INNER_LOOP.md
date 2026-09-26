@@ -4,8 +4,9 @@ Status: initial implementation integrated (2026-09-26). This file describes harn
 [OUTER_LOOP_MEMORY.md](OUTER_LOOP_MEMORY.md) (Elliott). For shapes and signatures, [CONTRACTS.md](CONTRACTS.md) is still the authority.
 
 Development and smoke runs now target the OpenAI API through `OPENAI_API_KEY` and
-`OPENAI_TEST_MODEL` (default `gpt-5.6-luna`). The `Chat` protocol is provider-neutral, but the OpenAI transport
-adapter is still required; all LLM roles in one run must use the same exact model.
+`OPENAI_TEST_MODEL` (default `gpt-5.6-luna`). The provider-neutral `Chat` protocol is implemented by
+`OpenAIChat`, and between-game reflection uses `OpenAIReflectionModel`; all LLM roles in one run use the same
+exact model.
 
 ## Objective
 

@@ -146,11 +146,10 @@ ruff check .
 ruff format --check .
 mypy
 python -m unittest discover -v
-# After the OpenAI Chat/reflection adapter lands:
 python -m zorkinator harness --chain <unique-name> --games 2 --moves 20 --seed 0
 ```
 
 Atlas tests and real chains require `MONGODB_URI`. New development/smoke model calls use `OPENAI_API_KEY` and
-default to `OPENAI_TEST_MODEL=gpt-5.6-luna`. The current runtime transport is Anthropic-specific, so an OpenAI
-`Chat`/reflection adapter must land before the next model-backed smoke run; do not route the OpenAI key through
-the Anthropic client. Benchmark credentials and models remain separate from smoke-test defaults.
+default to `OPENAI_TEST_MODEL=gpt-5.6-luna`. `OpenAIChat` and `OpenAIReflectionModel` use the Responses API for
+the harness player and reflector respectively; benchmark credentials and Anthropic models remain separate from
+smoke-test defaults.

@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from .driver import BetweenGameDriver, ChainCursor
 
 BASELINE_MODEL = "claude-haiku-4-5"
+OPENAI_DEV_MODEL = "gpt-5.6-luna"
 MAX_SCORE = 350
 MAX_TOOL_ROUNDS = 3
 
@@ -32,6 +33,7 @@ PRICES: dict[str, tuple[float, float]] = {
     "claude-sonnet-4-5-20250929": (3.0, 15.0),
     "claude-sonnet-5": (2.0, 10.0),
     "claude-haiku-4-5": (1.0, 5.0),
+    "gpt-5.6-luna": (0.2, 1.2),
 }
 
 EndReason = Literal["death", "won", "game_over", "gave_up", "cap", "usd_cap"]

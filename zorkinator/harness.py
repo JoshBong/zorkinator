@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -26,6 +27,7 @@ from .prompts import PromptName
 from .runner import (
     BASELINE_MODEL,
     MAX_SCORE,
+    OPENAI_DEV_MODEL,
     PRICES,
     AnthropicChat,
     Chat,
@@ -37,7 +39,7 @@ from .world import WorldModel
 
 EndReason = Literal["death", "won", "game_over", "gave_up", "cap", "usd_cap", "stuck40"]
 FactWriter = Callable[[WorldFactDoc], None]
-DEFAULT_TEST_MODEL = "gpt-4.1-mini"  # smoke tests; the benchmark model is BASELINE_MODEL
+DEFAULT_TEST_MODEL = OPENAI_DEV_MODEL  # smoke tests; the benchmark model is BASELINE_MODEL
 
 
 @dataclass
@@ -360,23 +362,27 @@ def main() -> int:
     """One harness game from the terminal, with live progress.
 
     python -m zorkinator.harness --player explorer --moves 60     # offline, no API key
-    python -m zorkinator.harness --moves 20                       # gpt-4.1-mini (OPENAI_API_KEY)
+    python -m zorkinator.harness --moves 20                       # gpt-5.6-luna (OPENAI_API_KEY)
     python -m zorkinator.harness --model claude-haiku-4-5    # benchmark (ANTHROPIC_API_KEY)
     """
     from dotenv import load_dotenv
 
+    load_dotenv()
     parser = argparse.ArgumentParser(prog="zorkinator.harness")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--moves", type=int, default=20, help="move cap (smoke: 20; full: 500)")
     parser.add_argument("--player", choices=["model", "explorer"], default="model")
-    parser.add_argument("--model", default=DEFAULT_TEST_MODEL, help=f"benchmark: {BASELINE_MODEL}")
+    parser.add_argument(
+        "--model",
+        default=os.getenv("OPENAI_TEST_MODEL") or DEFAULT_TEST_MODEL,
+        help=f"development: {DEFAULT_TEST_MODEL}; benchmark: {BASELINE_MODEL}",
+    )
     parser.add_argument("--usd-cap", type=float, default=2.0)
     parser.add_argument("--out", default="runs")
     parser.add_argument("--quiet", action="store_true", help="one line per move, no KB notes")
     parser.add_argument("--no-trace", action="store_true", help="skip the per-move trace file")
     args = parser.parse_args()
 
-    load_dotenv()
     chat = make_chat(args.player, args.model, args.seed)
     spec = GameSpec(args.seed, args.moves, args.usd_cap)
     facts: list[WorldFactDoc] = []
