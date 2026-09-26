@@ -169,46 +169,45 @@ function HeadToHead() {
       ) : (
         <>
           {/* The two games plus what the harness is doing about it — one view, no scrolling
-              to find out why it's winning. */}
-          <div className="grid gap-3 xl:grid-cols-[1fr_1fr_360px]">
+              to find out why it's winning. Mind and Rules each get their own column so
+              neither is squeezed into a shared sidebar. */}
+          <div className="grid gap-3 xl:grid-cols-[1fr_1fr_290px_290px]">
             <div className="rounded-xl border border-baseline/40 p-1">
               <Terminal moves={base} index={bIdx} life={game} className="h-[250px]" />
             </div>
             <div className="rounded-xl border border-harness/40 p-1">
               <Terminal moves={harn} index={hIdx} life={game} className="h-[250px]" />
             </div>
-            <div className="flex flex-col gap-3 xl:h-[250px]">
-              <MindPanel move={hMove} className="h-[200px] xl:h-auto xl:min-h-0 xl:flex-[3]" />
-              <div className="panel flex h-[150px] flex-col p-3 xl:h-auto xl:min-h-0 xl:flex-[2]">
-                <p className="panel-title flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-lesson" /> Harness rules & memory · {known.length}
-                </p>
-                <div className="mt-2 flex-1 space-y-1.5 overflow-y-auto pr-1">
-                  {rulesQ.isLoading ? (
-                    <LoadingState label="Loading rules" />
-                  ) : known.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      No lessons yet — first game starts from scratch.
-                    </p>
-                  ) : (
-                    known.map((r) => (
-                      <motion.div
-                        key={r.rule_id}
-                        initial={{ opacity: 0, x: 8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="rounded-md border border-lesson/30 bg-lesson/5 p-2"
-                      >
-                        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-lesson">
-                          {r.type === "guardrail" ? (
-                            <ShieldAlert className="h-3 w-3 text-guard" />
-                          ) : null}
-                          {r.rule_id} v{r.version} · {r.type}
-                        </div>
-                        <p className="mt-1 text-xs">{r.text}</p>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
+            <MindPanel move={hMove} className="h-[250px]" />
+            <div className="panel flex h-[250px] flex-col p-3">
+              <p className="panel-title flex items-center gap-2">
+                <Brain className="h-4 w-4 text-lesson" /> Harness rules & memory · {known.length}
+              </p>
+              <div className="mt-2 flex-1 space-y-1.5 overflow-y-auto pr-1">
+                {rulesQ.isLoading ? (
+                  <LoadingState label="Loading rules" />
+                ) : known.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    No lessons yet — first game starts from scratch.
+                  </p>
+                ) : (
+                  known.map((r) => (
+                    <motion.div
+                      key={r.rule_id}
+                      initial={{ opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="rounded-md border border-lesson/30 bg-lesson/5 p-2"
+                    >
+                      <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-lesson">
+                        {r.type === "guardrail" ? (
+                          <ShieldAlert className="h-3 w-3 text-guard" />
+                        ) : null}
+                        {r.rule_id} v{r.version} · {r.type}
+                      </div>
+                      <p className="mt-1 text-xs">{r.text}</p>
+                    </motion.div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -232,6 +231,7 @@ function HeadToHead() {
                 map={mapQ.data}
                 visited={visited}
                 currentRoom={hMove?.room}
+                previousRoom={harn[hIdx - 1]?.room}
                 className="h-[250px]"
               />
               <p className="presenter-hide mt-1 px-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
