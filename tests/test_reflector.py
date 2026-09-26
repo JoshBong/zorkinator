@@ -287,6 +287,57 @@ class ReflectorTests(unittest.TestCase):
             Reflector(repository, model).propose("run_2")
         self.assertEqual(repository.recorded, [])
 
+    def test_rejects_malformed_rule_before_persisting_proposal(self) -> None:
+        repository = FakeRepository(run(), [move(1), move(2, died=True)])
+        model = FakeModel(
+            {
+                "memory_ops": [],
+                "rule_diffs": [
+                    {
+                        "op": "add",
+                        "key": "malformed",
+                        "text": "Avoid this action.",
+                        "when": "command 2",
+                        "verdict": "block",
+                        "evidence": [{"run_id": "run_2", "n": 2}],
+                    }
+                ],
+                "summary": "Malformed rule.",
+            }
+        )
+
+        with self.assertRaisesRegex(ReflectionError, "rule when must be an object"):
+            Reflector(repository, model).propose("run_2")
+
+        self.assertEqual(repository.recorded, [])
+
+    def test_rejects_stale_memory_target_before_persisting_proposal(self) -> None:
+        repository = FakeRepository(run(), [move(1), move(2, died=True)])
+        parent = root().model_copy(
+            update={"memory_refs": [MemoryRef(memory_id="mem_1", revision_id="rev_current")]}
+        )
+        repository.get_version = lambda version_id: parent  # type: ignore[method-assign]
+        model = FakeModel(
+            {
+                "memory_ops": [
+                    {
+                        "op": "retire",
+                        "memory_id": "mem_1",
+                        "expected_revision_id": "rev_stale",
+                        "rationale": "No longer useful.",
+                        "evidence": [],
+                    }
+                ],
+                "rule_diffs": [],
+                "summary": "Retire stale memory.",
+            }
+        )
+
+        with self.assertRaisesRegex(ReflectionError, "stale expected revision"):
+            Reflector(repository, model).propose("run_2")
+
+        self.assertEqual(repository.recorded, [])
+
     def test_rejects_model_mismatch_and_incomplete_transcript(self) -> None:
         with self.assertRaisesRegex(ReflectionError, "differs from run model"):
             Reflector(

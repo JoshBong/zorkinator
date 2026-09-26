@@ -192,11 +192,9 @@ completed the required two-game, 20-move Atlas smoke chain without cross-experim
 
 Still required before claiming the complete self-improving harness:
 
-1. Validate complete rule diffs before recording the deterministic proposal, so a malformed persisted proposal
-   cannot leave a chain at a permanently rejected boundary.
-2. Integrate rule promotion through Josh's fixed verifier; memory content remains advisory until then.
-3. Integrate parser, scribe, player retry, verifier checks, and stuck monitoring into the version-scoped callback.
-4. Record the chain/run/version IDs and rule/memory diff in the replay view so the demo can show why a death was
+1. Integrate rule promotion through Josh's fixed verifier; memory content remains advisory until then.
+2. Integrate parser, scribe, player retry, verifier checks, and stuck monitoring into the version-scoped callback.
+3. Record the chain/run/version IDs and rule/memory diff in the replay view so the demo can show why a death was
    avoided.
 
 See [`INTEGRATION_HANDOFF.md`](INTEGRATION_HANDOFF.md) for the callback contract, ownership boundary, verified
