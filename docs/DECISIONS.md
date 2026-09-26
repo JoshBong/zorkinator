@@ -1,0 +1,22 @@
+# Decisions
+
+Newest at the bottom. Anything marked PROPOSED is not agreed yet; do not build on it until it is.
+
+## 2026-09-26 — Demo = game 1 vs game N side by side (by Josh Huang)
+
+Replay two runs from `moves` (same seed) instead of relying on live play; the outer loop is the critical path, and Planner / tool pool / skills vector search get cut first. The pitch is one death that was avoided because of one learned rule.
+
+## 2026-09-26 — Soft rules warn, only hard rules block (by Josh Huang)
+
+ZorkGPT's LLM critic was wrong in 68 of 77 overrides and got removed; letting unproven rules block would repeat that. Soft = warning appended to the prompt; hard = block, and only after death-backed promotion.
+
+## 2026-09-26 — No Jev / specialist decision model (by Josh Huang)
+
+It would be a different project and breaks the same-model comparison against the paper. Every LLM call uses the same model.
+
+## 2026-09-26 — PROPOSED, not yet agreed: v4 amendments
+
+1. Promotion also replays the rule over all logged moves; if it would have blocked any move that later scored, it stays soft (the death-only check is near-circular).
+2. `when` conditions are limited to a fixed field list (room, inventory, room_is_dark, known world_facts about the destination, command pattern).
+3. Lean per-move prompt: cached prefix (paper prompt + this version's lessons) + ~500-token dynamic tail; rules only enter the prompt when they fire; facts are looked up by room, not searched.
+4. Scribe LLM only on the first visit to a room; the parser handles the rest.

@@ -1,0 +1,5 @@
+jericho==3.3.1
+spacy==3.8.16
+anthropic
+pymongo
+python-dotenv
