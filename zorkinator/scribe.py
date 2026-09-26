@@ -51,9 +51,8 @@ class Observation:
 
     @property
     def progressed(self) -> bool:
-        return bool(
-            self.new_rooms or self.new_items or self.new_interaction or self.score_delta > 0
-        )
+        # A new command is not progress: "examine X" for 300 moves would never look stuck.
+        return bool(self.new_rooms or self.new_items or self.score_delta > 0)
 
 
 def _is_room_title(line: str) -> bool:

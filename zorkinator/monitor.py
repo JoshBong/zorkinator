@@ -8,7 +8,7 @@ from typing import Literal
 from .scribe import Observation
 from .world import WorldModel
 
-STUCK_AFTER = 40  # moves without progress before the game ends ("stuck40")
+STUCK_AFTER = 60  # moves with no new room, item, or score before the game ends ("stuck40")
 REPEAT_LIMIT = 2  # same command, same room, same outcome more than this -> warning
 
 Status = Literal["ok", "repeat", "stuck"]

@@ -66,7 +66,8 @@ def build_tail(
     elif here is not None:
         lines.append(
             f"Location: {here.name}"
-            + (f" — {_short(here.description)}" if here.description else "")
+            # The full description: it is the puzzle text (the rug, the sword, the lantern).
+            + (f" — {_short(here.description, ROOM_TEXT_CHARS)}" if here.description else "")
         )
     else:
         lines.append("Location: unknown.")
@@ -132,6 +133,9 @@ def build_prompt(
         build_prefix(world, version_context, prompt),
         build_tail(world, n, last_output, status, expected),
     )
+
+
+ROOM_TEXT_CHARS = 700
 
 
 def _short(text: str, limit: int = 160) -> str:
