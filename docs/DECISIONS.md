@@ -43,6 +43,10 @@ The first version starts with an empty map, an empty item knowledge base and no 
 
 To keep play exploratory rather than a brute-force search or memorization: leads come only from the game text (never untried compass directions or valid actions); the prompt shows what was already tried and favors new actions and unexamined items; repetition triggers a warning, not a block; raw command sequences from earlier games never enter the prompt. The score is reported, never optimized directly. Design: [INNER_LOOP.md](INNER_LOOP.md).
 
+## 2026-09-26 — Learn from surprises: the Player predicts each outcome (by Josh Huang)
+
+The harness learns cause and effect from consequences, not from the score: the score is measured, never trained on. To make that measurable, each harness reply adds `Expect: <predicted outcome>` under the command (with `Goal:`); the next prompt shows "You expected: … / What happened: …", and the next reply opens with `Surprise: yes|no`, the model judging its own prediction (no extra model call). Changes: Seb, `player.py` parses `Expect:`/`Surprise:` and `builder.py` shows expected vs actual, with `extract_command` skipping `Surprise:`/`Goal:`/`Expect:` lines; Josh, `MoveRecord` gains `expected: str | None` and `surprise: bool | None`; Elliott, the Reflector's evidence packet ranks deaths first, then surprise moves; Himali, the live view shows expected vs actual with a surprise badge. New metric: surprise rate per game, which should fall as the harness learns, independent of score. Paper mode is unchanged. Seb reruns the 20-move smoke test after the change to confirm commands still extract cleanly.
+
 ## 2026-09-26 — Development and smoke tests use the OpenAI key and cheapest supported GPT model
 
 From this point forward, model-backed development tests and smoke chains use `OPENAI_API_KEY`, not the Anthropic

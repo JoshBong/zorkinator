@@ -96,7 +96,7 @@ class MapRoomOut(BaseModel):
     name: str
     dark: bool
     first_seen_life: int
-    death_count: int
+    death_lives: list[int]
 
 
 class MapEdgeOut(BaseModel):

@@ -76,7 +76,9 @@ export interface MapRoom {
   name: string;
   dark: boolean;
   first_seen_life: number;
-  death_count: number;
+  /** Life numbers in which the agent died here, so the UI can hide deaths from games
+   * later than the one currently being viewed (no spoilers while stepping through). */
+  death_lives: number[];
 }
 
 export interface MapEdge {

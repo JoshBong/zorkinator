@@ -232,10 +232,12 @@ function HeadToHead() {
                 visited={visited}
                 currentRoom={hMove?.room}
                 previousRoom={harn[hIdx - 1]?.room}
+                currentGame={game}
                 className="h-[250px]"
               />
               <p className="presenter-hide mt-1 px-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                Persisted in Atlas · world_facts, upserted on every move
+                Persisted in Atlas · world_facts, upserted on every move · brighter = discovered
+                more recently · red = died here
               </p>
             </div>
           ) : (
