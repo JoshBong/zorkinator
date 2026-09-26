@@ -49,8 +49,9 @@ change. The limit is tunable and starts at 40 moves, matching the existing `stuc
 ## Knowledge bases
 
 There are two layers. **Working KBs** live in memory during a game and fill up move by move. The exact immutable
-version manifest is placed in the cached prompt prefix. Hydrating its structured map/item/objective memories into
-the working dataclasses is still follow-up work. **Version memories** in Atlas are the only thing that carries
+version manifest is hydrated into them at game start (`WorldModel.load`): structured map/item/objective memories
+become working entries tagged with their `memory_id`; any other memory stays advisory JSON in the cached prefix.
+**Version memories** in Atlas are the only thing that carries
 between games, and only the outer loop writes them.
 
 | KB | Working (per game) | Carried across games as memory `kind` |
@@ -79,7 +80,30 @@ Filling entries that start empty:
 - **"Taken." / "Dropped." / inventory replies** update the inventory. Every command records its outcome in
   `room.tried` (and in `item.tried` when the command names an item).
 - **Memories from earlier games** load marked as `source: memory`. The prompt labels them "from earlier games, may be wrong".
-  When this game's play contradicts one, the contradiction is recorded, so the Reflector can revise or retire that memory.
+  The first time play tests one, the scribe records whether it held (see *Memory shapes and feedback*), so the
+  outer loop can confirm, revise or retire that memory.
+
+### Memory shapes and feedback
+
+`WorldModel.load` hydrates these `content` shapes (other kinds and shapes stay advisory JSON; `contradicted`
+memories are never loaded as facts):
+
+| kind | content |
+|---|---|
+| `room` | `{room, exits: {dir: to or null}, blocked: {dir: reason}, items: [name], tried: {command: outcome}, dark, text}` |
+| `map_edge` | `{from, direction, to}` |
+| `item` | `{item or name, room or location, text or note}` |
+| `objective`, `hypothesis`, `run_summary` | `{text}` |
+
+The loaded map renders once into the cached prefix ("Map and items from earlier games"); the per-move tail shows
+remembered exits, items and actions ("Earlier games tried here") for the current room. Loaded memories are only
+counted in the JSON packet (`memories_in_notes`) so they are not shown twice.
+
+Feedback is evidence, not a verdict. When play first tests a remembered exit (walked, or found blocked) or item
+(seen or taken), the scribe calls `world.check_memory`, which writes a `world_facts` row
+`{subject: memory_id, attr: "memory_confirmed:<claim>" | "memory_contradicted:<claim>", value: detail, move: n}`
+and adds it to `world.summary()["memory_feedback"]`. The remembered entry is then replaced by this game's
+observation.
 
 Every observation also goes to `world_facts` (keyed by `run_id`) with the move that produced it. That's the evidence the
 Reflector cites. The full command sequence stays in `moves`. The outer loop may condense it into a `run_summary`,
@@ -105,7 +129,11 @@ The prompt is rebuilt each move with no chat history. Fixed text comes first so 
      - items seen but never examined or used;
      - open hypotheses.
    - **Recent:** the last 5 moves (command → outcome).
-   - **Warnings:** soft-rule warnings from the verifier; a note when the monitor sees repetition.
+   - **Notes for this room:** memories whose `locations` include the current room (advice, cautions, failures).
+   - **Cautions:** learned rules whose state conditions (room, darkness, inventory) hold now, with the action each
+     is about, shown *before* the Player chooses. A soft rule never re-prompts; if the command still matches, the
+     match is logged in `moves.warnings` and the next prompt says so. Hard rules block and the Player retries.
+   - **Warnings:** a note when the monitor sees repetition.
    - **Latest game output:** word for word.
 
 The player replies with the command on line 1, which the existing `extract_command` reads. An optional second line,
@@ -141,6 +169,7 @@ The aim is creative play that learns, not raising the score through search or me
 1. **Done:** working KB dataclasses plus an empty game-1 world.
 2. **Done:** `builder`, `player`, code-only `scribe`, `monitor`, and a 20-move-cap harness path.
 3. **Partial:** `Goal:` and leads are implemented; first-visit LLM extraction remains optional follow-up.
-4. **Done at the boundary:** exact manifest memory is included in the prompt and `world_facts` writes to Atlas.
-   Structured hydration into the working KB remains.
+4. **Done:** exact manifest memory is hydrated into the working KBs; play confirms or contradicts each loaded
+   memory in `world_facts`. The outer loop carries the map, items and per-room actions forward by fixed code and
+   feeds the feedback to the Reflector (`carryover.py`; DECISIONS.md, "Outer loop learns from inner-loop evidence").
 5. **Done:** the between-game driver supplies the child manifest to game 2; the Atlas smoke verified isolation.

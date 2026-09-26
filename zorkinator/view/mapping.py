@@ -9,11 +9,14 @@ Each gap is called out in a comment below rather than filled with invented numbe
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
 from itertools import groupby
 from typing import Any, Literal
 
 from .. import db
-from ..models import GameEvaluation, MoveRecord, RuleDoc, RunRecord
+from ..models import GameEvaluation, MemoryRevision, MoveRecord, RuleDoc, RunRecord
+from ..verifier import _room_title
+from ..world import direction_of
 from .schemas import (
     Condition,
     EvalConditionOut,
@@ -24,6 +27,7 @@ from .schemas import (
     LifeOut,
     MapEdgeOut,
     MapRoomOut,
+    MemoryOut,
     MoveOut,
     PerLifePointOut,
     ReflectionOut,
@@ -33,14 +37,45 @@ from .schemas import (
 )
 
 _END_REASON_LABEL: dict[str, str] = {
+    # The frontend keys off the substring "survived" for every non-death ending.
     "death": "died",
-    "won": "won the game",
-    "game_over": "game over",
-    "gave_up": "gave up",
-    "cap": "hit the move cap",
-    "usd_cap": "hit the $ cap",
-    "stuck40": "stuck (no progress)",
+    "won": "survived (won the game)",
+    "game_over": "survived (game over)",
+    "gave_up": "survived (gave up)",
+    "cap": "survived (hit the move cap)",
+    "usd_cap": "survived (hit the $ cap)",
+    "stuck40": "survived (stuck, no progress)",
 }
+
+
+def _room_after(moves: list[MoveRecord]) -> list[str | None]:
+    """Room the player is in after each move, from room titles in the game text (works for
+    baseline moves too, which log no ``room``)."""
+    out: list[str | None] = []
+    room: str | None = None
+    for m in moves:
+        title = _room_title(m.text)
+        if title:
+            room = title
+        elif room is None:
+            room = m.room
+        out.append(room)
+    return out
+
+
+def _rules_learned_by_run() -> dict[str, list[str]]:
+    """run_id -> rule ids born (or promoted) by reflecting on that run."""
+    versions = {
+        v["_id"]: v.get("source_run_id")
+        for v in db.get_db().harness_versions.find({}, {"source_run_id": 1})
+    }
+    out: dict[str, list[str]] = defaultdict(list)
+    for rule in db.get_rules():
+        for version_id in (rule.born_version, rule.promoted_version):
+            source = versions.get(version_id) if version_id else None
+            if source and rule.id not in out[source]:
+                out[source].append(rule.id)
+    return out
 
 
 def _group_key(run: RunRecord) -> str:
@@ -101,13 +136,14 @@ def list_runs() -> list[RunOut]:
 
 
 def list_lives(group_id: str) -> list[LifeOut]:
+    learned = _rules_learned_by_run()
     return [
         LifeOut(
             life=_life_of(r),
             score=r.score,
             moves=r.moves,
             death_cause=_END_REASON_LABEL.get(r.end_reason, r.end_reason),
-            rules_learned=[],  # no per-life rule attribution yet (Reflector not built)
+            rules_learned=learned.get(r.run_id, []),
         )
         for r in _members_of(group_id)
     ]
@@ -147,6 +183,39 @@ def list_moves(group_id: str, life: int) -> list[MoveOut]:
     return [move_out(m) for m in db.get_moves(run.run_id)]
 
 
+def _memory_out(memory: MemoryRevision) -> MemoryOut:
+    return MemoryOut.model_validate(memory.model_dump(mode="json"))
+
+
+def list_memories(run_id: str) -> list[MemoryOut] | None:
+    """Return the active memory manifest for one exact persisted run.
+
+    Memories are resolved through the run's version rather than queried globally,
+    so historical, sibling, or uncommitted revisions cannot leak into the API.
+    ``None`` distinguishes an unknown run from a known run with no memory version.
+    """
+    run = db.get_run(run_id)
+    if run is None:
+        return None
+    if run.version_id is None:
+        return []
+
+    store = db.MongoOuterLoopStore(db.get_db())
+    version = store.get_version(run.version_id)
+    if version is None:
+        raise ValueError(f"run {run_id!r} references missing version {run.version_id!r}")
+
+    memories: list[MemoryOut] = []
+    for reference in version.memory_refs:
+        memory = store.read(version.version_id, reference.memory_id)
+        if memory is None:
+            raise ValueError(
+                f"version {version.version_id!r} references missing memory {reference.memory_id!r}"
+            )
+        memories.append(_memory_out(memory))
+    return memories
+
+
 def get_reflection(group_id: str, life: int) -> ReflectionOut | None:
     """Best-effort: reads the most recent memory_event proposed for this life's run.
 
@@ -178,7 +247,7 @@ def _rule_type_of(rule: RuleDoc) -> Literal["rule", "guardrail", "memory"]:
     return "rule"
 
 
-def rule_out(r: RuleDoc) -> RuleOut:
+def rule_out(r: RuleDoc, life_of_run: Callable[[str], int] | None = None) -> RuleOut:
     """Best-effort mapping: RuleDoc has no version field the way the frontend expects
     (no rule-level version history is modeled yet), so every rule is its own v1 row.
     """
@@ -189,10 +258,10 @@ def rule_out(r: RuleDoc) -> RuleOut:
         version=1,
         type=_rule_type_of(r),
         text=r.text,
-        status="active" if r.status == "hard" else "superseded",
+        status="active",
         learned_from=LearnedFromOut(
             run_id=ev_run_id,
-            life=1,
+            life=life_of_run(ev_run_id) if life_of_run and ev_run_id else 1,
             move=int(ev_move) if ev_move.isdigit() else 0,
         ),
         score_impact=0.0,  # Verifier promotion doesn't record a score delta yet
@@ -202,14 +271,39 @@ def rule_out(r: RuleDoc) -> RuleOut:
 
 
 def list_rules() -> list[RuleOut]:
-    return [rule_out(r) for r in db.get_rules()]
+    runs = {run.run_id: run for run in db.get_runs()}
+    return [
+        rule_out(r, lambda rid: _life_of(runs[rid]) if rid in runs else 1) for r in db.get_rules()
+    ]
 
 
 def get_map(group_id: str) -> RunMapOut:
-    """Real query over world_facts; empty until the Scribe (Seb) writes room/exit facts."""
+    """Rooms and exits from world_facts (harness) plus room titles in the game text (any run),
+    with per-room deaths ("graves")."""
     rooms: dict[str, MapRoomOut] = {}
     edges: list[MapEdgeOut] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def room_of(name: str, member: RunRecord) -> MapRoomOut:
+        return rooms.setdefault(
+            name,
+            MapRoomOut(name=name, dark=False, first_seen_life=_life_of(member), death_lives=[]),
+        )
+
     for member in _members_of(group_id):
+        moves = db.get_moves(member.run_id)
+        after = _room_after(moves)
+        prev: str | None = None
+        for m, here in zip(moves, after, strict=True):
+            if here:
+                room_of(here, member)
+                direction = direction_of(m.command)
+                if prev and here != prev and direction and (prev, here, direction) not in seen:
+                    seen.add((prev, here, direction))
+                    edges.append(MapEdgeOut(from_=prev, to=here, direction=direction))
+            prev = here
+        if member.end_reason == "death" and after and after[-1]:
+            room_of(after[-1], member).death_lives.append(_life_of(member))
         for fact in db.get_world_facts(member.run_id):
             if fact.attr == "dark":
                 room = rooms.setdefault(

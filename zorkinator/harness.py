@@ -112,20 +112,25 @@ def play_game(
     started_at = datetime.now(UTC)
     run_id = f"harness-{chat.model}-s{spec.seed}-{started_at:%Y%m%dT%H%M%S%f}"
     version_id = spec.version_id
+    world = spec.world or WorldModel.empty(run_id)
+    world.run_id = run_id
+    rules: list[RuleDoc] = []
+    version_context = ""
     if spec.version is not None:
         if version_id is not None and version_id != spec.version.version_id:
             raise ValueError("version_id does not match the exact version manifest")
         if repository is None:
             raise ValueError("an exact version manifest requires its repository")
         version_id = spec.version.version_id
-        version_context = builder.build_version_context(run_id, spec.version, repository=repository)
-        rules: list[RuleDoc] = repository.get_rules(list(spec.version.rule_ids))
-    else:
-        version_context = ""
-        rules = []
+        memories, rules = builder.resolve_manifest(spec.version, repository=repository)
+        # Map/item/objective memories become working-KB entries the scribe can confirm or
+        # contradict during play; everything else stays advisory JSON in the prefix.
+        loaded = world.load(memories)
+        version_context = builder.render_version_context(
+            run_id, spec.version, memories, rules, loaded=loaded
+        )
     expected: str | None = None  # the Player's prediction for the previous move
-    world = spec.world or WorldModel.empty(run_id)
-    world.run_id = run_id
+    warned: list[str] = []  # cautions the previous command matched
     monitor = Monitor(stuck_after=spec.stuck_after)
     usage = Usage()
     moves = 0
@@ -155,6 +160,11 @@ def play_game(
                 end_reason = "usd_cap"
                 break
 
+            here = verifier.State(
+                room=world.state.room,
+                inventory=frozenset(item.casefold() for item in world.inventory),
+                room_is_dark=world.state.in_dark,
+            )
             move_prompt = builder.build_prompt(
                 world,
                 n,
@@ -163,30 +173,23 @@ def play_game(
                 version_context=version_context,
                 prompt=spec.prompt,
                 expected=expected,
+                cautions=_cautions(rules, here),
+                warned=warned,
             )
             t0 = time.monotonic()
             proposal = player.propose(chat, move_prompt)
             usage.add(proposal.usage)
-            # Hard rules block and the Player retries with the reason (max 3 tries).
-            # A soft rule warns once; the Player may keep the command.
+            # Hard rules block and the Player retries with the reason (max 3 tries). Soft rules
+            # never re-prompt: the Player saw them as cautions above; a match is logged on the
+            # move (evidence for promotion and reflection) and shown in the next prompt.
             rejections: list[dict[str, str]] = []
             warnings: list[str] = []
-            here = verifier.State(
-                room=world.state.room,
-                inventory=frozenset(item.casefold() for item in world.inventory),
-                room_is_dark=world.state.in_dark,
-            )
+            warned = []
             while not proposal.gave_up and len(rejections) < MAX_REJECTIONS:
                 verdict = verifier.check(proposal.command, here, rules)
                 if verdict.ok:
-                    if verdict.warnings and not warnings:
-                        warnings = [w.split(":")[0] for w in verdict.warnings]
-                        note = "; ".join(verdict.warnings)
-                        proposal = player.propose(
-                            chat, move_prompt, feedback=f"Warning (you may proceed): {note}"
-                        )
-                        usage.add(proposal.usage)
-                        continue
+                    warnings = [w.split(":")[0] for w in verdict.warnings]
+                    warned = [w.split(": ", 1)[-1] for w in verdict.warnings]
                     break
                 rejections.append(
                     {
@@ -396,6 +399,19 @@ def play_harness(
         prompt=prompt,
     )
     return play_game(spec, chat=chat, sink=sink, repository=repository, facts=facts).record
+
+
+def _cautions(rules: list[RuleDoc], here: verifier.State) -> list[str]:
+    """Learned rules tied to the current situation (room, darkness, inventory), with the action
+    each one is about. Command-only rules are in the prefix manifest already."""
+    out = []
+    for rule in rules:
+        if verifier.STATE_FIELDS.isdisjoint(rule.when) or not verifier.applies(rule, here):
+            continue
+        action = rule.when.get("command", rule.when.get("command_pattern"))
+        gate = "blocked" if rule.status == "hard" and rule.verdict == "block" else "caution"
+        out.append(f"{rule.text} ({gate}: commands matching {action})")
+    return out
 
 
 def _cost(usage: Usage, chat: Chat) -> float:

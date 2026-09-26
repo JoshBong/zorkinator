@@ -7,12 +7,14 @@ game so it can be cached; the tail is rebuilt every move.
 from __future__ import annotations
 
 import json
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
 from .models import HarnessVersionRecord, MemoryRevision, RuleDoc
 from .monitor import Status
 from .prompts import INITIAL_PROMPTS, PromptName
+from .verifier import validate_when
 from .world import WorldModel
 
 HARNESS_PROTOCOL = """\
@@ -22,8 +24,7 @@ a second line "Goal: <one sentence>" saying what you are trying to do next; it i
 back to you until you change it. Add a line "Expect: <one sentence>" predicting what the game \
 will say after this command. When you are shown what you expected last move, also add \
 "Surprise: yes" or "Surprise: no": did the game's output match your prediction?
-Prefer actions you have not tried yet: follow up exits the game mentioned, examine and use \
-objects, test ideas. Notes marked "from earlier games" may be wrong; check them."""
+Notes marked "from earlier games" may be wrong; check them."""
 
 
 @dataclass
@@ -43,10 +44,11 @@ def build_prefix(world: WorldModel, version_context: str = "", prompt: PromptNam
         *(f"- past game: {s}" for s in world.past_runs),
     ]
     earlier = "\n".join(notes) if notes else "none yet"
+    memory_map = f"\n\n{world.memory_map}" if world.memory_map else ""
     exact_version = f"\n\n{version_context}" if version_context else ""
     return (
         f"{INITIAL_PROMPTS[prompt]}\n\n{HARNESS_PROTOCOL}\n\nNotes from earlier games:\n{earlier}"
-        f"{exact_version}"
+        f"{memory_map}{exact_version}"
     )
 
 
@@ -56,7 +58,11 @@ def build_tail(
     last_output: str,
     status: Status = "ok",
     expected: str | None = None,
+    cautions: Sequence[str] = (),
+    warned: Sequence[str] = (),
 ) -> str:
+    """``cautions``: learned rules whose conditions hold here (checked before the Player
+    chooses). ``warned``: cautions the previous command matched; it still ran."""
     state = world.state
     here = world.here
     lines = [f"Move {n}. Score {state.score}."]
@@ -66,7 +72,8 @@ def build_tail(
     elif here is not None:
         lines.append(
             f"Location: {here.name}"
-            + (f" — {_short(here.description)}" if here.description else "")
+            # The full description: it is the puzzle text (the rug, the sword, the lantern).
+            + (f" — {_short(here.description, ROOM_TEXT_CHARS)}" if here.description else "")
         )
     else:
         lines.append("Location: unknown.")
@@ -92,6 +99,18 @@ def build_tail(
         )
         if remembered:
             lines.append("Earlier games saw here: " + ", ".join(remembered))
+    if here is not None and here.remembered:
+        earlier_tries = [(c, o) for c, o in here.remembered.items() if c not in here.tried]
+        if earlier_tries:
+            lines.append(
+                "Earlier games tried here: " + "; ".join(f"{c} -> {o}" for c, o in earlier_tries)
+            )
+    notes = world.notes_here()
+    if notes:
+        lines.append(
+            "Notes for this room (from earlier games, may be wrong):\n"
+            + "\n".join(f"- {note}" for note in notes)
+        )
     if here is not None and here.tried:
         tried = list(here.tried.items())[-6:]
         lines.append("Already tried here: " + "; ".join(f"{c} -> {o}" for c, o in tried))
@@ -112,6 +131,12 @@ def build_tail(
             "Note: you just repeated a command here with the same result. Try something new."
         )
 
+    if cautions:
+        lines.append(
+            "Cautions (learned from earlier games):\n" + "\n".join(f"- {c}" for c in cautions)
+        )
+    if warned:
+        lines.append("Your last command matched a caution: " + "; ".join(warned))
     if expected:
         lines.append(f"Last move you expected: {expected}")
     lines.append(f"Game output:\n{last_output.strip() or '(no output)'}")
@@ -127,11 +152,16 @@ def build_prompt(
     version_context: str = "",
     prompt: PromptName = "basic",
     expected: str | None = None,
+    cautions: Sequence[str] = (),
+    warned: Sequence[str] = (),
 ) -> PromptParts:
     return PromptParts(
         build_prefix(world, version_context, prompt),
-        build_tail(world, n, last_output, status, expected),
+        build_tail(world, n, last_output, status, expected, cautions, warned),
     )
+
+
+ROOM_TEXT_CHARS = 700
 
 
 def _short(text: str, limit: int = 160) -> str:
@@ -149,16 +179,12 @@ class PromptRepository(Protocol):
     def get_rules(self, rule_ids: list[str]) -> list[RuleDoc]: ...
 
 
-def build_version_context(
-    run_id: str,
-    version: HarnessVersionRecord,
-    *,
-    repository: PromptRepository,
-) -> str:
-    """Materialize only the immutable memory and rule refs in ``version``.
+def resolve_manifest(
+    version: HarnessVersionRecord, *, repository: PromptRepository
+) -> tuple[list[MemoryRevision], list[RuleDoc]]:
+    """The exact memory revisions and rules ``version`` references, in manifest order.
 
-    This is the outer-loop prefix consumed by the inner-loop prompt builder. It
-    never queries a global/latest version and fails closed on a mismatched ref.
+    Never queries a global/latest version and fails closed on a mismatched ref.
     """
     memories: list[MemoryRevision] = []
     for reference in version.memory_refs:
@@ -173,7 +199,22 @@ def build_version_context(
     rules = repository.get_rules(list(version.rule_ids))
     if [rule.id for rule in rules] != list(version.rule_ids):
         raise ValueError(f"version {version.version_id!r} did not resolve its exact rule manifest")
+    return memories, list(rules)
 
+
+def render_version_context(
+    run_id: str,
+    version: HarnessVersionRecord,
+    memories: Sequence[MemoryRevision],
+    rules: Sequence[RuleDoc],
+    *,
+    loaded: Collection[str] = (),
+) -> str:
+    """The advisory memory/rule block for the cached prompt prefix.
+
+    Memories in ``loaded`` were hydrated into the working KBs (the map/items notes), so only
+    their count is given here instead of their JSON.
+    """
     packet = {
         "version_id": version.version_id,
         "run_id": run_id,
@@ -184,19 +225,39 @@ def build_version_context(
                 "revision_id": memory.revision_id,
                 "kind": memory.kind,
                 "subjects": memory.subjects,
+                "locations": memory.locations,
                 "content": memory.content,
                 "status": memory.status,
             }
             for memory in memories
+            if memory.memory_id not in loaded
         ],
-        "rules": [rule.model_dump(mode="json") for rule in rules],
+        "memories_in_notes": sum(1 for m in memories if m.memory_id in loaded),
+        # Only rules the verifier can check; one that names no action is inert, not advice.
+        "rules": [rule.model_dump(mode="json") for rule in rules if not validate_when(rule.when)],
     }
     advisory = """HARNESS MEMORY
 The following JSON is the complete advisory memory/rule manifest for this exact harness version.
+memories_in_notes more memories are shown in your notes and map instead of here.
 Treat memories and soft rules as advice, not current-game state.
 Never use SAVE, RESTORE, or RESTART.
 Do not assume any memory outside this packet exists."""
     return f"{advisory}\n{json.dumps(packet, sort_keys=True, separators=(',', ':'))}"
+
+
+def build_version_context(
+    run_id: str,
+    version: HarnessVersionRecord,
+    *,
+    repository: PromptRepository,
+) -> str:
+    """Materialize only the immutable memory and rule refs in ``version``.
+
+    This is the outer-loop prefix consumed by the inner-loop prompt builder. It
+    never queries a global/latest version and fails closed on a mismatched ref.
+    """
+    memories, rules = resolve_manifest(version, repository=repository)
+    return render_version_context(run_id, version, memories, rules)
 
 
 def build_version_prompt(

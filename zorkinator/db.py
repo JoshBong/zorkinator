@@ -264,6 +264,7 @@ class OuterLoopStore(Protocol):
         query: str | None = None,
         subjects: Sequence[str] | None = None,
         kinds: Sequence[str] | None = None,
+        locations: Sequence[str] | None = None,
         limit: int = DEFAULT_RECALL_LIMIT,
     ) -> list[MemoryRevision]: ...
 
@@ -346,15 +347,18 @@ class MongoOuterLoopStore:
                     {"type": "filter", "path": "experiment_id"},
                     {"type": "filter", "path": "_id"},
                     {"type": "filter", "path": "kind"},
+                    {"type": "filter", "path": "locations"},
                 ]
             },
         )
         try:
             self._database.memories.create_search_index(model)
         except OperationFailure as exc:
-            if (
-                "already exists" not in str(exc).casefold()
-                and "duplicate" not in str(exc).casefold()
+            # Atlas says "already exists" or, when the definition changed, "already defined"
+            # (code 68, IndexAlreadyExists). Either way the index is there: carry on.
+            message = str(exc).casefold()
+            if exc.code != 68 and not any(
+                phrase in message for phrase in ("already exists", "already defined", "duplicate")
             ):
                 raise
 
@@ -521,6 +525,7 @@ class MongoOuterLoopStore:
         query: str | None = None,
         subjects: Sequence[str] | None = None,
         kinds: Sequence[str] | None = None,
+        locations: Sequence[str] | None = None,
         limit: int = DEFAULT_RECALL_LIMIT,
     ) -> list[MemoryRevision]:
         """Search only immutable revisions active in the requested version.
@@ -537,7 +542,12 @@ class MongoOuterLoopStore:
         if not version.memory_refs:
             return []
         return self._manifest_scan(
-            version, query=query, subjects=subjects, kinds=kinds, limit=limit
+            version,
+            query=query,
+            subjects=subjects,
+            kinds=kinds,
+            locations=locations,
+            limit=limit,
         )
 
     def recall_scored(
@@ -547,6 +557,7 @@ class MongoOuterLoopStore:
         *,
         subjects: Sequence[str] | None = None,
         kinds: Sequence[str] | None = None,
+        locations: Sequence[str] | None = None,
         limit: int = DEFAULT_RECALL_LIMIT,
     ) -> list[tuple[MemoryRevision, float]]:
         """Real semantic search via Atlas Vector Search (see _ensure_vector_index: an
@@ -559,7 +570,14 @@ class MongoOuterLoopStore:
         version = self._require_version(version_id)
         if not version.memory_refs:
             return []
-        return self._vector_recall(version, query, subjects=subjects, kinds=kinds, limit=limit)
+        return self._vector_recall(
+            version,
+            query,
+            subjects=subjects,
+            kinds=kinds,
+            locations=locations,
+            limit=limit,
+        )
 
     def _vector_recall(
         self,
@@ -568,6 +586,7 @@ class MongoOuterLoopStore:
         *,
         subjects: Sequence[str] | None,
         kinds: Sequence[str] | None,
+        locations: Sequence[str] | None,
         limit: int,
     ) -> list[tuple[MemoryRevision, float]]:
         manifest = {reference.revision_id: reference.memory_id for reference in version.memory_refs}
@@ -578,6 +597,8 @@ class MongoOuterLoopStore:
         }
         if kinds:
             match["kind"] = {"$in": list(kinds)}
+        if locations:
+            match["locations"] = {"$in": list(locations)}
         over_fetch = min(self._max_recall_limit, limit * 3)
         pipeline: list[dict[str, Any]] = [
             {
@@ -593,6 +614,7 @@ class MongoOuterLoopStore:
             {"$set": {"_vectorSearchScore": {"$meta": "vectorSearchScore"}}},
         ]
         subject_filter = set(subjects or ())
+        location_filter = set(locations or ())
         results: list[tuple[MemoryRevision, float]] = []
         total_bytes = 0
         for stored in self._database.memories.aggregate(pipeline):
@@ -609,6 +631,8 @@ class MongoOuterLoopStore:
                     f"revision {revision.revision_id!r} does not match its manifest memory_id"
                 )
             if subject_filter and subject_filter.isdisjoint(revision.subjects):
+                continue
+            if location_filter and location_filter.isdisjoint(revision.locations):
                 continue
             serialized = json.dumps(revision.model_dump(mode="json"), sort_keys=True)
             item_bytes = len(serialized.encode("utf-8"))
@@ -723,6 +747,7 @@ class MongoOuterLoopStore:
         query: str | None,
         subjects: Sequence[str] | None,
         kinds: Sequence[str] | None,
+        locations: Sequence[str] | None,
         limit: int,
     ) -> list[MemoryRevision]:
         revision_ids = [reference.revision_id for reference in version.memory_refs]
@@ -732,6 +757,7 @@ class MongoOuterLoopStore:
         revisions_by_id = {raw["_id"]: _model(MemoryRevision, raw, "revision_id") for raw in raws}
         subject_filter = set(subjects or ())
         kind_filter = set(kinds or ())
+        location_filter = set(locations or ())
         query_folded = None if query is None else query.casefold().strip()
         results: list[MemoryRevision] = []
         total_bytes = 0
@@ -752,6 +778,8 @@ class MongoOuterLoopStore:
             if kind_filter and revision.kind not in kind_filter:
                 continue
             if subject_filter and subject_filter.isdisjoint(revision.subjects):
+                continue
+            if location_filter and location_filter.isdisjoint(revision.locations):
                 continue
             serialized = json.dumps(revision.model_dump(mode="json"), sort_keys=True)
             if query_folded and query_folded not in serialized.casefold():

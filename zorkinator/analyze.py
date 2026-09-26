@@ -34,6 +34,17 @@ def load(out: str | Path) -> tuple[list[RunRecord], dict[str, list[MoveRecord]]]
     return runs, moves
 
 
+def load_atlas() -> tuple[list[RunRecord], dict[str, list[MoveRecord]]]:
+    """Same shape as ``load``, read from Atlas (where harness chains are logged)."""
+    from dotenv import load_dotenv
+
+    from . import db
+
+    load_dotenv()
+    runs = db.get_runs()
+    return runs, {run.run_id: db.get_moves(run.run_id) for run in runs}
+
+
 def condition(run: RunRecord) -> str:
     if run.chain:
         return run.chain.split("-chain")[0]
@@ -105,6 +116,30 @@ def report(runs: list[RunRecord], moves: dict[str, list[MoveRecord]]) -> str:
     return "\n".join(out)
 
 
+def score_at(moves: list[MoveRecord], cap: int) -> int:
+    """Score after the last move at or before ``cap`` (final score if the game ended earlier)."""
+    scores = [m.score for m in moves if m.n <= cap]
+    return scores[-1] if scores else 0
+
+
+def at_move_table(runs: list[RunRecord], moves: dict[str, list[MoveRecord]], cap: int) -> str:
+    """Per condition, the score at move ``cap``: the fair bar for short-capped games."""
+    groups: dict[str, list[int]] = defaultdict(list)
+    for run in runs:
+        groups[condition(run)].append(score_at(moves[run.run_id], cap))
+    out = [
+        f"| Condition | Games | Score at move {cap}: mean | Median | SD | Range |",
+        "|---|---|---|---|---|---|",
+    ]
+    for name, scores in sorted(groups.items()):
+        sd = st.stdev(scores) if len(scores) > 1 else 0.0
+        out.append(
+            f"| {name} | {len(scores)} | {st.mean(scores):.1f} | {st.median(scores):g} | {sd:.1f} "
+            f"| {min(scores)}-{max(scores)} |"
+        )
+    return "\n".join(out)
+
+
 def compare(runs: list[RunRecord], base: str, other: str) -> str:
     a = [r.score for r in runs if condition(r) == base]
     b = [r.score for r in runs if condition(r) == other]
@@ -115,6 +150,96 @@ def compare(runs: list[RunRecord], base: str, other: str) -> str:
         f"(gap {st.mean(b) - st.mean(a):+.1f}, one-sided permutation p={permutation_p(a, b):.3f}, "
         f"n={len(b)} vs {len(a)})"
     )
+
+
+def plot_learning_curve(
+    runs: list[RunRecord],
+    moves: dict[str, list[MoveRecord]],
+    path: str | Path,
+    *,
+    baseline: str = "chats",
+    baseline_chain: str = "long",
+    harness: str = "harness",
+) -> Path:
+    """Score by game number: baseline chains as a band + mean, the long baseline chain, and the
+    harness chain with its surprise rate. Regenerate as harness games land."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    def by_game(name: str) -> dict[int, list[RunRecord]]:
+        out: dict[int, list[RunRecord]] = defaultdict(list)
+        for r in runs:
+            if condition(r) == name and r.game_index is not None:
+                out[r.game_index].append(r)
+        return out
+
+    fig, ax = plt.subplots(figsize=(10, 5.2), dpi=150)
+    band = by_game(baseline)
+    if band:
+        xs = sorted(band)
+        lo = [min(r.score for r in band[g]) for g in xs]
+        hi = [max(r.score for r in band[g]) for g in xs]
+        mean = [st.mean(r.score for r in band[g]) for g in xs]
+        ax.fill_between(
+            [x + 1 for x in xs],
+            lo,
+            hi,
+            color="#9AA5B1",
+            alpha=0.25,
+            label="baseline, 10 chains (min-max)",
+        )
+        ax.plot([x + 1 for x in xs], mean, color="#5B6B7B", lw=2, label="baseline, 10-chain mean")
+    long_chain = by_game(baseline_chain)
+    if long_chain:
+        xs = sorted(long_chain)
+        ax.plot(
+            [x + 1 for x in xs],
+            [long_chain[g][0].score for g in xs],
+            color="#2B3A4A",
+            lw=1.6,
+            marker="o",
+            ms=3.5,
+            label="baseline, one 25-game chain",
+        )
+    harness_games = by_game(harness)
+    if harness_games:
+        xs = sorted(harness_games)
+        ax.plot(
+            [x + 1 for x in xs],
+            [harness_games[g][0].score for g in xs],
+            color="#C27C1E",
+            lw=2.4,
+            marker="o",
+            ms=5,
+            label="harness chain",
+        )
+        rates = [surprise_rate(moves[harness_games[g][0].run_id]) for g in xs]
+        if any(r is not None for r in rates):
+            ax2 = ax.twinx()
+            ax2.plot(
+                [x + 1 for x in xs],
+                [100 * (r or 0) for r in rates],
+                color="#C27C1E",
+                lw=1.4,
+                ls="--",
+                label="harness surprise rate",
+            )
+            ax2.set_ylabel("surprise rate (% of predictions wrong)", color="#C27C1E")
+            ax2.set_ylim(0, 100)
+            ax2.legend(loc="lower right", frameon=False)
+    ax.set_xlabel("game number in chain")
+    ax.set_ylabel("score (of 350)")
+    ax.set_ylim(0, max(80, ax.get_ylim()[1]))
+    ax.set_title("Same model (Claude Haiku 4.5), same seed: bare loop vs harness")
+    ax.grid(alpha=0.25)
+    ax.legend(loc="upper left", frameon=False)
+    fig.tight_layout()
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out)
+    return out
 
 
 def _lines(path: Path) -> list[str]:
@@ -132,9 +257,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(prog="zorkinator.analyze")
     parser.add_argument("--out", default="runs", help="directory with runs.jsonl")
     parser.add_argument("--compare", nargs=2, metavar=("BASE", "OTHER"))
+    parser.add_argument("--plot", metavar="PNG", help="write the learning-curve chart here")
+    parser.add_argument("--atlas", action="store_true", help="read runs from Atlas, not --out")
+    parser.add_argument("--at", type=int, metavar="N", help="also report score at move N")
+    parser.add_argument("--harness", default="harness", help="harness condition/chain label")
     args = parser.parse_args()
-    runs, moves = load(args.out)
+    runs, moves = load_atlas() if args.atlas else load(args.out)
     print(report(runs, moves))
+    if args.at:
+        print()
+        print(at_move_table(runs, moves, args.at))
+    if args.plot:
+        print("wrote", plot_learning_curve(runs, moves, args.plot, harness=args.harness))
     if args.compare:
         print()
         print(compare(runs, *args.compare))

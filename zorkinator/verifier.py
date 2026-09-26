@@ -1,16 +1,21 @@
 """Verifier: fixed, mechanical rule checks. No model calls, and never editable by the Reflector.
 
 Two jobs:
-- ``check`` runs before every harness move. Hard rules block the command; soft rules only add a
-  warning line to the prompt (ZorkGPT's LLM critic was wrong in 68 of 77 overrides, so unproven
-  rules never block).
+- ``check`` runs before every harness move. Hard rules block the command; soft rules never block
+  and never re-prompt: a match is logged on the move (ZorkGPT's LLM critic was wrong in 68 of 77
+  overrides, so unproven rules never block). ``applies`` tells the prompt which cautions hold in
+  the current state, so the Player sees them before it chooses.
+- A rule is a caution about one action, so ``when`` must name a command. "Do X here" or "this
+  place is dangerous" is knowledge, not a gate: it belongs in memories (the Reflector converts
+  such rules into location-scoped memories).
 - ``Promoter.promote`` decides whether a proposed rule becomes hard, by replaying it against logged
   moves. It is the ``RulePromoter`` that ``versions.VersionManager`` takes.
 
 A rule's ``when`` may only use the fields in ``WHEN_FIELDS``, all human-visible:
 
-    command       regex, full match, case-insensitive, e.g. "(kill|attack) troll.*"
-                  (``command_pattern`` is accepted as the same field)
+    command       required. regex, full match, case-insensitive, e.g. "(kill|attack) troll.*"
+                  (``command_pattern`` is accepted as the same field); a pattern that matches
+                  any command (".*", "\\w+") names no action and is rejected
     room          room name or list of names (case-insensitive)
     room_is_dark  true/false: the current room's text said it is pitch black
     carrying      items that must all be carried (substring match)
@@ -29,6 +34,9 @@ from .models import MoveRecord, RuleDoc, RunRecord
 WHEN_FIELDS = frozenset(
     {"command", "command_pattern", "room", "room_is_dark", "carrying", "not_carrying"}
 )
+STATE_FIELDS = frozenset({"room", "room_is_dark", "carrying", "not_carrying"})
+# A pattern that matches these names no particular action.
+_ANY_COMMAND_PROBES = ("", "qqq zzz", "a")
 
 
 @dataclass(frozen=True)
@@ -57,11 +65,16 @@ def validate_when(when: Mapping[str, Any]) -> list[str]:
     if "command" in when and "command_pattern" in when:
         errors.append("use command or command_pattern, not both")
     pattern = when.get("command", when.get("command_pattern"))
-    if pattern is not None:
+    if pattern is None or not str(pattern).strip():
+        errors.append("no command: a rule must name the action it cautions against")
+    else:
         try:
-            re.compile(str(pattern))
+            compiled = re.compile(str(pattern), flags=re.IGNORECASE)
         except re.error as exc:
             errors.append(f"bad command regex: {exc}")
+        else:
+            if any(compiled.fullmatch(probe) for probe in _ANY_COMMAND_PROBES):
+                errors.append("command matches any command: name a specific action")
     if "room_is_dark" in when and not isinstance(when["room_is_dark"], bool):
         errors.append("room_is_dark must be true or false")
     for key in ("carrying", "not_carrying"):
@@ -71,11 +84,16 @@ def validate_when(when: Mapping[str, Any]) -> list[str]:
 
 
 def matches(rule: RuleDoc, command: str, state: State) -> bool:
+    pattern = rule.when.get("command", rule.when.get("command_pattern"))
+    if not applies(rule, state):
+        return False
+    return re.fullmatch(str(pattern), command.strip(), flags=re.IGNORECASE) is not None
+
+
+def applies(rule: RuleDoc, state: State) -> bool:
+    """The rule is valid and its state conditions (everything but the command) hold now."""
     when = rule.when
     if validate_when(when):
-        return False
-    pattern = when.get("command", when.get("command_pattern"))
-    if pattern is not None and not re.fullmatch(str(pattern), command.strip(), flags=re.IGNORECASE):
         return False
     if "room" in when:
         rooms = when["room"] if isinstance(when["room"], list) else [when["room"]]

@@ -7,7 +7,7 @@ import os
 
 from dotenv import load_dotenv
 
-from . import db, verifier
+from . import builder, db, verifier
 from .adapter import GameAdapter
 from .driver import (
     BetweenGameDriver,
@@ -26,7 +26,7 @@ from .runner import (
     play_chains,
     play_harness_chain,
 )
-from .versions import VersionManager
+from .versions import VersionLimits, VersionManager
 
 
 def manual(seed: int) -> int:
@@ -71,6 +71,9 @@ def baseline(seed: int, moves: int, prompt: str, model: str, usd_cap: float, out
     return 0
 
 
+MAX_CHILD_OPERATIONS = 150  # Zork I has ~110 rooms
+
+
 def _record_boundary(outcome: dict[str, object]) -> None:
     """Persist one learning-boundary outcome (committed / budget_exhausted / learning_failed)."""
     db.get_db().chain_boundaries.insert_one(dict(outcome))
@@ -101,13 +104,20 @@ def harness(
             if anthropic_model
             else OpenAIReflectionModel(resolved_model)
         )
-        proposals = ReflectorProposalCreator(store, reflection_model)
+        # The whole parent manifest feeds the fixed-code map carry-over (carryover.derive).
+        proposals = ReflectorProposalCreator(
+            store,
+            reflection_model,
+            manifest=lambda version: builder.resolve_manifest(version, repository=store)[0],
+        )
         # Soft -> hard only by replay: cited runs plus every logged harness game.
         # ...replayed over this chain's own games only, so chains stay isolated experiments.
         promoter = verifier.Promoter(
             db.get_moves, history=lambda: run_repository.get_chain_runs(chain)
         )
-        versions = VersionManager(store, store, store, promoter)
+        # Room updates from the carry-over come on top of the Reflector's own 20 operations.
+        limits = VersionLimits(max_operations=MAX_CHILD_OPERATIONS, max_memory_bytes=512 * 1024)
+        versions = VersionManager(store, store, store, promoter, limits=limits)
         # One reflection per game; the default budget (10 calls / $5) would silently stop learning.
         budget = ReflectionBudget(max_calls=games, max_usd=reflect_usd)
         driver = BetweenGameDriver(chain, store, run_repository, proposals, versions, budget=budget)

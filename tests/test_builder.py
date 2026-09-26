@@ -17,6 +17,7 @@ def memory(memory_id: str, revision_id: str, text: str) -> MemoryRevision:
         supersedes_revision_id=None,
         kind="lesson",
         subjects=["test"],
+        locations=["West of House"],
         content={"text": text},
         status="supported",
         evidence=[EvidenceRef(run_id="run-0", n=1)],
@@ -69,6 +70,7 @@ class PromptBuilderTests(unittest.TestCase):
 
         self.assertIn("committed game-one memory", prompt)
         self.assertIn('"version_id":"version-child"', prompt)
+        self.assertIn('"locations":["West of House"]', prompt)
         self.assertNotIn("must never leak", prompt)
         self.assertNotIn("memory-foreign", prompt)
 

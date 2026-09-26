@@ -27,6 +27,7 @@ from .models import (
     RuleDoc,
     RunRecord,
 )
+from .verifier import validate_when
 
 
 class CommitError(ValueError):
@@ -249,6 +250,7 @@ class VersionManager:
                     supersedes_revision_id=None,
                     kind=operation.kind,
                     subjects=operation.subjects,
+                    locations=operation.locations,
                     content=operation.content,
                     status=operation.status,
                     evidence=operation.evidence,
@@ -283,6 +285,7 @@ class VersionManager:
                 supersedes_revision_id=operation.expected_revision_id,
                 kind=operation.kind,
                 subjects=operation.subjects,
+                locations=operation.locations,
                 content=operation.content,
                 status=operation.status,
                 evidence=operation.evidence,
@@ -529,8 +532,12 @@ def validate_rule_diffs(
         _reject_unknown_rule_fields(raw, allowed)
         key = _required_string(raw, "key")
         _required_string(raw, "text")
-        if not isinstance(raw.get("when"), dict):
+        when = raw.get("when")
+        if not isinstance(when, dict):
             raise CommitError("rule when must be an object")
+        # Fixed verifier check: a rule names the action it gates (see verifier.validate_when).
+        if errors := validate_when(when):
+            raise CommitError(f"rule {key!r} when is not checkable: {'; '.join(errors)}")
         if raw.get("verdict") not in {"warn", "block"}:
             raise CommitError("rule verdict must be warn or block")
         if not _parse_rule_evidence(raw.get("evidence", [])):

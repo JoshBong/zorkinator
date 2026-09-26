@@ -39,6 +39,7 @@ def revision(
         supersedes_revision_id=None,
         kind="map_edge",
         subjects=["room_a", "room_b"],
+        locations=["room_a", "room_b"],
         content={"text": text},
         status="supported",
         evidence=[EvidenceRef(run_id="run_1", n=3)],
@@ -186,6 +187,17 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
             {"_id": {"$in": ["memrev_1_1"]}, "experiment_id": "exp_1"}
         )
 
+    def test_recall_filters_by_location(self) -> None:
+        active_revision = revision().model_copy(update={"locations": ["room_b"]})
+        self.database.harness_versions.find_one.return_value = mongo_document(
+            version(), "version_id"
+        )
+        self.database.memories.find.return_value = [mongo_document(active_revision, "revision_id")]
+
+        self.assertEqual(self.store.recall("v2", locations=["room_a"]), [])
+        self.assertEqual(self.store.recall("v2", locations=["room_b"]), [active_revision])
+        self.assertEqual(self.store.recall("v2", query="room_b"), [active_revision])
+
     def test_recall_returns_empty_without_querying_for_empty_manifest(self) -> None:
         empty_version = version().model_copy(update={"memory_refs": []})
         self.database.harness_versions.find_one.return_value = mongo_document(
@@ -309,6 +321,22 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
 
         self.assertEqual(results, [(active, 0.75)])
 
+    def test_scored_recall_passes_and_enforces_location_filter(self) -> None:
+        active = revision().model_copy(update={"locations": ["room_b"]})
+        self.database.harness_versions.find_one.return_value = mongo_document(
+            version(), "version_id"
+        )
+        active_doc = mongo_document(active, "revision_id")
+        active_doc["_vectorSearchScore"] = 0.75
+        self.database.memories.aggregate.return_value = [active_doc]
+
+        self.assertEqual(self.store.recall_scored("v2", "path", locations=["room_a"]), [])
+        self.assertEqual(
+            self.store.recall_scored("v2", "path", locations=["room_b"]), [(active, 0.75)]
+        )
+        pipeline = self.database.memories.aggregate.call_args.args[0]
+        self.assertEqual(pipeline[0]["$vectorSearch"]["filter"]["locations"], {"$in": ["room_b"]})
+
     def test_direct_publication_rejects_non_root_version(self) -> None:
         with self.assertRaisesRegex(ValueError, "non-root versions require atomic"):
             self.store.publish_version(version())
@@ -367,7 +395,7 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
                     "op": "add",
                     "key": "fatal",
                     "text": "Avoid fatal action.",
-                    "when": {"action": "fatal"},
+                    "when": {"command": "fatal"},
                     "verdict": "block",
                     "evidence": [{"run_id": "run_1", "n": 3}],
                 }
@@ -453,7 +481,7 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
                     "op": "add",
                     "key": "fatal",
                     "text": "Avoid the fatal action.",
-                    "when": {"action": "fatal"},
+                    "when": {"command": "fatal"},
                     "verdict": "block",
                     "evidence": [{"run_id": "run_1", "n": 3}],
                 }

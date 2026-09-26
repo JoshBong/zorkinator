@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 Condition = Literal["baseline", "harness", "ablation"]
 
@@ -68,6 +68,31 @@ class ReflectionOut(BaseModel):
     effect: str
     lesson_text: str
     rule_id: str
+
+
+class MemoryEvidenceOut(BaseModel):
+    run_id: str
+    n: int
+
+
+class MemoryOut(BaseModel):
+    revision_id: str
+    schema_version: Literal[1]
+    experiment_id: str
+    memory_id: str
+    supersedes_revision_id: str | None
+    kind: str
+    subjects: list[str]
+    locations: list[str] = []
+    content: dict[str, JsonValue]
+    status: Literal["hypothesis", "supported", "contradicted"]
+    evidence: list[MemoryEvidenceOut]
+    rationale: str
+    source_run_id: str
+    proposal_id: str
+    operation_key: str
+    born_version_id: str
+    created_at: str
 
 
 RuleType = Literal["rule", "guardrail", "memory"]
