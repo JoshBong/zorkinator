@@ -23,3 +23,10 @@ paper's HTML. Baseline uses `basic`. The advanced prompt gave no improvement in 
 Their game build differs from ours, so we rerun paper mode ourselves on Jericho (same prompt, same model,
 full history, 500-move cap). Compare harness vs our paper-mode run; cite 75 as the published reference.
 Jericho reports `done` at the first death (Zork would otherwise reincarnate you), matching the paper's "player dies" end condition.
+
+## Past-chat memory condition (`--chats`)
+The paper's models ran in the chatbot apps, where each could "access previous chats". We approximate that with
+`recent_chats` / `conversation_search` tools over the chain's earlier games (`zorkinator/memory.py`) and a one-line
+system note that the tools exist (the app's own system prompt announces them). The note never tells the model to use
+them; whether it does is part of the result. Chains: 10 independent chains x 10 sequential games; game 1 of each chain
+has no memory and doubles as a no-memory sample.
