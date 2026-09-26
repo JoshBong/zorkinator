@@ -17,7 +17,7 @@ from .memory import TOOLS, ChatArchive
 from .models import MoveRecord, RunRecord
 from .prompts import INITIAL_PROMPTS, PromptName
 
-BASELINE_MODEL = "claude-opus-4-5-20251101"
+BASELINE_MODEL = "claude-haiku-4-5"
 MAX_SCORE = 350
 MAX_TOOL_ROUNDS = 3
 

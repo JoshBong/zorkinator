@@ -24,3 +24,7 @@ It would be a different project and breaks the same-model comparison against the
 ## 2026-09-26 — Memory split: inner loop = L1 (per game), outer loop = L2 (general only) (by Josh Huang)
 
 Inner loop builds map/facts/notes from scratch each game (`world_facts` keyed by `run_id`, discarded after the game). Outer loop carries only general rules and procedures across games; nothing cross-game may contain a room name, and `versions.commit` rejects any rule/lesson that mentions a room name the parser has seen. No routes / skills / persistent map. Demo shows two effects: harness game 1 vs baseline (in-game scaffolding) and game N vs game 1 (general learning); a held-out seed tests that the learning transfers. A persistent-map run (L3) is optional comparison only, never the headline.
+
+## 2026-09-26 — Benchmark model = Claude Haiku 4.5; 10 chains x 10 games (by Josh Huang)
+
+We benchmark against our own baselines, not the paper's number, so every condition (paper loop, paper loop + past-chat memory, harness) uses `claude-haiku-4-5` to save cost; the Opus 4.5 run (44/350) is a side note. Each condition runs as 10 independent chains of 10 sequential games (100 games); chats are shared only within a chain.
