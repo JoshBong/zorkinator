@@ -116,10 +116,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 const NAV = [
   { to: "/", label: "Live Run" },
-  { to: "/graveyard", label: "Graveyard" },
+  { to: "/about", label: "About" },
   { to: "/rulebook", label: "Rulebook" },
   { to: "/eval", label: "Eval Lab" },
-  { to: "/ablation", label: "Ablation Lab" },
 ] as const;
 
 function RootComponent() {
@@ -132,7 +131,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-background">
         <header className="presenter-hide sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+          <div className="relative mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
             <Link to="/" className="flex items-baseline gap-2">
               <span className="phosphor-text font-mono text-lg font-bold tracking-[0.2em]">
                 GRUE LAB
@@ -141,7 +140,9 @@ function RootComponent() {
                 self-evolving zork harness
               </span>
             </Link>
-            <nav className="flex flex-wrap items-center gap-1">
+            {/* Absolutely centered on the header regardless of the logo's width, rather than
+                just sitting left-aligned after it. */}
+            <nav className="flex flex-wrap items-center gap-1 sm:absolute sm:left-1/2 sm:-translate-x-1/2">
               {NAV.map((n) => (
                 <Link
                   key={n.to}

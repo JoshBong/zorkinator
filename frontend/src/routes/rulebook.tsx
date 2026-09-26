@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
@@ -134,9 +134,9 @@ function Rulebook() {
                       <p className="mt-1.5 text-sm text-foreground">{v.text}</p>
                       <p className="mt-2 font-mono text-[11px] text-muted-foreground">
                         learned from{" "}
-                        <Link to="/graveyard" className="text-lesson underline underline-offset-2">
+                        <span className="text-lesson">
                           life {v.learned_from.life}, move {v.learned_from.move}
-                        </Link>{" "}
+                        </span>{" "}
                         · {v.learned_from.run_id}
                       </p>
                       {diff && (diff.added.length > 0 || diff.removed.length > 0) && (

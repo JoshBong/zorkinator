@@ -11,7 +11,6 @@ import { MapGraph } from "@/components/MapGraph";
 import { ReplayControls } from "@/components/ReplayControls";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useReplay } from "@/lib/use-replay";
-import type { Move } from "@/api/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,14 +33,6 @@ export const Route = createFileRoute("/")({
   }),
   component: HeadToHead,
 });
-
-function streak(moves: Move[], i: number) {
-  const cur = moves[i];
-  if (!cur) return 0;
-  let n = 1;
-  for (let j = i - 1; j >= 0 && moves[j]?.command === cur.command; j--) n++;
-  return n;
-}
 
 /** Pause after a game finishes so its final state (including any death) is visible
  * before demo mode cuts away to the next game. */
@@ -149,7 +140,6 @@ function HeadToHead() {
   const hIdx = Math.min(replay.index, Math.max(0, harn.length - 1));
   const bScore = base[bIdx]?.score ?? 0;
   const hScore = harn[hIdx]?.score ?? 0;
-  const bStreak = streak(base, bIdx);
   const hMove = harn[hIdx];
 
   const visited = useMemo(() => new Set(harn.slice(0, hIdx + 1).map((m) => m.room)), [harn, hIdx]);
@@ -192,7 +182,7 @@ function HeadToHead() {
   const moveCap = harn.length || base.length;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Game selector */}
       <div className="presenter-hide flex flex-wrap items-center gap-2">
         <span className="panel-title">Game{moveCap ? ` · ${moveCap} moves each` : ""}</span>
@@ -222,37 +212,39 @@ function HeadToHead() {
         </button>
       </div>
 
-      {/* Scoreboard */}
-      <div className="panel grid items-center gap-4 p-3 md:grid-cols-[1fr_auto_1fr]">
-        <ScoreBlock
-          label="Baseline"
-          score={bScore}
-          total={totals.base}
-          tone="baseline"
-          note={
-            !baseRun
-              ? "No baseline run logged yet"
-              : bStreak >= 3
-                ? `Repeated action x${bStreak}`
-                : undefined
-          }
-        />
-        <div className="text-center font-mono">
-          <p className="panel-title">
-            Game {game + gameOffset} · move {replay.index + 1}/{length || 1}
-          </p>
-          <p className={`mt-1 text-sm ${lead >= 0 ? "text-harness" : "text-baseline"}`}>
-            {lead >= 0 ? "Harness leads by" : "Baseline leads by"} {Math.abs(lead)}
-          </p>
+      {/* Hero + scoreboard merged into one row: the pitch and the proof, at a glance, with no
+          scrolling needed to also see the map below. Grid (not flex+justify-between) so the
+          scoreboard sits dead-center of the whole panel — an empty third column mirrors the
+          headline's column, which is what actually centers column 2, not just "after the
+          headline with whatever space is left". */}
+      <div className="panel grid grid-cols-[1fr_auto_1fr] items-center gap-4 p-3">
+        <h1 className="text-xl leading-tight font-bold tracking-tight text-foreground sm:text-2xl">
+          Same model.
+          <br />
+          <span className="phosphor-text">A better memory.</span>
+        </h1>
+
+        <div className="flex flex-wrap items-center gap-5">
+          <ScoreBlock compact label="Baseline" score={bScore} total={totals.base} tone="baseline" />
+          <div className="text-center font-mono">
+            <p className="panel-title">
+              Game {game + gameOffset} · move {replay.index + 1}/{length || 1}
+            </p>
+            <p className={`mt-1 text-sm ${lead >= 0 ? "text-harness" : "text-baseline"}`}>
+              {lead >= 0 ? "Harness leads by" : "Baseline leads by"} {Math.abs(lead)}
+            </p>
+          </div>
+          <ScoreBlock
+            compact
+            label="Harness"
+            score={hScore}
+            total={totals.harn}
+            tone="harness"
+            align="right"
+          />
         </div>
-        <ScoreBlock
-          label="Harness"
-          score={hScore}
-          total={totals.harn}
-          tone="harness"
-          align="right"
-          note={hMove?.guardrail?.blocked ? "Guardrail blocked a fatal move" : undefined}
-        />
+
+        <div aria-hidden />
       </div>
 
       {harnQ.isLoading || (!!baseRun && baseQ.isLoading) ? (
@@ -265,18 +257,18 @@ function HeadToHead() {
           <div className="grid gap-3 xl:grid-cols-[1fr_1fr_290px_290px]">
             <div className="rounded-xl border border-baseline/40 p-1">
               {baseRun ? (
-                <Terminal moves={base} index={bIdx} life={game} className="h-[250px]" />
+                <Terminal moves={base} index={bIdx} life={game} className="h-[190px]" />
               ) : (
-                <div className="panel flex h-[250px] items-center justify-center">
+                <div className="panel flex h-[190px] items-center justify-center">
                   <EmptyState label="No baseline run logged yet" />
                 </div>
               )}
             </div>
             <div className="rounded-xl border border-harness/40 p-1">
-              <Terminal moves={harn} index={hIdx} life={game} className="h-[250px]" />
+              <Terminal moves={harn} index={hIdx} life={game} className="h-[190px]" />
             </div>
-            <MindPanel move={hMove} className="h-[250px]" />
-            <div className="panel flex h-[250px] flex-col p-3">
+            <MindPanel move={hMove} className="h-[190px]" />
+            <div className="panel flex h-[190px] flex-col p-3">
               <p className="panel-title flex items-center gap-2">
                 <Brain className="h-4 w-4 text-lesson" /> Harness rules & memory · {known.length}
               </p>
@@ -330,14 +322,15 @@ function HeadToHead() {
                 currentRoom={hMove?.room}
                 previousRoom={harn[hIdx - 1]?.room}
                 currentGame={game}
-                className="h-[250px]"
+                startRoom={harn[0]?.room}
+                className="h-[340px]"
               />
               <p className="presenter-hide mt-1 px-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
                 Persisted in Atlas · red = died here
               </p>
             </div>
           ) : (
-            <div className="panel h-[250px]">
+            <div className="panel h-[340px]">
               {mapQ.isError ? (
                 <ErrorState error={mapQ.error} onRetry={() => mapQ.refetch()} />
               ) : (
@@ -383,15 +376,15 @@ function ScoreBlock({
   score,
   total,
   tone,
-  note,
   align = "left",
+  compact = false,
 }: {
   label: string;
   score: number;
   total: number;
   tone: "baseline" | "harness";
-  note?: string | undefined;
   align?: "left" | "right";
+  compact?: boolean;
 }) {
   const color = tone === "harness" ? "text-harness" : "text-baseline";
   return (
@@ -401,14 +394,15 @@ function ScoreBlock({
         key={score}
         initial={{ scale: 1.2 }}
         animate={{ scale: 1 }}
-        className={`font-mono text-5xl ${color}`}
+        className={`font-mono ${compact ? "text-3xl" : "text-5xl"} ${color}`}
       >
         {score}
       </motion.p>
-      <p className="font-mono text-xs text-muted-foreground">
-        Total so far: <span className={color}>{total}</span>
-      </p>
-      {note && <p className={`mt-1 font-mono text-xs ${color}`}>⚠ {note}</p>}
+      {!compact && (
+        <p className="font-mono text-xs text-muted-foreground">
+          Total so far: <span className={color}>{total}</span>
+        </p>
+      )}
     </div>
   );
 }

@@ -10,9 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AblationRouteImport } from './routes/ablation'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as EvalRouteImport } from './routes/eval'
-import { Route as GraveyardRouteImport } from './routes/graveyard'
 import { Route as RulebookRouteImport } from './routes/rulebook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -20,19 +19,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AblationRoute = AblationRouteImport.update({
-  id: '/ablation',
-  path: '/ablation',
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EvalRoute = EvalRouteImport.update({
   id: '/eval',
   path: '/eval',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GraveyardRoute = GraveyardRouteImport.update({
-  id: '/graveyard',
-  path: '/graveyard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RulebookRoute = RulebookRouteImport.update({
@@ -43,39 +37,35 @@ const RulebookRoute = RulebookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/ablation': typeof AblationRoute
+  '/about': typeof AboutRoute
   '/eval': typeof EvalRoute
-  '/graveyard': typeof GraveyardRoute
   '/rulebook': typeof RulebookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/ablation': typeof AblationRoute
+  '/about': typeof AboutRoute
   '/eval': typeof EvalRoute
-  '/graveyard': typeof GraveyardRoute
   '/rulebook': typeof RulebookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/ablation': typeof AblationRoute
+  '/about': typeof AboutRoute
   '/eval': typeof EvalRoute
-  '/graveyard': typeof GraveyardRoute
   '/rulebook': typeof RulebookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ablation' | '/eval' | '/graveyard' | '/rulebook'
+  fullPaths: '/' | '/about' | '/eval' | '/rulebook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ablation' | '/eval' | '/graveyard' | '/rulebook'
-  id: '__root__' | '/' | '/ablation' | '/eval' | '/graveyard' | '/rulebook'
+  to: '/' | '/about' | '/eval' | '/rulebook'
+  id: '__root__' | '/' | '/about' | '/eval' | '/rulebook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AblationRoute: typeof AblationRoute
+  AboutRoute: typeof AboutRoute
   EvalRoute: typeof EvalRoute
-  GraveyardRoute: typeof GraveyardRoute
   RulebookRoute: typeof RulebookRoute
 }
 
@@ -88,11 +78,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ablation': {
-      id: '/ablation'
-      path: '/ablation'
-      fullPath: '/ablation'
-      preLoaderRoute: typeof AblationRouteImport
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/eval': {
@@ -100,13 +90,6 @@ declare module '@tanstack/react-router' {
       path: '/eval'
       fullPath: '/eval'
       preLoaderRoute: typeof EvalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/graveyard': {
-      id: '/graveyard'
-      path: '/graveyard'
-      fullPath: '/graveyard'
-      preLoaderRoute: typeof GraveyardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rulebook': {
@@ -121,9 +104,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AblationRoute: AblationRoute,
+  AboutRoute: AboutRoute,
   EvalRoute: EvalRoute,
-  GraveyardRoute: GraveyardRoute,
   RulebookRoute: RulebookRoute,
 }
 export const routeTree = rootRouteImport

@@ -78,17 +78,11 @@ export function ReplayControls({
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-2">
           {moves.map((m, i) =>
-            m.guardrail?.blocked || m.repeated_action || i === moves.length - 1 ? (
+            m.repeated_action ? (
               <span
                 key={m.move}
                 style={{ left: `${(i / total) * 100}%` }}
-                className={`absolute top-0 h-2 w-[2px] ${
-                  i === moves.length - 1
-                    ? "bg-baseline"
-                    : m.guardrail?.blocked
-                      ? "bg-guard"
-                      : "bg-lesson"
-                }`}
+                className="absolute top-0 h-2 w-[2px] bg-lesson"
               />
             ) : null,
           )}
