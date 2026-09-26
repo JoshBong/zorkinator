@@ -1,5 +1,8 @@
 .env
 .venv/
+.python/
+.tools/
+.uv-cache/
 __pycache__/
 *.pyc
 games/
@@ -7,3 +10,5 @@ games/
 .DS_Store
 .ai-rules/
 .claude/
+.mypy_cache/
+.ruff_cache/

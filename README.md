@@ -11,6 +11,15 @@ Built at the MongoDB x Cerebral Valley Harness Engineering hackathon, 2026-09-26
 
 ## Setup
 
+On macOS or Linux, the setup script installs a project-local Python 3.11 runtime with `uv`, all runtime
+and development dependencies, the spaCy model, the verified Zork I story file, and the Git hooks:
+
+```bash
+./setup.sh
+```
+
+Manual setup, if preferred:
+
 ```bash
 brew install python@3.11            # Jericho does not build on 3.14
 python3.11 -m venv .venv && source .venv/bin/activate
@@ -29,6 +38,31 @@ Check Jericho works:
 ```bash
 python -c "from jericho import FrotzEnv; print(FrotzEnv('games/zork1.z5').reset()[0][:120])"
 ```
+
+Play manually in the terminal:
+
+```bash
+source .venv/bin/activate
+python -m zorkinator manual --seed 0
+```
+
+Type `quit` or press Ctrl-C to leave. The benchmark-forbidden commands `SAVE`, `RESTORE`, and `RESTART`
+are blocked by the adapter.
+
+## Code quality
+
+Run the same checks used by CI:
+
+```bash
+ruff check .
+ruff format --check .
+mypy
+python -m unittest discover -v
+```
+
+Pre-commit runs Ruff (including formatting) and strict mypy with the Pydantic plugin. GitHub Actions runs
+the checks again on every push and pull request. Configure the repository's branch protection to require
+the `lint-type-test` check if merges must be blocked when these checks fail.
 
 ## Docs
 
