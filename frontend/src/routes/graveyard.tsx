@@ -6,12 +6,7 @@ import { Skull } from "lucide-react";
 
 import { api } from "@/api/client";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/graveyard")({
   head: () => ({
@@ -19,7 +14,8 @@ export const Route = createFileRoute("/graveyard")({
       { title: "The Graveyard — GRUE LAB" },
       {
         name: "description",
-        content: "Every death the agent suffered, the lesson it produced, and how far it got next time.",
+        content:
+          "Every death the agent suffered, the lesson it produced, and how far it got next time.",
       },
       { property: "og:title", content: "The Graveyard — GRUE LAB" },
       {
@@ -79,9 +75,7 @@ function Graveyard() {
               />
             </div>
             <p className="mt-3 text-sm text-foreground">{l.death_cause}</p>
-            <p className="mt-1 font-mono text-xs text-muted-foreground">
-              survived {l.moves} moves
-            </p>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">survived {l.moves} moves</p>
             {l.rules_learned.length > 0 && (
               <p className="mt-3 font-mono text-xs text-lesson">
                 → produced {l.rules_learned.join(", ")}

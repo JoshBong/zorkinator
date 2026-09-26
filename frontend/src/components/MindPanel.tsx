@@ -2,7 +2,13 @@ import { AnimatePresence, motion } from "motion/react";
 import { Brain, ShieldAlert, Sparkles } from "lucide-react";
 import type { Move } from "@/api/types";
 
-export function MindPanel({ move, className = "" }: { move?: Move | undefined; className?: string }) {
+export function MindPanel({
+  move,
+  className = "",
+}: {
+  move?: Move | undefined;
+  className?: string;
+}) {
   return (
     <div className={`panel flex flex-col overflow-hidden ${className}`}>
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
@@ -76,9 +82,7 @@ export function MindPanel({ move, className = "" }: { move?: Move | undefined; c
           <p className="panel-title mb-2">Command chosen</p>
           <div className="flex items-center gap-2 rounded-md border border-harness/40 bg-surface-2 p-3">
             <Sparkles className="h-4 w-4 text-harness" />
-            <span className="font-mono text-base text-harness">
-              {move?.command ?? "—"}
-            </span>
+            <span className="font-mono text-base text-harness">{move?.command ?? "—"}</span>
           </div>
           <p className="mt-2 font-mono text-[11px] text-muted-foreground">
             room: {move?.room ?? "unknown"}

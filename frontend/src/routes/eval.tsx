@@ -24,7 +24,8 @@ export const Route = createFileRoute("/eval")({
       { title: "Eval Lab — GRUE LAB" },
       {
         name: "description",
-        content: "Score per life, moves survived and causes of death: harness versus baseline across runs.",
+        content:
+          "Score per life, moves survived and causes of death: harness versus baseline across runs.",
       },
       { property: "og:title", content: "Eval Lab — GRUE LAB" },
       {
@@ -85,8 +86,7 @@ function EvalLab() {
 
   const deaths = Array.from({ length: 10 }, (_, i) => {
     const rows = harnessLives.map((q) => q.data?.[i]).filter(Boolean);
-    const count = (needle: string) =>
-      rows.filter((r) => r!.death_cause.includes(needle)).length;
+    const count = (needle: string) => rows.filter((r) => r!.death_cause.includes(needle)).length;
     return {
       life: i + 1,
       grue: count("grue"),
@@ -178,8 +178,18 @@ function EvalLab() {
                 <XAxis dataKey="life" {...AXIS} />
                 <YAxis {...AXIS} />
                 <Tooltip {...TOOLTIP} />
-                <Line dataKey="harness" stroke="var(--color-harness)" strokeWidth={2.5} dot={false} />
-                <Line dataKey="baseline" stroke="var(--color-baseline)" strokeWidth={2.5} dot={false} />
+                <Line
+                  dataKey="harness"
+                  stroke="var(--color-harness)"
+                  strokeWidth={2.5}
+                  dot={false}
+                />
+                <Line
+                  dataKey="baseline"
+                  stroke="var(--color-baseline)"
+                  strokeWidth={2.5}
+                  dot={false}
+                />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

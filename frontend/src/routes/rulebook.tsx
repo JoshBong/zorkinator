@@ -13,7 +13,8 @@ export const Route = createFileRoute("/rulebook")({
       { title: "The Rulebook — GRUE LAB" },
       {
         name: "description",
-        content: "Versioned rules, guardrails and memories the agent wrote for itself, with diffs and lineage.",
+        content:
+          "Versioned rules, guardrails and memories the agent wrote for itself, with diffs and lineage.",
       },
       { property: "og:title", content: "The Rulebook — GRUE LAB" },
       {
@@ -72,7 +73,9 @@ function Rulebook() {
               key={f}
               onClick={() => setFilter(f)}
               className={`rounded-md px-3 py-1.5 font-mono text-xs uppercase ${
-                filter === f ? "bg-harness/20 text-harness" : "text-muted-foreground hover:bg-secondary"
+                filter === f
+                  ? "bg-harness/20 text-harness"
+                  : "text-muted-foreground hover:bg-secondary"
               }`}
             >
               {f}

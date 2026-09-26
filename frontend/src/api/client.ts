@@ -1,14 +1,5 @@
 import * as mock from "./mock";
-import type {
-  EvalSummary,
-  Life,
-  Move,
-  Reflection,
-  Rule,
-  Run,
-  RunMap,
-  StreamEvent,
-} from "./types";
+import type { EvalSummary, Life, Move, Reflection, Rule, Run, RunMap, StreamEvent } from "./types";
 
 /**
  * Flip USE_MOCK to false (or set VITE_USE_MOCK="false") once the FastAPI

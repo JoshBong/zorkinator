@@ -12,7 +12,6 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { usePresenterMode } from "../lib/use-presenter";
-import { USE_MOCK } from "../api/client";
 
 function NotFoundComponent() {
   return (
@@ -91,6 +90,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap",
       },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
@@ -116,7 +116,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 const NAV = [
   { to: "/", label: "Live Run" },
-  { to: "/race", label: "Race Mode" },
   { to: "/graveyard", label: "Graveyard" },
   { to: "/rulebook", label: "Rulebook" },
   { to: "/eval", label: "Eval Lab" },
@@ -125,7 +124,9 @@ const NAV = [
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const { presenter } = usePresenterMode();
+  // Presenter mode (large fonts, hides .presenter-hide elements) still toggles with "P" —
+  // there's just no visible badge for it in the header anymore.
+  usePresenterMode();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -153,12 +154,6 @@ function RootComponent() {
                 </Link>
               ))}
             </nav>
-            <div className="ml-auto flex items-center gap-3 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-              <span>{USE_MOCK ? "mock data" : "live api"}</span>
-              <span className="rounded border border-border px-2 py-1">
-                press P · presenter {presenter ? "on" : "off"}
-              </span>
-            </div>
           </div>
         </header>
         <main className="mx-auto max-w-[1600px] px-4 py-5">

@@ -56,9 +56,7 @@ export function MapGraph({
             const isCurrent = r.name === currentRoom;
             return (
               <g key={r.name} opacity={seen ? 1 : 0.22}>
-                {r.dark && (
-                  <circle cx={p.x} cy={p.y} r={18} className="fill-foreground/5" />
-                )}
+                {r.dark && <circle cx={p.x} cy={p.y} r={18} className="fill-foreground/5" />}
                 <circle
                   cx={p.x}
                   cy={p.y}

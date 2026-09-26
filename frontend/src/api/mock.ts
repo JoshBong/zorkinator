@@ -60,7 +60,8 @@ const EDGES: [string, string, string][] = [
 ];
 
 const OBSERVATIONS: Record<string, string> = {
-  "West of House": "A weathered white house sits behind an overgrown lawn. A mailbox leans by the path.",
+  "West of House":
+    "A weathered white house sits behind an overgrown lawn. A mailbox leans by the path.",
   "North of House": "The north face of the house. Boarded windows refuse to give.",
   "Behind House": "A small window at the back of the house hangs slightly open.",
   Kitchen: "A cluttered kitchen. A sack sits on the table, and a dark stairway leads up.",
@@ -397,9 +398,7 @@ export function getEvalSummary(): EvalSummary {
         max: Math.max(...scores),
       };
     });
-    const all = runIds.flatMap((r) =>
-      Array.from({ length: 10 }, (_, i) => lifeScore(r, i + 1)),
-    );
+    const all = runIds.flatMap((r) => Array.from({ length: 10 }, (_, i) => lifeScore(r, i + 1)));
     const allMoves = runIds.flatMap((r) =>
       Array.from({ length: 10 }, (_, i) => lifeMoves(r, i + 1)),
     );

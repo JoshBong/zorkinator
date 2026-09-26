@@ -26,7 +26,8 @@ export const Route = createFileRoute("/ablation")({
       { title: "Ablation Lab — GRUE LAB" },
       {
         name: "description",
-        content: "Flip reflection, rules, memory and guardrails on or off and see the recorded result.",
+        content:
+          "Flip reflection, rules, memory and guardrails on or off and see the recorded result.",
       },
       { property: "og:title", content: "Ablation Lab — GRUE LAB" },
       {
@@ -101,7 +102,10 @@ function AblationLab() {
             >
               {k}
             </span>
-            <Switch checked={config[k]} onCheckedChange={() => setConfig((c) => ({ ...c, [k]: !c[k] }))} />
+            <Switch
+              checked={config[k]}
+              onCheckedChange={() => setConfig((c) => ({ ...c, [k]: !c[k] }))}
+            />
           </label>
         ))}
       </div>
@@ -124,7 +128,9 @@ function AblationLab() {
             </div>
             <div>
               <p className="panel-title">Drop from full harness</p>
-              <p className={`mt-1 font-mono text-2xl ${drop > 0 ? "text-baseline" : "text-harness"}`}>
+              <p
+                className={`mt-1 font-mono text-2xl ${drop > 0 ? "text-baseline" : "text-harness"}`}
+              >
                 {drop > 0 ? `-${drop}` : "—"}
               </p>
             </div>
@@ -147,7 +153,12 @@ function AblationLab() {
                       fontSize: 12,
                     }}
                   />
-                  <Line dataKey="mean" stroke="var(--color-harness)" strokeWidth={2.5} dot={false} />
+                  <Line
+                    dataKey="mean"
+                    stroke="var(--color-harness)"
+                    strokeWidth={2.5}
+                    dot={false}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>

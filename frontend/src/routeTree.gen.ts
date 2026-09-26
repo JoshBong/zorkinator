@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AblationRouteImport } from './routes/ablation'
 import { Route as EvalRouteImport } from './routes/eval'
 import { Route as GraveyardRouteImport } from './routes/graveyard'
-import { Route as RaceRouteImport } from './routes/race'
 import { Route as RulebookRouteImport } from './routes/rulebook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -36,11 +35,6 @@ const GraveyardRoute = GraveyardRouteImport.update({
   path: '/graveyard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RaceRoute = RaceRouteImport.update({
-  id: '/race',
-  path: '/race',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RulebookRoute = RulebookRouteImport.update({
   id: '/rulebook',
   path: '/rulebook',
@@ -52,7 +46,6 @@ export interface FileRoutesByFullPath {
   '/ablation': typeof AblationRoute
   '/eval': typeof EvalRoute
   '/graveyard': typeof GraveyardRoute
-  '/race': typeof RaceRoute
   '/rulebook': typeof RulebookRoute
 }
 export interface FileRoutesByTo {
@@ -60,7 +53,6 @@ export interface FileRoutesByTo {
   '/ablation': typeof AblationRoute
   '/eval': typeof EvalRoute
   '/graveyard': typeof GraveyardRoute
-  '/race': typeof RaceRoute
   '/rulebook': typeof RulebookRoute
 }
 export interface FileRoutesById {
@@ -69,22 +61,14 @@ export interface FileRoutesById {
   '/ablation': typeof AblationRoute
   '/eval': typeof EvalRoute
   '/graveyard': typeof GraveyardRoute
-  '/race': typeof RaceRoute
   '/rulebook': typeof RulebookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ablation' | '/eval' | '/graveyard' | '/race' | '/rulebook'
+  fullPaths: '/' | '/ablation' | '/eval' | '/graveyard' | '/rulebook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ablation' | '/eval' | '/graveyard' | '/race' | '/rulebook'
-  id:
-    | '__root__'
-    | '/'
-    | '/ablation'
-    | '/eval'
-    | '/graveyard'
-    | '/race'
-    | '/rulebook'
+  to: '/' | '/ablation' | '/eval' | '/graveyard' | '/rulebook'
+  id: '__root__' | '/' | '/ablation' | '/eval' | '/graveyard' | '/rulebook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -92,7 +76,6 @@ export interface RootRouteChildren {
   AblationRoute: typeof AblationRoute
   EvalRoute: typeof EvalRoute
   GraveyardRoute: typeof GraveyardRoute
-  RaceRoute: typeof RaceRoute
   RulebookRoute: typeof RulebookRoute
 }
 
@@ -126,13 +109,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GraveyardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/race': {
-      id: '/race'
-      path: '/race'
-      fullPath: '/race'
-      preLoaderRoute: typeof RaceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/rulebook': {
       id: '/rulebook'
       path: '/rulebook'
@@ -148,7 +124,6 @@ const rootRouteChildren: RootRouteChildren = {
   AblationRoute: AblationRoute,
   EvalRoute: EvalRoute,
   GraveyardRoute: GraveyardRoute,
-  RaceRoute: RaceRoute,
   RulebookRoute: RulebookRoute,
 }
 export const routeTree = rootRouteImport
