@@ -116,6 +116,30 @@ def report(runs: list[RunRecord], moves: dict[str, list[MoveRecord]]) -> str:
     return "\n".join(out)
 
 
+def score_at(moves: list[MoveRecord], cap: int) -> int:
+    """Score after the last move at or before ``cap`` (final score if the game ended earlier)."""
+    scores = [m.score for m in moves if m.n <= cap]
+    return scores[-1] if scores else 0
+
+
+def at_move_table(runs: list[RunRecord], moves: dict[str, list[MoveRecord]], cap: int) -> str:
+    """Per condition, the score at move ``cap``: the fair bar for short-capped games."""
+    groups: dict[str, list[int]] = defaultdict(list)
+    for run in runs:
+        groups[condition(run)].append(score_at(moves[run.run_id], cap))
+    out = [
+        f"| Condition | Games | Score at move {cap}: mean | Median | SD | Range |",
+        "|---|---|---|---|---|---|",
+    ]
+    for name, scores in sorted(groups.items()):
+        sd = st.stdev(scores) if len(scores) > 1 else 0.0
+        out.append(
+            f"| {name} | {len(scores)} | {st.mean(scores):.1f} | {st.median(scores):g} | {sd:.1f} "
+            f"| {min(scores)}-{max(scores)} |"
+        )
+    return "\n".join(out)
+
+
 def compare(runs: list[RunRecord], base: str, other: str) -> str:
     a = [r.score for r in runs if condition(r) == base]
     b = [r.score for r in runs if condition(r) == other]
@@ -235,10 +259,14 @@ def main() -> int:
     parser.add_argument("--compare", nargs=2, metavar=("BASE", "OTHER"))
     parser.add_argument("--plot", metavar="PNG", help="write the learning-curve chart here")
     parser.add_argument("--atlas", action="store_true", help="read runs from Atlas, not --out")
+    parser.add_argument("--at", type=int, metavar="N", help="also report score at move N")
     parser.add_argument("--harness", default="harness", help="harness condition/chain label")
     args = parser.parse_args()
     runs, moves = load_atlas() if args.atlas else load(args.out)
     print(report(runs, moves))
+    if args.at:
+        print()
+        print(at_move_table(runs, moves, args.at))
     if args.plot:
         print("wrote", plot_learning_curve(runs, moves, args.plot, harness=args.harness))
     if args.compare:

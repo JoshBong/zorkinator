@@ -14,6 +14,8 @@ from typing import Any, Literal
 
 from .. import db
 from ..models import GameEvaluation, MemoryRevision, MoveRecord, RuleDoc, RunRecord
+from ..verifier import _room_title
+from ..world import direction_of
 from .schemas import (
     Condition,
     EvalConditionOut,
@@ -34,14 +36,45 @@ from .schemas import (
 )
 
 _END_REASON_LABEL: dict[str, str] = {
+    # The frontend keys off the substring "survived" for every non-death ending.
     "death": "died",
-    "won": "won the game",
-    "game_over": "game over",
-    "gave_up": "gave up",
-    "cap": "hit the move cap",
-    "usd_cap": "hit the $ cap",
-    "stuck40": "stuck (no progress)",
+    "won": "survived (won the game)",
+    "game_over": "survived (game over)",
+    "gave_up": "survived (gave up)",
+    "cap": "survived (hit the move cap)",
+    "usd_cap": "survived (hit the $ cap)",
+    "stuck40": "survived (stuck, no progress)",
 }
+
+
+def _room_after(moves: list[MoveRecord]) -> list[str | None]:
+    """Room the player is in after each move, from room titles in the game text (works for
+    baseline moves too, which log no ``room``)."""
+    out: list[str | None] = []
+    room: str | None = None
+    for m in moves:
+        title = _room_title(m.text)
+        if title:
+            room = title
+        elif room is None:
+            room = m.room
+        out.append(room)
+    return out
+
+
+def _rules_learned_by_run() -> dict[str, list[str]]:
+    """run_id -> rule ids born (or promoted) by reflecting on that run."""
+    versions = {
+        v["_id"]: v.get("source_run_id")
+        for v in db.get_db().harness_versions.find({}, {"source_run_id": 1})
+    }
+    out: dict[str, list[str]] = defaultdict(list)
+    for rule in db.get_rules():
+        for version_id in (rule.born_version, rule.promoted_version):
+            source = versions.get(version_id) if version_id else None
+            if source and rule.id not in out[source]:
+                out[source].append(rule.id)
+    return out
 
 
 def _group_key(run: RunRecord) -> str:
@@ -102,13 +135,14 @@ def list_runs() -> list[RunOut]:
 
 
 def list_lives(group_id: str) -> list[LifeOut]:
+    learned = _rules_learned_by_run()
     return [
         LifeOut(
             life=_life_of(r),
             score=r.score,
             moves=r.moves,
             death_cause=_END_REASON_LABEL.get(r.end_reason, r.end_reason),
-            rules_learned=[],  # no per-life rule attribution yet (Reflector not built)
+            rules_learned=learned.get(r.run_id, []),
         )
         for r in _members_of(group_id)
     ]
@@ -223,10 +257,10 @@ def rule_out(r: RuleDoc) -> RuleOut:
         version=1,
         type=_rule_type_of(r),
         text=r.text,
-        status="active" if r.status == "hard" else "superseded",
+        status="active",
         learned_from=LearnedFromOut(
             run_id=ev_run_id,
-            life=1,
+            life=_life_of(ev_run) if (ev_run := db.get_run(ev_run_id)) else 1,
             move=int(ev_move) if ev_move.isdigit() else 0,
         ),
         score_impact=0.0,  # Verifier promotion doesn't record a score delta yet
@@ -240,10 +274,32 @@ def list_rules() -> list[RuleOut]:
 
 
 def get_map(group_id: str) -> RunMapOut:
-    """Real query over world_facts; empty until the Scribe (Seb) writes room/exit facts."""
+    """Rooms and exits from world_facts (harness) plus room titles in the game text (any run),
+    with per-room deaths ("graves")."""
     rooms: dict[str, MapRoomOut] = {}
     edges: list[MapEdgeOut] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def room_of(name: str, member: RunRecord) -> MapRoomOut:
+        return rooms.setdefault(
+            name,
+            MapRoomOut(name=name, dark=False, first_seen_life=_life_of(member), death_lives=[]),
+        )
+
     for member in _members_of(group_id):
+        moves = db.get_moves(member.run_id)
+        after = _room_after(moves)
+        prev: str | None = None
+        for m, here in zip(moves, after, strict=True):
+            if here:
+                room_of(here, member)
+                direction = direction_of(m.command)
+                if prev and here != prev and direction and (prev, here, direction) not in seen:
+                    seen.add((prev, here, direction))
+                    edges.append(MapEdgeOut(from_=prev, to=here, direction=direction))
+            prev = here
+        if member.end_reason == "death" and after and after[-1]:
+            room_of(after[-1], member).death_lives.append(_life_of(member))
         for fact in db.get_world_facts(member.run_id):
             if fact.attr == "dark":
                 room = rooms.setdefault(
