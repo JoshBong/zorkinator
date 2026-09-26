@@ -1,6 +1,6 @@
 # Contracts
 
-> Draft — agree at kickoff. Owners: A = Josh (game) + Hiamil (Atlas, view), B = Seb, C = Elliott.
+> Draft — agree at kickoff. Owners: A = Josh (game) + Hiamil (Atlas, view), B = Seb, C = Elliott (Reflector, versions); verifier + promotion = Josh.
 
 ## Mongo collections (Atlas sandbox, db `zork`)
 
@@ -30,11 +30,12 @@ A  runner.play(version_id, mode, seed, move_cap) -> run_id        # stuck40 stop
 B  builder.build_prompt(run_id, n, version) -> str               # state from Atlas, no chat history
 B  player.propose(prompt, feedback=None) -> cmd
 B  scribe.update(run_id, n, text, parsed) -> None                # world_facts upserts
-C  verifier.check(cmd, state, version) -> {ok, rule_id, reason, hard}
+J  verifier.check(cmd, state, version) -> {ok, rule_id, reason, hard}
        soft -> warning appended to prompt, never blocks (ZorkGPT: LLM critic 88% wrong)
        hard -> block, Player retries (max 3 total)
 C  reflector.propose(run_id) -> [rule diffs]                     # once per game
-C  versions.commit(parent_id, diffs, run_id) -> version_id       # promotion check here
+J  verifier.promote(rule, runs) -> "hard"|"soft"                 # death replay + false-positive replay over logged moves
+C  versions.commit(parent_id, diffs, run_id) -> version_id       # calls verifier.promote
 
 ## Fixed
 same model every call · same seed for game 1 and game N · no SAVE/RESTORE/RESTART

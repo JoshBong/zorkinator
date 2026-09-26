@@ -19,12 +19,13 @@ collection, same seed, plus the rule diff that explains one avoided death. Every
 
 | Owner | Files (proposed, under `zorkinator/`) | Contract functions |
 |---|---|---|
-| **Josh** — game connector | `adapter.py` `parser.py` `runner.py` | `adapter.reset/step`, `parser.parse`, `runner.play` (paper mode first) |
+| **Josh** — game connector + verifier | `adapter.py` `parser.py` `runner.py` `verifier.py` | `adapter.reset/step`, `parser.parse`, `runner.play` (paper mode first), then `verifier.check` + promotion check |
 | **Hiamil** — Atlas + display | `db.py` `view/` | Atlas cluster, indexes, `db.py` helper, change stream, side-by-side replay view |
 | **Seb** — inner loop | `builder.py` `player.py` `scribe.py` `monitor.py` | `builder.build_prompt`, `player.propose`, `scribe.update` |
-| **Elliott** — outer loop | `verifier.py` `reflector.py` `versions.py` | `verifier.check`, `reflector.propose`, `versions.commit` |
+| **Elliott** — outer loop | `reflector.py` `versions.py` | rule format, `reflector.propose`, `versions.commit` (calls Josh's promotion check) |
 
 Changing a signature or document shape in `docs/CONTRACTS.md` = tell the other two first, then update the file in the same commit.
+Josh + Elliott agree the rule format and the allowed `when` fields first (Reflector writes rules, verifier reads them).
 First step for everyone: a stub of your functions that returns plausible fake data, so the loop runs end to end before anything is real.
 
 ## Hard rules (the benchmark — never change these)
