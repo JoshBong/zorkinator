@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from zorkinator.models import MoveRecord, RuleDoc, RunRecord
-from zorkinator.verifier import Promoter, State, check, replay_states, validate_when
+from zorkinator.verifier import Promoter, State, check, matches, replay_states, validate_when
 
 NOW = datetime(2026, 9, 26, tzinfo=UTC)
 
@@ -95,6 +95,47 @@ class CheckTest(unittest.TestCase):
         self.assertTrue(validate_when({"location_id": 12}))
         self.assertTrue(validate_when({}))
 
+    def test_all_allowed_state_conditions_are_required(self) -> None:
+        guarded = rule(
+            {
+                "command": "open.*",
+                "room": ["Dark Cellar"],
+                "room_is_dark": True,
+                "carrying": ["lamp"],
+                "not_carrying": ["sword"],
+            },
+            [],
+            "hard",
+        )
+        lit = State(room="dark cellar", inventory=frozenset({"brass lamp"}), room_is_dark=True)
+
+        self.assertTrue(matches(guarded, "OPEN trapdoor", lit))
+        self.assertFalse(matches(guarded, "open trapdoor", State(room="Dark Cellar")))
+        self.assertFalse(
+            matches(
+                guarded,
+                "open trapdoor",
+                State(
+                    room="Dark Cellar", inventory=frozenset({"lamp", "sword"}), room_is_dark=True
+                ),
+            )
+        )
+
+    def test_invalid_rule_neither_warns_nor_blocks_and_soft_warnings_precede_a_hard_block(
+        self,
+    ) -> None:
+        invalid = rule({"command": "[", "room_is_dark": "yes"}, [], "hard")
+        self.assertTrue(validate_when(invalid.when))
+        self.assertTrue(check("look", State(), [invalid]).ok)
+
+        soft = rule({"command": "look"}, [])
+        hard = rule({"command": "look"}, [], "hard").model_copy(update={"id": "r2"})
+        verdict = check("look", State(), [soft, hard])
+        self.assertFalse(verdict.ok)
+        self.assertTrue(verdict.hard)
+        self.assertEqual(verdict.rule_id, "r2")
+        self.assertEqual(verdict.warnings, ("r1: Don't fight the troll without the sword",))
+
 
 class ReplayTest(unittest.TestCase):
     def test_state_tracks_room_dark_and_inventory(self) -> None:
@@ -132,6 +173,14 @@ class PromoteTest(unittest.TestCase):
     def test_no_death_evidence_stays_soft(self) -> None:
         p = self.promoter({"a": DEATH_RUN})
         self.assertEqual(p.promote(rule(TROLL, ["a:2"]), [run("a")]), "soft")
+
+    def test_history_moves_can_prevent_promotion_even_when_not_supplied_as_runs(self) -> None:
+        p = Promoter(
+            lambda run_id: {"a": DEATH_RUN, "b": WIN_RUN}[run_id], history=lambda: [run("b")]
+        )
+        too_broad = rule({"command": "(kill|attack) troll.*"}, ["a:3"])
+
+        self.assertEqual(p.promote(too_broad, [run("a")]), "soft")
 
 
 if __name__ == "__main__":
