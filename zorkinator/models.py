@@ -70,7 +70,7 @@ class RunRecord(ContractModel):
     moves: NonNegativeInt
     died: StrictBool
     death_move: NonNegativeInt | None
-    end_reason: Literal["death", "won", "game_over", "gave_up", "cap", "usd_cap"]
+    end_reason: Literal["death", "won", "game_over", "gave_up", "cap", "usd_cap", "stuck40"]
     tokens_in: NonNegativeInt
     tokens_out: NonNegativeInt
     tokens_cache_write: NonNegativeInt

@@ -36,3 +36,9 @@ The proposed interface, immutable revision schema, version manifests, and implem
 ## 2026-09-26 — Benchmark model = Claude Haiku 4.5; 10 chains x 10 games (by Josh Huang)
 
 We benchmark against our own baselines, not the paper's number, so every condition (paper loop, paper loop + past-chat memory, harness) uses `claude-haiku-4-5` to save cost; the Opus 4.5 run (44/350) is a side note. Each condition runs as 10 independent chains of 10 sequential games (100 games); chats are shared only within a chain.
+
+## 2026-09-26 — Inner loop: empty KBs, n-game outer loop, exploration over brute force (by Seb)
+
+The first version starts with an empty map, an empty item knowledge base and no objective notes. The outer loop runs n games. After each one it turns what was learned into versioned memories (kinds `room`, `map_edge`, `item`, `objective`, `hypothesis`, `run_summary`), and the next game starts from that version. Each inner-loop move injects location, exits, inventory, the model's own goal and open leads into a fresh prompt. A game ends at 500 moves, at death, on "I give up", or when the monitor finds no progress (new room, item, interaction or score change) for too long.
+
+To keep play exploratory rather than a brute-force search or memorization: leads come only from the game text (never untried compass directions or valid actions); the prompt shows what was already tried and favors new actions and unexamined items; repetition triggers a warning, not a block; raw command sequences from earlier games never enter the prompt. The score is reported, never optimized directly. Design: [INNER_LOOP.md](INNER_LOOP.md).

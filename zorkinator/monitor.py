@@ -1,0 +1,44 @@
+"""Progress monitor: notices repetition and stalls. Never blocks a command."""
+
+from __future__ import annotations
+
+from collections import Counter
+from typing import Literal
+
+from .scribe import Observation
+from .world import WorldModel
+
+STUCK_AFTER = 40  # moves without progress before the game ends ("stuck40")
+REPEAT_LIMIT = 2  # same command, same room, same outcome more than this -> warning
+
+Status = Literal["ok", "repeat", "stuck"]
+
+
+class Monitor:
+    def __init__(self, stuck_after: int = STUCK_AFTER, repeat_limit: int = REPEAT_LIMIT) -> None:
+        self.stuck_after = stuck_after
+        self.repeat_limit = repeat_limit
+        self.last_progress = 0
+        self._repeats: Counter[tuple[str | None, str, str]] = Counter()
+        self.status: Status = "ok"
+
+    def update(self, world: WorldModel, n: int, obs: Observation) -> Status:
+        if obs.progressed:
+            self.last_progress = n
+        step = world.state.recent[-1] if world.state.recent else None
+        repeated = False
+        if step is not None:
+            key = (step.room, step.command.casefold(), step.outcome)
+            self._repeats[key] += 1
+            repeated = self._repeats[key] > self.repeat_limit
+        if n - self.last_progress >= self.stuck_after:
+            self.status = "stuck"
+        elif repeated:
+            self.status = "repeat"
+        else:
+            self.status = "ok"
+        return self.status
+
+    def idle_moves(self, n: int) -> int:
+        """Moves since the last new room, item, interaction, or score gain."""
+        return max(0, n - self.last_progress)

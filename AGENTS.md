@@ -8,9 +8,18 @@ Read this whole file before writing code. Then read, in order:
 
 ## What we're building (hackathon, due 5:00 PM today)
 
-A harness that plays Zork I through Jericho and **gets better game over game by learning rules from its own
-deaths**. Baseline: arXiv 2602.15867, frontier LLMs in a bare loop score <10% of Zork I, best ~75/350.
-Same model + same prompt in two modes: **paper mode** (bare loop) and **harness mode**. Any score gap is the harness.
+A harness that plays Zork I through Jericho and **gets better game over game by building its own knowledge**.
+Baseline: arXiv 2602.15867. Frontier LLMs in a bare loop score under 10% of Zork I; the best was about 75/350.
+The same model and the same prompt run in two modes: **paper mode** (the bare loop) and **harness mode**. Any score gap is the harness.
+
+- **Outer loop, n games** ([docs/OUTER_LOOP_MEMORY.md](docs/OUTER_LOOP_MEMORY.md)): starts from empty knowledge bases (map,
+  items, objectives). After each game it decides what to keep, as versioned memories backed by evidence, and publishes the version the
+  next game plays.
+- **Inner loop, one game** ([docs/INNER_LOOP.md](docs/INNER_LOOP.md)): one command per move. Each move's prompt carries the current
+  location, exits, inventory, the goal and open leads, taken from the knowledge bases and filled in as the game goes. A game ends at 500 moves, at death, or when the model gives up or gets stuck.
+- **Explore, don't brute-force:** leads come only from the game text, the prompt favors untried actions, and no raw
+  command sequence is ever replayed. Learning rules from deaths (soft rules warn; hard rules block only after
+  promotion) stays as a separate path.
 
 **The demo:** game 1 (cold, zero rules) vs game N (final harness), replayed side by side from the `moves`
 collection, same seed, plus the rule diff that explains one avoided death. Everything serves that.
