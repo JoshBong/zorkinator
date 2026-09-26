@@ -25,9 +25,18 @@ def main() -> int:
 
     print(f"Connected. Server version: {client.server_info()['version']}")
 
-    collections = ("runs", "moves", "world_facts", "rules", "lessons", "harness_versions")
+    collections = (
+        "runs",
+        "moves",
+        "world_facts",
+        "rules",
+        "memories",
+        "memory_events",
+        "harness_versions",
+    )
 
     db.ensure_indexes()
+    db.MongoOuterLoopStore(db.get_db()).ensure_indexes()
     print(f"Indexes ready on database {db.DB_NAME!r}:")
     for name in collections:
         indexes = sorted(db.get_db()[name].index_information().keys())

@@ -19,6 +19,12 @@ RECENT_CHARS = 4000
 SEARCH_HITS = 5
 SNIPPET_CHARS = 400
 
+# States only that the tools exist, like the app's own system prompt; never says to use them.
+SYSTEM_NOTE = (
+    "You have access to the user's past conversations with you through the recent_chats and "
+    "conversation_search tools."
+)
+
 TOOLS: list[ToolParam] = [
     {
         "name": "recent_chats",

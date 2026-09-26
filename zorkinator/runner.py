@@ -13,7 +13,7 @@ import anthropic
 from anthropic.types import MessageParam
 
 from .adapter import DEFAULT_STORY_FILE, GameAdapter
-from .memory import TOOLS, ChatArchive
+from .memory import SYSTEM_NOTE, TOOLS, ChatArchive
 from .models import MoveRecord, RunRecord
 from .prompts import INITIAL_PROMPTS, PromptName
 
@@ -146,6 +146,7 @@ class AnthropicChat:
         return self._client.messages.create(
             model=self.model,
             max_tokens=1024,
+            system=SYSTEM_NOTE,
             messages=messages,
             tools=TOOLS,
             # After MAX_TOOL_ROUNDS lookups the model must answer with a command.

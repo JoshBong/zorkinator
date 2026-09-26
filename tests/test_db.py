@@ -6,14 +6,7 @@ from datetime import UTC, datetime
 from bson import ObjectId
 
 from zorkinator import db
-from zorkinator.models import (
-    HarnessVersionDoc,
-    LessonDoc,
-    MoveRecord,
-    RuleDoc,
-    RunRecord,
-    WorldFactDoc,
-)
+from zorkinator.models import MoveRecord, RuleDoc, RunRecord, WorldFactDoc
 
 
 class MongoMappingTest(unittest.TestCase):
@@ -148,29 +141,6 @@ class AtlasIntegrationTest(unittest.TestCase):
         self.assertEqual(len(facts), 1)
         self.assertTrue(facts[0].value)
         self.assertEqual(facts[0].move, 5)
-
-    def test_lesson_round_trip(self) -> None:
-        lesson_id = f"lesson-test-{uuid.uuid4().hex[:8]}"
-        lesson = LessonDoc(
-            id=lesson_id,
-            kind="procedure",
-            text="Light the lamp before going underground.",
-            evidence=[f"{self.run_id}:3"],
-            born_version="v1",
-        )
-        db.insert_lesson(lesson)
-        self.addCleanup(lambda: db.get_db().lessons.delete_one({"_id": lesson_id}))
-        lessons = db.get_lessons()
-        self.assertIn(lesson_id, [lesson_.id for lesson_ in lessons])
-
-    def test_harness_version_round_trip(self) -> None:
-        version_id = f"v-test-{uuid.uuid4().hex[:8]}"
-        version = HarnessVersionDoc(id=version_id, created_at=datetime.now(UTC))
-        db.save_harness_version(version)
-        self.addCleanup(lambda: db.get_db().harness_versions.delete_one({"_id": version_id}))
-        fetched = db.get_harness_version(version_id)
-        assert fetched is not None
-        self.assertEqual(fetched.id, version_id)
 
 
 if __name__ == "__main__":
