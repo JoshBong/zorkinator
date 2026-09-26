@@ -53,11 +53,16 @@ agent can actually use, and the agent must not be allowed to act on beliefs it c
 </p>
 
 1. **Inner loop, one move.** The scribe updates the game's working knowledge (rooms, exits, items, what was
-   tried and what happened). The builder writes a fresh, compact prompt from it, with no chat history. The player
-   replies with a command, its current goal, and what it expects to happen. The verifier checks the command
-   against learned rules before it reaches the game.
-2. **Outer loop, after each game.** The reflector reads the finished game (deaths and score changes first) and
-   proposes memory changes: add, revise, or retire. The version manager checks every cited move exists, then
+   tried and what happened) and confirms or contradicts what earlier games remembered. The builder writes a
+   fresh, compact prompt from it, with no chat history: state, cautions that apply here, and the open leads.
+   The player replies with a command, its current goal, and what it expects to happen. The verifier checks the
+   command against learned rules before it reaches the game. When the monitor sees no new room, item, or score
+   for a while, the prompt switches to exploring: pursue a lead from earlier games, or try something untried.
+2. **Outer loop, after each game.** The reflector reads the finished game (deaths and surprises first) and
+   proposes memory changes: add, revise, or retire, plus the **frontier**: leads for every edge of what is
+   known (a locked thing, an exit that needs something, an item with no use yet), each with the action to try
+   next and how many games have been spent on it. Resolved leads are retired; dead ends are dropped after three
+   tries. Fixed code carries the map across games. The version manager checks every cited move exists, then
    commits the whole batch or none of it, and publishes a new harness version. The next game plays exactly that
    version.
 3. **Earned authority.** A proposed rule starts soft: it only adds a warning. The promoter makes it hard only if
@@ -69,11 +74,12 @@ agent can actually use, and the agent must not be allowed to act on beliefs it c
 | Piece | State |
 |---|---|
 | Paper baseline, past-chat condition, chains, analysis | Working; 100+ games logged |
-| Inner loop: world model, builder, player with goal, stall monitor | Working |
-| Outer loop: reflector, immutable versions, sequential chain on Atlas | Working; two-game smoke chain passed |
+| Inner loop: world model, builder, player with goal, stall monitor | Working; memories load into the world model, map carried over by fixed code |
+| Outer loop: reflector, immutable versions, sequential chain on Atlas | Working; learning failures are contained and logged per game |
+| Frontier: `lead` memories, idle → explore prompt | Working; leads reach the next game with an action and attempt count |
 | Verifier `check` and replay promoter (`verifier.py`) | Working: hard rules block in the harness; the chain promotes rules only by replay |
-| Predicted outcomes and surprise rate | Working: every move logs `expected`; the model rates its last prediction as a surprise or not |
-| GRUE LAB dashboard | Working on mock data; moving to live Atlas data |
+| Predicted outcomes and surprise rate | Working: every move logs `expected`; the model rates its last prediction as a surprise or not; surprises rank first in reflection evidence |
+| GRUE LAB dashboard | Working on live Atlas data: baseline and harness chains, per-life moves, map with graves, rulebook |
 
 ## Results so far
 
@@ -164,7 +170,9 @@ cd frontend && npm i && VITE_USE_MOCK=false npm run dev     # UI; omit VITE_USE_
 | `builder.py`, `player.py`, `monitor.py` | Fresh prompt each move; one command plus goal; repetition and stall warnings |
 | `harness.py`, `driver.py` | One harness game; the sequential chain that plays, reflects, and commits versions |
 | `reflector.py`, `versions.py` | Proposes memory changes from evidence; validates and publishes immutable versions |
-| `verifier.py` | Mechanical rule checks and soft → hard promotion by replay |
+| `verifier.py` | Mechanical rule checks and soft → hard promotion by replay; a rule must name an action |
+| `carryover.py` | Fixed-code map carry-over between versions |
+| `seed_run.py`, `import_runs.py` | Append a scripted game to a chain; load local baseline logs into Atlas |
 | `db.py` | The only module that talks to MongoDB Atlas, including Vector Search recall |
 | `analyze.py` | Results tables, surprise rate, permutation tests |
 | `view/`, `frontend/` | FastAPI over Atlas and the GRUE LAB dashboard |
