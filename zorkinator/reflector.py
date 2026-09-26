@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from typing import Protocol
 from uuid import uuid4
 
+import anthropic
 from pydantic import JsonValue, TypeAdapter, ValidationError
 
 from .models import (
@@ -72,6 +73,45 @@ class ReflectionModel(Protocol):
     model: str
 
     def generate(self, prompt: str) -> ReflectionModelResponse: ...
+
+
+class AnthropicReflectionModel:
+    """One-shot, JSON-constrained Anthropic transport for between-game reflection."""
+
+    def __init__(
+        self,
+        model: str,
+        *,
+        client: anthropic.Anthropic | None = None,
+        max_tokens: int = 4096,
+    ) -> None:
+        if not model:
+            raise ValueError("model must be non-empty")
+        if max_tokens < 1:
+            raise ValueError("max_tokens must be positive")
+        self.model = model
+        self._client = client or anthropic.Anthropic(max_retries=8)
+        self._max_tokens = max_tokens
+
+    def generate(self, prompt: str) -> ReflectionModelResponse:
+        response = self._client.messages.create(
+            model=self.model,
+            max_tokens=self._max_tokens,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        content = "".join(block.text for block in response.content if block.type == "text")
+        if not content:
+            raise ReflectionError("reflection model returned no text content")
+        usage = response.usage
+        return ReflectionModelResponse(
+            content=content,
+            usage={
+                "input_tokens": usage.input_tokens,
+                "output_tokens": usage.output_tokens,
+                "cache_creation_input_tokens": usage.cache_creation_input_tokens or 0,
+                "cache_read_input_tokens": usage.cache_read_input_tokens or 0,
+            },
+        )
 
 
 @dataclass(frozen=True)
@@ -268,10 +308,20 @@ Return exactly one JSON object with keys memory_ops, rule_diffs, and summary. me
 add {op,key,kind,subjects,content,status,evidence:[{run_id,n}],rationale};
 revise {op,memory_id,expected_revision_id,kind,subjects,content,status,evidence,rationale};
 retire {op,memory_id,expected_revision_id,rationale,evidence}. Revisions are complete replacements.
+For every add/revise: content MUST be a JSON object (for example {"text":"The trap killed me"});
+status MUST be exactly "hypothesis", "supported", or "contradicted"; subjects MUST be an array of
+strings. Every evidence item MUST contain one run_id string and one integer move n that appears in
+the transcript--never a range, string, or summary. A valid add looks exactly like
+{"op":"add","key":"trap","kind":"failure","subjects":["trap"],
+"content":{"text":"Entering the trap was fatal"},"status":"supported",
+"evidence":[{"run_id":"the exact visible run id","n":7}],"rationale":"Move 7 ended badly."}.
 Rule diffs are separate objects; new rules must cite public evidence and are born soft. Empty arrays
 are valid. Use add {op,key,text,when,verdict,evidence}, revise
 {op,rule_id,key,text,when,verdict,evidence}, or retire {op,rule_id}. Never invent an evidence
-reference that is absent from the supplied transcript.
+reference that is absent from the supplied transcript. For add/revise, when MUST be a JSON object
+(for example {"command_pattern":"ready"}) and verdict MUST be exactly "warn" or "block"; do not
+write natural-language strings for when or use "soft" as the verdict. Prefer an empty rule_diffs
+array when no precise machine-checkable condition follows directly from the evidence.
 """
         return f"{instructions}\nEVIDENCE_PACKET\n{json.dumps(packet, sort_keys=True)}"
 

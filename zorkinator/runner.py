@@ -4,18 +4,23 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 import anthropic
 from anthropic.types import MessageParam
 
 from .adapter import DEFAULT_STORY_FILE, GameAdapter
+from .builder import HarnessPromptBuilder, PromptRepository
 from .memory import SYSTEM_NOTE, TOOLS, ChatArchive
-from .models import MoveRecord, RunRecord
+from .models import HarnessVersionRecord, MoveRecord, RunRecord, WorldFactDoc
 from .prompts import INITIAL_PROMPTS, PromptName
+
+if TYPE_CHECKING:
+    from .driver import BetweenGameDriver, ChainCursor
 
 BASELINE_MODEL = "claude-haiku-4-5"
 MAX_SCORE = 350
@@ -205,22 +210,37 @@ def play(
     archive: ChatArchive | None = None,
     chain: str | None = None,
     game_index: int | None = None,
+    version: HarnessVersionRecord | None = None,
+    prompt_builder: HarnessPromptBuilder | None = None,
 ) -> RunRecord:
     """Play one game and log every move. ``move_cap`` counts commands issued, as in the paper.
 
     With ``archive``, the model can look up earlier games' chats (the paper's app setting), and this
     game's chat is added to the archive when it ends.
     """
-    if mode != "paper":
-        raise NotImplementedError("Harness mode is not built yet.")
+    if mode == "harness":
+        if chain is None or game_index is None or version is None or prompt_builder is None:
+            raise ValueError("harness play requires chain, game_index, version, and prompt_builder")
+        if archive is not None:
+            raise ValueError("harness mode does not use cross-game chat archives")
+    elif version is not None or prompt_builder is not None:
+        raise ValueError("paper mode cannot receive a harness version or prompt builder")
+    harness_version = cast(HarnessVersionRecord, version)
+    harness_builder = cast(HarnessPromptBuilder, prompt_builder)
 
     started_at = datetime.now(UTC)
     tag = "-chats" if archive else ""
     run_id = f"{mode}-{prompt}{tag}-{chat.model}-s{seed}-{started_at:%Y%m%dT%H%M%S%f}"
     usage = Usage()
 
-    # Paper protocol: initial prompt, model replies "ready", then game output each turn.
-    messages: list[MessageParam] = [{"role": "user", "content": INITIAL_PROMPTS[prompt]}]
+    # Both modes use the paper prompt and readiness turn. Harness mode appends only
+    # the exact driver-selected manifest and rebuilds a stateless prompt every move.
+    initial_prompt = (
+        INITIAL_PROMPTS[prompt]
+        if mode == "paper"
+        else harness_builder.build_prompt(run_id, 0, harness_version)
+    )
+    messages: list[MessageParam] = [{"role": "user", "content": initial_prompt}]
     ack = chat.complete(messages, archive)
     usage.add(ack.usage)
     messages.extend(ack.transcript)
@@ -232,7 +252,8 @@ def play(
     end_reason: EndReason = "cap"
 
     with GameAdapter(story_file) as game:
-        messages.append({"role": "user", "content": game.reset(seed)})
+        observation = game.reset(seed)
+        messages.append({"role": "user", "content": observation})
 
         for n in range(1, move_cap + 1):
             if usage.cost(chat.model) >= usd_cap:
@@ -240,6 +261,16 @@ def play(
                 break
 
             t0 = time.monotonic()
+            if mode == "harness":
+                move_prompt = harness_builder.build_prompt(run_id, n, harness_version)
+                messages = [
+                    {
+                        "role": "user",
+                        "content": move_prompt,
+                    },
+                    *ack.transcript,
+                    {"role": "user", "content": observation},
+                ]
             reply = chat.complete(messages, archive)
             latency_ms = int((time.monotonic() - t0) * 1000)
             usage.add(reply.usage)
@@ -260,6 +291,7 @@ def play(
                 # Blocked (save/restore/restart/empty): the model sees why; the game doesn't move.
                 text = f"[Not allowed: {exc}]"
                 sink.move(_move(run_id, n, command, proposals, text, score, 0, False, latency_ms))
+                observation = text
                 messages.append({"role": "user", "content": text})
                 continue
 
@@ -269,6 +301,7 @@ def play(
             died = result["done"] and "you have died" in text.casefold()
             sink.move(_move(run_id, n, command, proposals, text, score, delta, died, latency_ms))
             messages.append({"role": "user", "content": text or "(no output)"})
+            observation = text or "(no output)"
 
             if result["done"]:
                 if died:
@@ -279,7 +312,7 @@ def play(
 
     record = RunRecord(
         run_id=run_id,
-        version_id=None,
+        version_id=None if version is None else version.version_id,
         mode=mode,
         prompt=prompt,
         model=chat.model,
@@ -305,6 +338,52 @@ def play(
     if archive is not None:
         archive.save(run_id, messages)
     return record
+
+
+def play_harness_chain(
+    games: int,
+    *,
+    driver: BetweenGameDriver,
+    repository: PromptRepository,
+    chat: Chat,
+    sink: Sink,
+    seed: int,
+    move_cap: int,
+    prompt: PromptName = "basic",
+    usd_cap: float = 15.0,
+    story_file: str | Path = DEFAULT_STORY_FILE,
+    facts: Callable[[WorldFactDoc], None] | None = None,
+) -> ChainCursor:
+    """Run sequential harness games through ``BetweenGameDriver.run``.
+
+    The callback loads the exact version ID supplied by the driver, constructs
+    every game prompt from that immutable manifest, and relies on ``play`` to
+    persist the fully attributed run before returning it to the driver.
+    """
+    from .driver import ChainCursor
+    from .harness import play_harness
+
+    def play_game(version_id: str, game_index: int) -> RunRecord:
+        version = repository.get_version(version_id)
+        if version is None:
+            raise LookupError(f"driver selected unknown harness version: {version_id}")
+        return play_harness(
+            seed,
+            move_cap,
+            chat=chat,
+            sink=sink,
+            usd_cap=usd_cap,
+            story_file=story_file,
+            version=version,
+            repository=repository,
+            facts=facts,
+            chain=driver.chain,
+            game_index=game_index,
+            prompt=prompt,
+        )
+
+    cursor = driver.run(games, play_game)
+    return ChainCursor(version_id=cursor.version_id, game_index=cursor.game_index)
 
 
 def _move(

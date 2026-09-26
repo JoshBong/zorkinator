@@ -1,7 +1,11 @@
 # Inner loop design (Seb)
 
-Status: agreed direction (2026-09-26). The code isn't built yet. This file describes harness mode for one game. Between games, see
+Status: initial implementation integrated (2026-09-26). This file describes harness mode for one game. Between games, see
 [OUTER_LOOP_MEMORY.md](OUTER_LOOP_MEMORY.md) (Elliott). For shapes and signatures, [CONTRACTS.md](CONTRACTS.md) is still the authority.
+
+Development and smoke runs now target the OpenAI API through `OPENAI_API_KEY` and
+`OPENAI_TEST_MODEL` (default `gpt-5.6-luna`). The `Chat` protocol is provider-neutral, but the OpenAI transport
+adapter is still required; all LLM roles in one run must use the same exact model.
 
 ## Objective
 
@@ -17,12 +21,12 @@ route or walk the map exhaustively.
 outer loop, n iterations (Elliott)
   version = root (empty map, empty items, empty objectives)
   for i in 1..n:
-      run = play("harness", seed, 500, version_id=version)      # inner loop, below
+      run = play_harness(seed, 500, version=manifest)             # inner loop, below
       proposal = reflector.propose(run.run_id)                   # what to keep from this game
       version = versions.commit(version, proposal, run.run_id)   # publishes the child version
 
 inner loop, one game (Seb)
-  world = WorldModel.load(version_id)       # KB snapshot from the version + empty per-game state
+  world = WorldModel.empty(run_id)          # empty per-game state; exact manifest is in the prompt
   text = adapter.reset(seed); scribe.observe(world, 0, None, text)
   for n in 1..500:
       prompt = builder.build_prompt(world, n)
@@ -43,9 +47,10 @@ change. The limit is tunable and starts at 40 moves, matching the existing `stuc
 
 ## Knowledge bases
 
-There are two layers. **Working KBs** live in memory during a game. They start from the version's memories and get
-filled in move by move. **Version memories** in Atlas are the only thing that carries between games, and only
-the outer loop writes them.
+There are two layers. **Working KBs** live in memory during a game and fill up move by move. The exact immutable
+version manifest is placed in the cached prompt prefix. Hydrating its structured map/item/objective memories into
+the working dataclasses is still follow-up work. **Version memories** in Atlas are the only thing that carries
+between games, and only the outer loop writes them.
 
 | KB | Working (per game) | Carried across games as memory `kind` |
 |---|---|---|
@@ -126,15 +131,15 @@ The aim is creative play that learns, not raising the score through search or me
 
 | With | What | Status |
 |---|---|---|
-| Josh | Harness branch of `runner.play`, which calls these modules. `parser.parse`, `verifier.check`. Add `"stuck"` to `RunRecord.end_reason` (the contract lists `stuck40`; the model doesn't have it). | Stubs until built |
-| Elliott | `memories.recall(version_id, kinds=…, subjects=…)` to load the KBs. Memory kinds `room`, `map_edge`, `item`, `objective`, `hypothesis`, `run_summary`. The Reflector reads `world_facts` plus `moves` as evidence. | Interface exists in `db.py` |
-| Himali | A Mongo `Sink` and `world_facts` writes | Branch `himali/atlas-db-layer` |
+| Josh | `parser.parse`, `verifier.check`, and the fixed promotion implementation. | Parser/verifier integration remains |
+| Elliott | `BetweenGameDriver.run` supplies one exact version; `build_version_context` resolves only its memory/rule refs. The Reflector reads `world_facts` plus `moves` as evidence. | Integrated |
+| Himali | `MongoSink`, `world_facts` writes, immutable version storage, and Atlas `recall_scored` Vector Search. | Integrated |
 
 ## Build order
 
-1. Working KB dataclasses, plus `WorldModel.load` from an empty version, so game 1 can run without Atlas.
-2. `builder`, `player` (on the existing `AnthropicChat`), code-only `scribe`, `monitor`. Run a 20-move smoke game on real Jericho
-   with a JSONL sink.
-3. The first-visit LLM extraction in the scribe; the `Goal:` line; the leads block.
-4. Load from a version through `memories.recall`, and write `world_facts` to Atlas.
-5. With Elliott: a two-game chain in which a fact seen in game 1 shows up in game 2's prompt, labelled as coming from memory.
+1. **Done:** working KB dataclasses plus an empty game-1 world.
+2. **Done:** `builder`, `player`, code-only `scribe`, `monitor`, and a 20-move-cap harness path.
+3. **Partial:** `Goal:` and leads are implemented; first-visit LLM extraction remains optional follow-up.
+4. **Done at the boundary:** exact manifest memory is included in the prompt and `world_facts` writes to Atlas.
+   Structured hydration into the working KB remains.
+5. **Done:** the between-game driver supplies the child manifest to game 2; the Atlas smoke verified isolation.

@@ -265,7 +265,7 @@ class OuterLoopStore(Protocol):
 
 
 class MongoOuterLoopStore:
-    """PyMongo implementation with exact-version visibility and idempotent writes."""
+    """Production outer-loop repository over runs, moves, versions, rules, and memories."""
 
     def __init__(
         self,
@@ -353,6 +353,31 @@ class MongoOuterLoopStore:
                 and "duplicate" not in str(exc).casefold()
             ):
                 raise
+
+    def get_run(self, run_id: str) -> RunRecord | None:
+        """Load one completed run for reflection or version evidence validation."""
+        raw = self._database.runs.find_one({"_id": run_id})
+        return None if raw is None else RunRecord.model_validate(_without_id(raw))
+
+    def get_moves(self, run_id: str) -> list[MoveRecord]:
+        """Load a run's public transcript in move order."""
+        cursor = self._database.moves.find({"run_id": run_id}).sort("n", ASCENDING)
+        return [MoveRecord.model_validate(_without_id(raw)) for raw in cursor]
+
+    def has_move(self, run_id: str, n: int) -> bool:
+        """Return whether an exact persisted move exists for a cited evidence reference."""
+        return self._database.moves.find_one({"run_id": run_id, "n": n}, {"_id": 1}) is not None
+
+    def get_rules(self, rule_ids: Sequence[str]) -> list[RuleDoc]:
+        """Resolve exactly the rules named by a version manifest, preserving its order."""
+        if not rule_ids:
+            return []
+        raws = self._database.rules.find({"_id": {"$in": list(rule_ids)}})
+        rules_by_id = {raw["_id"]: _model(RuleDoc, raw, "id") for raw in raws}
+        missing = [rule_id for rule_id in rule_ids if rule_id not in rules_by_id]
+        if missing:
+            raise ValueError(f"version references missing rules: {', '.join(missing)}")
+        return [rules_by_id[rule_id] for rule_id in rule_ids]
 
     def record_proposal(
         self,

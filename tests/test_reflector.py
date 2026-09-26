@@ -4,7 +4,10 @@ import json
 import unittest
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
+from unittest.mock import MagicMock
+
+import anthropic
 
 from zorkinator.models import (
     HarnessVersionRecord,
@@ -16,6 +19,7 @@ from zorkinator.models import (
     RunRecord,
 )
 from zorkinator.reflector import (
+    AnthropicReflectionModel,
     ReflectionError,
     ReflectionModelResponse,
     Reflector,
@@ -119,6 +123,48 @@ class FakeModel:
 
 
 class ReflectorTests(unittest.TestCase):
+    def test_anthropic_transport_normalizes_usage_without_sampling_overrides(self) -> None:
+        client = MagicMock()
+        response = MagicMock()
+        response.content = [MagicMock(type="text", text='{"summary":"ok"}')]
+        response.usage.input_tokens = 11
+        response.usage.output_tokens = 7
+        response.usage.cache_creation_input_tokens = None
+        response.usage.cache_read_input_tokens = 3
+        client.messages.create.return_value = response
+        model = AnthropicReflectionModel(
+            "test-model", client=cast(anthropic.Anthropic, client), max_tokens=321
+        )
+
+        result = model.generate("reflect this")
+
+        self.assertEqual(result.content, '{"summary":"ok"}')
+        self.assertEqual(
+            result.usage,
+            {
+                "input_tokens": 11,
+                "output_tokens": 7,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 3,
+            },
+        )
+        kwargs = client.messages.create.call_args.kwargs
+        self.assertEqual(kwargs["model"], "test-model")
+        self.assertEqual(kwargs["max_tokens"], 321)
+        self.assertEqual(kwargs["messages"], [{"role": "user", "content": "reflect this"}])
+        self.assertNotIn("output_config", kwargs)
+        self.assertNotIn("temperature", kwargs)
+
+    def test_anthropic_transport_rejects_empty_content(self) -> None:
+        client = MagicMock()
+        response = MagicMock()
+        response.content = []
+        client.messages.create.return_value = response
+        model = AnthropicReflectionModel("test-model", client=cast(anthropic.Anthropic, client))
+
+        with self.assertRaisesRegex(ReflectionError, "no text content"):
+            model.generate("reflect this")
+
     def test_proposes_from_public_packet_and_records_before_return(self) -> None:
         repository = FakeRepository(run(), [move(1), move(2, died=True)])
         model = FakeModel(

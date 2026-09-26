@@ -33,6 +33,10 @@ md5 games/zork1.z5                  # b732a93a6244ddd92a9b9a3e3a46c687
 cp .env.example .env                # then fill in keys
 ```
 
+For development and smoke tests, set `OPENAI_API_KEY` and optionally
+`OPENAI_TEST_MODEL` (default: `gpt-5.6-luna`). Keep credentials only in `.env`; never commit or print them.
+The currently recorded benchmark model remains separate—see [`docs/DECISIONS.md`](docs/DECISIONS.md).
+
 Check Jericho works:
 
 ```bash
@@ -75,5 +79,6 @@ Coding agents: start at [`AGENTS.md`](AGENTS.md).
 - [`docs/CONTRACTS.md`](docs/CONTRACTS.md): Mongo shapes and function signatures (authority)
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): what's decided and what's still proposed
 - [`docs/ARCHITECTURE_MAP.md`](docs/ARCHITECTURE_MAP.md): components, data flow, rule format, team split
+- [`docs/INTEGRATION_HANDOFF.md`](docs/INTEGRATION_HANDOFF.md): outer-loop next work and inner-loop integration boundary
 - [`docs/DESIGN.md`](docs/DESIGN.md): claim, ground rules, results to show
 - [`docs/PRIOR_ART.md`](docs/PRIOR_ART.md): ZorkGPT and jev-zork, and what we learned from them

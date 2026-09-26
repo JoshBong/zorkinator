@@ -63,6 +63,8 @@ J  verifier.check(cmd, state, version) -> {ok, rule_id, reason, hard}
 C  reflector.propose(run_id) -> ReflectionProposal              # once per game
 J  verifier.promote(rule, runs) -> "hard"|"soft"                 # death replay + false-positive replay over logged moves
 C  versions.commit(parent_id, proposal, run_id) -> version_id    # calls verifier.promote
+C  driver.ensure_cold_root() -> version_id                        # empty manifest, isolated per chain
+C  driver.run(games, play_game) -> ChainCursor                   # resume: game -> reflect -> commit -> next game
 C  memories.read(version_id, memory_id) -> MemoryRevision | None
 C  memories.recall(version_id, *, query=None, subjects=None, kinds=None, limit=10)
       -> list[MemoryRevision]                                    # exact version only, substring query
@@ -73,6 +75,12 @@ H  memories.recall_scored(version_id, query, *, subjects=None, kinds=None, limit
 ReflectionProposal = {proposal_id, run_id, parent_id, memory_ops, rule_diffs, summary}
 memory_ops = Add | Revise | Retire; add/revise carry complete payloads and public evidence.
 All memory is advisory. Only verifier.promote can grant blocking authority to a rule.
+
+`driver.run` is the sequential harness boundary. Its `play_game(version_id, game_index)` callback must
+persist and return a completed harness `RunRecord` with that exact `version_id`, the driver's `chain`, and a
+contiguous zero-based `game_index`. The driver gives the committed child version to the next game; it reuses a
+persisted proposal after restart and enforces the configured per-chain reflection-call/USD budget. A cold root
+has no rules or memories, so experiments never inherit another chain's state.
 
 ## Fixed
 same model every call · same seed for game 1 and game N · no SAVE/RESTORE/RESTART

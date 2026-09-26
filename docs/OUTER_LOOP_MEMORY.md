@@ -181,14 +181,25 @@ The same proposal committed twice returns the same version ID. Two different pro
 
 Reject wrong source-run/parent associations, unknown memory IDs, stale expected revisions, duplicate operations, missing evidence, cross-experiment references, unsupported payload types, and exceeded limits before publication. Validation failure preserves the parent unchanged. A failed batch never grants hard-rule authority through memory content.
 
-## Implementation plan and acceptance checks
+## Implementation status and acceptance checks
 
-1. Coordinate and amend `CONTRACTS.md`: proposal type, memory read interface, three collection shapes/extensions, lesson compatibility, and open-ended persistence policy.
-2. Add strict typed envelope/operation models, retaining flexible bounded JSON content. Stub Reflector output and exercise a fake proposal end to end.
-3. Implement immutable persistence, exact-version reads, retirement, experiment isolation, and idempotent publication through Himali's DB interface.
-4. Implement bounded public-evidence assembly and the real structured Reflector call. Configure input/output, operation-count, content-size, and cost limits in fixed code; exact initial values remain tuning parameters.
-5. Integrate rule promotion separately and hand the published version ID to the next-game orchestrator. Coordinate version-scoped memory consumption with Seb.
-6. Verify with synthetic transcripts: add → retrieve in child; revise → parent unchanged; retire → absent only in child; retry → same version; unrelated cold experiment → no memories; invalid evidence/stale revision → no publication; failure between staging/publication → parent still usable.
-7. Run the required 20-move integration smoke games: an observed fact becomes a cited memory after game 1 and is available to game 2 under the published child. Check the earlier game's memory view remains exactly reproducible.
+Completed: `CONTRACTS.md` carries the collection/interface amendments; strict operation and revision models,
+immutable Atlas persistence, exact-version reads, evidence validation, bounded reflection, and idempotent version
+publication are implemented. `BetweenGameDriver` creates a cold root per chain, reuses a persisted proposal after
+restart, enforces a persisted reflection budget, and hands each committed child version to the next callback.
+The harness runner now consumes the exact callback version, persists the driver's chain cursor fields, and has
+completed the required two-game, 20-move Atlas smoke chain without cross-experiment memory leakage.
+
+Still required before claiming the complete self-improving harness:
+
+1. Validate complete rule diffs before recording the deterministic proposal, so a malformed persisted proposal
+   cannot leave a chain at a permanently rejected boundary.
+2. Integrate rule promotion through Josh's fixed verifier; memory content remains advisory until then.
+3. Integrate parser, scribe, player retry, verifier checks, and stuck monitoring into the version-scoped callback.
+4. Record the chain/run/version IDs and rule/memory diff in the replay view so the demo can show why a death was
+   avoided.
+
+See [`INTEGRATION_HANDOFF.md`](INTEGRATION_HANDOFF.md) for the callback contract, ownership boundary, verified
+smoke evidence, known limitations, and prioritized next work.
 
 Success is persistent, evidence-backed learning with an auditable version boundary. Automatic usefulness scoring, vector retrieval, policy self-modification, and inner-loop stall recovery are not required to establish that boundary.

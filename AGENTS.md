@@ -52,8 +52,10 @@ First step for everyone: a stub of your functions that returns plausible fake da
 ## Practical
 
 - Setup: see `README.md`. Python 3.11 (Jericho breaks on 3.14). `zork1.z5` md5 must be `b732a93a6244ddd92a9b9a3e3a46c687`.
-- Models: `claude-sonnet-4-5-20250929` (primary), `claude-opus-4-5-20251101` (headline). Anthropic Python SDK v1+:
-  **do not pass `temperature`/`top_p`/`top_k`** — it raises `TypeError`.
+- Development and smoke tests use `OPENAI_API_KEY` with `OPENAI_TEST_MODEL` (default `gpt-5.6-luna`). The OpenAI
+  transport adapter must be used; never pass the OpenAI key to the Anthropic client or silently fall back providers.
+- Recorded benchmark/headline models remain as documented in `docs/DECISIONS.md`. For legacy Anthropic runs,
+  **do not pass `temperature`/`top_p`/`top_k`** to the Anthropic Python SDK v1+; it raises `TypeError`.
 - Keep the per-move prompt small: no chat history; state comes from Atlas each move. Put fixed text first so prompt caching works.
 - Per-run dollar cap and a stop after 40 moves without a score change (in `runner.play`).
 - Smoke-test everything on 20-move games before any long run.

@@ -38,6 +38,7 @@ flips between **paper mode** (the paper's bare loop) and **harness mode**. Any s
  │     new soft rules · lessons · context-policy changes · tool on/off                 │
  │  [4 Verifier: promotion check] soft -> hard only with evidence                      │
  │  [10 Version Manager] validity gate -> save new harness_version (parent + scores)   │
+ │  [13 Between-game Driver] resumes one cold chain and passes each child to its game  │
  └─────────────────────────────────────────────────────────────────────────────────────┘
    [11 Run Manager] parallel games, seeds, $ caps      [12 Live View] change stream on moves
 ```
@@ -61,6 +62,7 @@ flips between **paper mode** (the paper's bare loop) and **harness mode**. Any s
 | 10 | Version Manager | code, **fixed** | Applies accepted diffs, checks the result is valid, saves a new version with its parent and scores. Picks the version for the next game. | harness_versions | harness_versions |
 | 11 | Run Manager | code, **fixed** | Runs games in parallel, sets seeds, enforces per-run $ cap, logs every run | | runs |
 | 12 | Live View | UI | Change stream on `moves`: game text, world map, rejections, rule promotions, score vs the paper's ~75 line | moves, rules | |
+| 13 | Between-game Driver | code, **fixed** | Creates an empty, experiment-isolated root; for each persisted harness game, reflects once, commits idempotently, and supplies the child version to the next game. Resumes without repeating a persisted proposal and stops new reflection at the chain budget. | runs, memory_events, harness_versions | harness_versions, memory_events |
 
 ---
 
@@ -148,8 +150,9 @@ Game 1: all off, or all on. The Reflector toggles them per version based on use 
 2. Parser + Scribe + Context Builder -> harness plays with memory, no rules
 3. Verifier (repeat detection first, then rules) + Reflector + promotion
 4. Progress Monitor + Planner
-5. Tool pool + Version Manager
-6. Live View
+5. Version Manager + Between-game Driver; wire the game runner callback to persist each version-scoped game
+6. Run a 20-move, two-game harness smoke chain and verify game 2 receives only game 1's committed manifest
+7. Live View
 Each step is a working, demoable harness. Cut from the bottom if time runs out.
 
 ---

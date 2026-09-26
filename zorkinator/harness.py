@@ -11,8 +11,10 @@ from typing import Literal
 
 from . import builder, player, scribe
 from .adapter import DEFAULT_STORY_FILE, GameAdapter
-from .models import MoveRecord, RunRecord, WorldFactDoc
+from .builder import PromptRepository
+from .models import HarnessVersionRecord, MoveRecord, RunRecord, WorldFactDoc
 from .monitor import STUCK_AFTER, Monitor
+from .prompts import PromptName
 from .runner import BASELINE_MODEL, MAX_SCORE, AnthropicChat, Chat, JsonlSink, Sink, Usage
 from .world import WorldModel
 
@@ -29,15 +31,27 @@ def play_harness(
     usd_cap: float = 15.0,
     story_file: str | Path = DEFAULT_STORY_FILE,
     version_id: str | None = None,
+    version: HarnessVersionRecord | None = None,
+    repository: PromptRepository | None = None,
     facts: FactWriter | None = None,
     stuck_after: int = STUCK_AFTER,
     chain: str | None = None,
     game_index: int | None = None,
+    prompt: PromptName = "basic",
 ) -> RunRecord:
     """Play one harness game and log every move. ``facts`` receives world_facts upserts
     (e.g. ``db.upsert_world_fact``); without it they are dropped."""
     started_at = datetime.now(UTC)
     run_id = f"harness-{chat.model}-s{seed}-{started_at:%Y%m%dT%H%M%S%f}"
+    if version is not None:
+        if version_id is not None and version_id != version.version_id:
+            raise ValueError("version_id does not match the exact version manifest")
+        if repository is None:
+            raise ValueError("an exact version manifest requires its repository")
+        version_id = version.version_id
+        version_context = builder.build_version_context(run_id, version, repository=repository)
+    else:
+        version_context = ""
     world = WorldModel.empty(run_id)  # TODO(Seb): WorldModel.load(run_id, version_id, store)
     monitor = Monitor(stuck_after=stuck_after)
     usage = Usage()
@@ -63,9 +77,16 @@ def play_harness(
                 end_reason = "usd_cap"
                 break
 
-            prompt = builder.build_prompt(world, n, output, status)
+            move_prompt = builder.build_prompt(
+                world,
+                n,
+                output,
+                status,
+                version_context=version_context,
+                prompt=prompt,
+            )
             t0 = time.monotonic()
-            proposal = player.propose(chat, prompt)
+            proposal = player.propose(chat, move_prompt)
             latency_ms = int((time.monotonic() - t0) * 1000)
             usage.add(proposal.usage)
             moves = n
@@ -123,7 +144,7 @@ def play_harness(
         run_id=run_id,
         version_id=version_id,
         mode="harness",
-        prompt="basic",
+        prompt=prompt,
         model=chat.model,
         seed=seed,
         move_cap=move_cap,

@@ -31,7 +31,7 @@ Inner loop builds map/facts/notes from scratch each game (`world_facts` keyed by
 
 The latest outer-loop discussion permits storing whatever human-visible knowledge the agent finds useful across games, including maps, routes, hypotheses, and procedures. This revises the intended general-only/no-room-name direction above. Memory remains advisory; hard blocking still requires the fixed promotion procedure. Atlas stores evidence separately from versioned memory interpretations, and cold experiments must not inherit prior experiment memories.
 
-The proposed interface, immutable revision schema, version manifests, and implementation plan are documented in [OUTER_LOOP_MEMORY.md](OUTER_LOOP_MEMORY.md). Those concrete schema/signature changes require coordination with Josh, Himali, and Seb and an accompanying `CONTRACTS.md` amendment before implementation; this decision entry does not silently change the current shared contract.
+The immutable revision schema, version manifests, and implementation status are documented in [OUTER_LOOP_MEMORY.md](OUTER_LOOP_MEMORY.md), and the shared shapes/signatures are now in `CONTRACTS.md`. Durable Reflector, versioning, Atlas access, the restart-safe between-game driver, exact-manifest prompt construction, and the Atlas smoke chain are implemented. Remaining outer/inner integration work is tracked in [INTEGRATION_HANDOFF.md](INTEGRATION_HANDOFF.md).
 
 ## 2026-09-26 — Benchmark model = Claude Haiku 4.5; 10 chains x 10 games (by Josh Huang)
 
@@ -42,3 +42,17 @@ We benchmark against our own baselines, not the paper's number, so every conditi
 The first version starts with an empty map, an empty item knowledge base and no objective notes. The outer loop runs n games. After each one it turns what was learned into versioned memories (kinds `room`, `map_edge`, `item`, `objective`, `hypothesis`, `run_summary`), and the next game starts from that version. Each inner-loop move injects location, exits, inventory, the model's own goal and open leads into a fresh prompt. A game ends at 500 moves, at death, on "I give up", or when the monitor finds no progress (new room, item, interaction or score change) for too long.
 
 To keep play exploratory rather than a brute-force search or memorization: leads come only from the game text (never untried compass directions or valid actions); the prompt shows what was already tried and favors new actions and unexamined items; repetition triggers a warning, not a block; raw command sequences from earlier games never enter the prompt. The score is reported, never optimized directly. Design: [INNER_LOOP.md](INNER_LOOP.md).
+
+## 2026-09-26 — Development and smoke tests use the OpenAI key and cheapest supported GPT model
+
+From this point forward, model-backed development tests and smoke chains use `OPENAI_API_KEY`, not the Anthropic
+key. The default test model is `gpt-5.6-luna`, currently documented by OpenAI as the cost-sensitive model for
+high-volume workloads. Configure it through `OPENAI_TEST_MODEL` so the test default can be updated without
+changing benchmark records when availability or pricing changes.
+
+This does not silently rewrite the benchmark result above: published comparison runs keep their recorded model
+until the benchmark owner explicitly changes that decision. Within any individual run, player, scribe, planner,
+and reflector must still use the same provider and exact model. Never fall back between providers mid-chain.
+Keys remain in `.env`, are gitignored, and must never be logged or committed.
+
+Reference: [OpenAI API model guide](https://platform.openai.com/docs/models).

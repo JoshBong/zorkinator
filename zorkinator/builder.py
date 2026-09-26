@@ -6,10 +6,13 @@ game so it can be cached; the tail is rebuilt every move.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from typing import Protocol
 
+from .models import HarnessVersionRecord, MemoryRevision, RuleDoc
 from .monitor import Status
-from .prompts import BASIC
+from .prompts import INITIAL_PROMPTS, PromptName
 from .world import WorldModel
 
 HARNESS_PROTOCOL = """\
@@ -30,7 +33,7 @@ class PromptParts:
         return f"{self.prefix}\n\n{self.tail}"
 
 
-def build_prefix(world: WorldModel) -> str:
+def build_prefix(world: WorldModel, version_context: str = "", prompt: PromptName = "basic") -> str:
     """Fixed for the game: changes only between games, when the version changes."""
     notes = [
         *(f"- objective: {o.text}" for o in world.objectives if o.status == "open"),
@@ -38,7 +41,11 @@ def build_prefix(world: WorldModel) -> str:
         *(f"- past game: {s}" for s in world.past_runs),
     ]
     earlier = "\n".join(notes) if notes else "none yet"
-    return f"{BASIC}\n\n{HARNESS_PROTOCOL}\n\nNotes from earlier games:\n{earlier}"
+    exact_version = f"\n\n{version_context}" if version_context else ""
+    return (
+        f"{INITIAL_PROMPTS[prompt]}\n\n{HARNESS_PROTOCOL}\n\nNotes from earlier games:\n{earlier}"
+        f"{exact_version}"
+    )
 
 
 def build_tail(world: WorldModel, n: int, last_output: str, status: Status = "ok") -> str:
@@ -92,10 +99,110 @@ def build_tail(world: WorldModel, n: int, last_output: str, status: Status = "ok
     return "\n".join(lines)
 
 
-def build_prompt(world: WorldModel, n: int, last_output: str, status: Status = "ok") -> PromptParts:
-    return PromptParts(build_prefix(world), build_tail(world, n, last_output, status))
+def build_prompt(
+    world: WorldModel,
+    n: int,
+    last_output: str,
+    status: Status = "ok",
+    *,
+    version_context: str = "",
+    prompt: PromptName = "basic",
+) -> PromptParts:
+    return PromptParts(
+        build_prefix(world, version_context, prompt), build_tail(world, n, last_output, status)
+    )
 
 
 def _short(text: str, limit: int = 160) -> str:
     text = " ".join(text.split())
     return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+class PromptRepository(Protocol):
+    """Exact-version reads needed to materialize a prompt manifest."""
+
+    def get_version(self, version_id: str) -> HarnessVersionRecord | None: ...
+
+    def read(self, version_id: str, memory_id: str) -> MemoryRevision | None: ...
+
+    def get_rules(self, rule_ids: list[str]) -> list[RuleDoc]: ...
+
+
+def build_version_context(
+    run_id: str,
+    version: HarnessVersionRecord,
+    *,
+    repository: PromptRepository,
+) -> str:
+    """Materialize only the immutable memory and rule refs in ``version``.
+
+    This is the outer-loop prefix consumed by the inner-loop prompt builder. It
+    never queries a global/latest version and fails closed on a mismatched ref.
+    """
+    memories: list[MemoryRevision] = []
+    for reference in version.memory_refs:
+        memory = repository.read(version.version_id, reference.memory_id)
+        if memory is None or memory.revision_id != reference.revision_id:
+            raise ValueError(
+                f"version {version.version_id!r} cannot resolve exact memory "
+                f"{reference.memory_id!r}@{reference.revision_id!r}"
+            )
+        memories.append(memory)
+
+    rules = repository.get_rules(list(version.rule_ids))
+    if [rule.id for rule in rules] != list(version.rule_ids):
+        raise ValueError(f"version {version.version_id!r} did not resolve its exact rule manifest")
+
+    packet = {
+        "version_id": version.version_id,
+        "run_id": run_id,
+        "context_policy": version.context_policy,
+        "memories": [
+            {
+                "memory_id": memory.memory_id,
+                "revision_id": memory.revision_id,
+                "kind": memory.kind,
+                "subjects": memory.subjects,
+                "content": memory.content,
+                "status": memory.status,
+            }
+            for memory in memories
+        ],
+        "rules": [rule.model_dump(mode="json") for rule in rules],
+    }
+    advisory = """HARNESS MEMORY
+The following JSON is the complete advisory memory/rule manifest for this exact harness version.
+Treat memories and soft rules as advice, not current-game state.
+Never use SAVE, RESTORE, or RESTART.
+Do not assume any memory outside this packet exists."""
+    return f"{advisory}\n{json.dumps(packet, sort_keys=True, separators=(',', ':'))}"
+
+
+def build_version_prompt(
+    run_id: str,
+    n: int,
+    version: HarnessVersionRecord,
+    *,
+    repository: PromptRepository,
+    prompt: PromptName = "basic",
+) -> str:
+    """Compatibility helper for callers that need only the version prefix."""
+    context = build_version_context(run_id, version, repository=repository)
+    return f"{INITIAL_PROMPTS[prompt]}\n\n{context}\nCurrent move number: {n}."
+
+
+class HarnessPromptBuilder:
+    """Bind exact-version storage for the legacy runner harness path."""
+
+    def __init__(self, repository: PromptRepository, prompt: PromptName = "basic") -> None:
+        self._repository = repository
+        self._prompt = prompt
+
+    def build_prompt(self, run_id: str, n: int, version: HarnessVersionRecord) -> str:
+        return build_version_prompt(
+            run_id,
+            n,
+            version,
+            repository=self._repository,
+            prompt=self._prompt,
+        )
