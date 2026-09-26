@@ -54,6 +54,10 @@ class MoveRecord(ContractModel):
     died: StrictBool
     latency_ms: NonNegativeInt
     ts: datetime
+    # Harness only (docs/DECISIONS.md "Learn from surprises"): the Player's predicted outcome, and
+    # its own verdict on the next move of whether the real outcome surprised it.
+    expected: StrictStr | None = None
+    surprise: StrictBool | None = None
 
 
 class RunRecord(ContractModel):
