@@ -60,3 +60,26 @@ and reflector must still use the same provider and exact model. Never fall back 
 Keys remain in `.env`, are gitignored, and must never be logged or committed.
 
 Reference: [OpenAI API model guide](https://platform.openai.com/docs/models).
+
+## 2026-09-26 — Atlas outer loop: publish atomically, retrieve version-safely, measure from existing evidence
+
+The outer loop will keep Atlas narrowly focused on correctness, retrieval, and demonstrable evidence:
+
+1. **Atomic version publication is required.** A committed child version, its immutable memory revisions,
+   and its terminal `memory_events` audit record are one transaction. The existing transaction-backed
+   publication path is the required path; a reader may treat only a committed `harness_versions` manifest
+   as visible knowledge.
+2. **Exact-version membership is the retrieval authority.** `recall_scored()` may use Atlas Vector Search
+   only to rank immutable revisions referenced by the requested version's manifest. Similarity, subjects,
+   kinds, or Atlas filter fields must never surface a historical, sibling-experiment, or uncommitted memory.
+3. **Build a compact per-game evaluation query/view from existing `runs`, `memory_events`, and
+   `harness_versions`.** It must report score, end reason/death move, cost, published memory/rule diff
+   counts, and retrieval scores when available. This is the source for the learning curve and replay
+   explanation; it does not introduce a second mutable "current knowledge" store.
+4. **Do not add Atlas Stream Processing, Online Archive, time-series collections, or Database Triggers to
+   the learning critical path.** They add deployment and asynchronous-failure surface without improving the
+   sequential reflect → validate → commit → next-game boundary. The existing change stream remains for the
+   live/replay view only.
+
+This refinement changes no LLM authority: memories remain advisory and only the fixed verifier promotion
+path may make a rule blocking. It also preserves the human-visible-information boundary.

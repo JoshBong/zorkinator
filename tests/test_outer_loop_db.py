@@ -12,8 +12,10 @@ from pymongo.errors import DuplicateKeyError
 
 from zorkinator.db import MongoOuterLoopStore
 from zorkinator.models import (
+    AddMemoryOperation,
     EvidenceRef,
     HarnessVersionRecord,
+    MemoryEvent,
     MemoryRef,
     MemoryRevision,
     MoveRecord,
@@ -22,6 +24,7 @@ from zorkinator.models import (
     RuleDoc,
     RunRecord,
 )
+from zorkinator.versions import _proposal_revision_ids, _stable_id
 
 NOW = datetime(2026, 9, 26, tzinfo=UTC)
 
@@ -290,6 +293,119 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
             ):
                 self.store.recall("v2", limit=invalid_limit)
 
+    def test_scored_recall_rechecks_manifest_membership_after_atlas(self) -> None:
+        active = revision()
+        inactive = revision("memrev_old", text="Historical sibling memory.")
+        self.database.harness_versions.find_one.return_value = mongo_document(
+            version(), "version_id"
+        )
+        inactive_doc = mongo_document(inactive, "revision_id")
+        inactive_doc["_vectorSearchScore"] = 0.99
+        active_doc = mongo_document(active, "revision_id")
+        active_doc["_vectorSearchScore"] = 0.75
+        self.database.memories.aggregate.return_value = [inactive_doc, active_doc]
+
+        results = self.store.recall_scored("v2", "path")
+
+        self.assertEqual(results, [(active, 0.75)])
+
+    def test_direct_publication_rejects_non_root_version(self) -> None:
+        with self.assertRaisesRegex(ValueError, "non-root versions require atomic"):
+            self.store.publish_version(version())
+        self.database.__getitem__.assert_not_called()
+
+    def test_atomic_bundle_requires_matching_terminal_event(self) -> None:
+        client = MagicMock()
+        store = MongoOuterLoopStore(cast(Database[dict[str, Any]], self.database), client=client)
+
+        with self.assertRaisesRegex(ValueError, "matching committed event"):
+            store.publish_bundle(version(), [revision()], [], [])
+
+        client.start_session.assert_not_called()
+
+    def test_game_evaluation_counts_only_published_committed_diffs(self) -> None:
+        run = RunRecord(
+            run_id="run_1",
+            version_id="v1",
+            mode="harness",
+            prompt="basic",
+            model="test-model",
+            seed=1,
+            move_cap=10,
+            score=12,
+            moves=4,
+            died=True,
+            death_move=4,
+            end_reason="death",
+            tokens_in=10,
+            tokens_out=2,
+            tokens_cache_write=0,
+            tokens_cache_read=0,
+            cost_usd=0.03,
+            started_at=NOW,
+            ended_at=NOW,
+            chain="chain_1",
+            game_index=0,
+        )
+        operation = AddMemoryOperation(
+            op="add",
+            key="path",
+            kind="map_edge",
+            subjects=["room_a"],
+            content={"text": "A path leads north."},
+            status="supported",
+            evidence=[EvidenceRef(run_id="run_1", n=3)],
+            rationale="Observed directly.",
+        )
+        proposal = ReflectionProposal(
+            proposal_id="proposal_1",
+            run_id="run_1",
+            parent_id="v1",
+            memory_ops=[operation],
+            rule_diffs=[
+                {
+                    "op": "add",
+                    "key": "fatal",
+                    "text": "Avoid fatal action.",
+                    "when": {"action": "fatal"},
+                    "verdict": "block",
+                    "evidence": [{"run_id": "run_1", "n": 3}],
+                }
+            ],
+            summary="Learn from the run.",
+        )
+        child = version()
+        event = MemoryEvent(
+            event_id="proposal_1:committed",
+            experiment_id="exp_1",
+            proposal_id="proposal_1",
+            phase="committed",
+            source_run_id="run_1",
+            parent_id="v1",
+            child_version_id="v2",
+            operations=[operation],
+            memory_revision_ids=["memrev_1_1"],
+            reason=None,
+            model="test-model",
+            usage={},
+            created_at=NOW,
+            proposal=proposal,
+        )
+        run_doc = run.model_dump(mode="python")
+        run_doc["_id"] = run.run_id
+        self.database.runs.find.return_value.sort.return_value = [run_doc]
+        self.database.harness_versions.find.return_value = [mongo_document(child, "version_id")]
+        self.database.memory_events.find.return_value = [mongo_document(event, "event_id")]
+
+        rows = self.store.get_game_evaluations(chain="chain_1")
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].child_version_id, "v2")
+        self.assertEqual(rows[0].memory_diffs.added, 1)
+        self.assertEqual(rows[0].rule_diffs.added, 1)
+        self.assertIsNone(rows[0].retrieval_scores)
+        self.database.runs.find.assert_called_once_with({"chain": "chain_1"})
+
     def test_proposal_rejects_duplicate_operation_for_one_memory(self) -> None:
         operation = RetireMemoryOperation(
             op="retire",
@@ -355,6 +471,32 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
         document = self.database.__getitem__.return_value.insert_one.call_args.args[0]
         self.assertEqual(document["proposal"]["rule_diffs"], proposal.rule_diffs)
         self.assertEqual(document["proposal"]["summary"], proposal.summary)
+
+    def test_committed_event_revision_ids_match_staged_operation_keys(self) -> None:
+        proposal = ReflectionProposal(
+            proposal_id="proposal_ids",
+            run_id="run_1",
+            parent_id="v1",
+            memory_ops=[
+                AddMemoryOperation(
+                    op="add",
+                    key="path",
+                    kind="map_edge",
+                    subjects=["room_a"],
+                    content={"text": "North leads onward."},
+                    status="supported",
+                    evidence=[EvidenceRef(run_id="run_1", n=3)],
+                    rationale="Observed directly.",
+                )
+            ],
+            rule_diffs=[],
+            summary="Preserve the path.",
+        )
+
+        self.assertEqual(
+            _proposal_revision_ids(proposal),
+            [_stable_id("memory_revision", "proposal_ids", "add:path")],
+        )
 
 
 if __name__ == "__main__":

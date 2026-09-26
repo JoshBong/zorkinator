@@ -28,10 +28,10 @@ consumption remains an integration point for Seb's inner loop.
 2. Build a bounded evidence packet: outcome, relevant events, and cited transcript windows. Preserve original move references. Allow targeted retrieval of more public evidence within a fixed budget.
 3. Reflector proposes a batch of memory additions, revisions, and retirements, plus separately typed rule diffs if needed. An empty batch is valid.
 4. Fixed validation checks structure, evidence, scope, parent consistency, and resource limits. Reject the batch with actionable errors if any operation is invalid; do not silently apply half of it.
-5. Version manager stages immutable memory revisions, invokes the existing promotion path for rule diffs, and publishes a complete child version.
+5. Version manager prepares immutable memory revisions, invokes the existing promotion path for rule diffs, and publishes the revisions, terminal audit event, and complete child version in one transaction.
 6. The orchestrator starts the next game with the returned version ID. The source run's score belongs to the parent that played it, not the newly generated child.
 
-No memory becomes visible to another game just because it was staged. Readers use a published version manifest, never “latest memories.” A failed reflection or commit leaves the parent usable. The orchestrator may continue with that parent, but must record the failure rather than report that learning succeeded.
+No memory becomes visible to another game unless its transaction publishes a version manifest. Readers use a published version manifest, never “latest memories.” A failed reflection or commit leaves the parent usable. The orchestrator may continue with that parent, but must record the failure rather than report that learning succeeded.
 
 ## Proposed interface
 
@@ -175,7 +175,7 @@ A historical revision matching a text query must never appear unless it is activ
 
 Use stable service-generated child/revision IDs tied to the persisted proposal. On retry, compare stored content to the expected content; mismatches are errors, not overwrite opportunities.
 
-Prefer a Mongo transaction for publishing the child manifest and committed audit event when the existing DB helper supports it. Persist immutable revisions first; readers cannot see them through a version until publication. If transactions are deferred, insert the complete version document last, treat it as the authoritative commit marker, and repair a missing committed audit event on retry. Staged, unreferenced revisions are harmless and can be cleaned up separately.
+Use a Mongo transaction for every non-root publication. The immutable revisions, rule revisions, terminal committed audit event, and complete child manifest commit together; the manifest is inserted last and remains the reader's visibility authority. The direct manifest publication helper is reserved for roots, so a child cannot bypass this boundary.
 
 The same proposal committed twice returns the same version ID. Two different proposals from one parent may form explicit branches, but the orchestrator chooses one version for the next game; no implicit global “latest” pointer is needed for the initial sequential learning chain.
 
@@ -189,6 +189,12 @@ publication are implemented. `BetweenGameDriver` creates a cold root per chain, 
 restart, enforces a persisted reflection budget, and hands each committed child version to the next callback.
 The harness runner now consumes the exact callback version, persists the driver's chain cursor fields, and has
 completed the required two-game, 20-move Atlas smoke chain without cross-experiment memory leakage.
+
+Atlas publication now requires the transaction-backed bundle for every child, and `recall_scored()` defensively
+rechecks every Vector Search result against the requested manifest. The read-only `/api/eval/games` view joins
+existing runs, committed memory events, and published versions into per-game score/outcome/cost and memory/rule
+diff counts. An optional `retrieval_query` adds live vector scores from each game's exact played version without
+persisting a second current-knowledge store.
 
 Still required before claiming the complete self-improving harness:
 

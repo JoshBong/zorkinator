@@ -13,7 +13,7 @@ from itertools import groupby
 from typing import Any, Literal
 
 from .. import db
-from ..models import MoveRecord, RuleDoc, RunRecord
+from ..models import GameEvaluation, MoveRecord, RuleDoc, RunRecord
 from .schemas import (
     Condition,
     EvalConditionOut,
@@ -263,3 +263,12 @@ def get_eval_summary() -> EvalSummaryOut:
             )
         )
     return EvalSummaryOut(conditions=conditions)
+
+
+def list_game_evaluations(
+    *, chain: str | None = None, retrieval_query: str | None = None
+) -> list[GameEvaluation]:
+    """Expose the read-only Atlas evidence view used by charts and replay explanations."""
+    return db.MongoOuterLoopStore(db.get_db()).get_game_evaluations(
+        chain=chain, retrieval_query=retrieval_query
+    )

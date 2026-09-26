@@ -17,6 +17,7 @@ import json
 import os
 from collections.abc import Sequence
 from datetime import datetime
+from itertools import pairwise
 from typing import Any, Literal, Protocol, TypeVar
 
 from bson import BSON
@@ -30,11 +31,14 @@ from pymongo.operations import SearchIndexModel
 
 from .models import (
     ContractModel,
+    GameEvaluation,
     HarnessVersionRecord,
     MemoryEvent,
     MemoryRevision,
     MoveRecord,
+    PublishedDiffCounts,
     ReflectionProposal,
+    RetrievalScore,
     RuleDoc,
     RunRecord,
     WorldFactDoc,
@@ -414,7 +418,13 @@ class MongoOuterLoopStore:
         self._insert_immutable("memory_events", _document(event, "event_id"))
 
     def publish_version(self, version: HarnessVersionRecord) -> None:
-        """Publish the complete manifest, the authoritative visibility marker."""
+        """Publish a root manifest; non-root children must use ``publish_bundle``."""
+        if (
+            version.parent_id is not None
+            or version.source_run_id is not None
+            or version.proposal_id is not None
+        ):
+            raise ValueError("non-root versions require atomic publish_bundle publication")
         self._insert_immutable("harness_versions", _document(version, "version_id"))
 
     def publish_bundle(
@@ -427,6 +437,32 @@ class MongoOuterLoopStore:
         """Atomically publish every record that makes one child version usable."""
         if self._client is None:
             raise RuntimeError("atomic publication requires a MongoClient")
+        if (
+            version.parent_id is None
+            or version.source_run_id is None
+            or version.proposal_id is None
+        ):
+            raise ValueError("publish_bundle requires a non-root child version")
+        committed = [
+            event
+            for event in events
+            if event.phase == "committed"
+            and event.child_version_id == version.version_id
+            and event.proposal_id == version.proposal_id
+            and event.source_run_id == version.source_run_id
+            and event.parent_id == version.parent_id
+            and event.experiment_id == version.experiment_id
+        ]
+        if len(committed) != 1:
+            raise ValueError("publish_bundle requires exactly one matching committed event")
+        revision_ids = [revision.revision_id for revision in revisions]
+        if committed[0].memory_revision_ids != revision_ids:
+            raise ValueError("committed event revision ids do not match the publication bundle")
+        manifest_revision_ids = {reference.revision_id for reference in version.memory_refs}
+        if not set(revision_ids).issubset(manifest_revision_ids):
+            raise ValueError("publication bundle contains a revision outside the child manifest")
+        if not {rule.id for rule in rules}.issubset(version.rule_ids):
+            raise ValueError("publication bundle contains a rule outside the child manifest")
         with self._client.start_session() as session, session.start_transaction():
             for revision in revisions:
                 self._insert_immutable(
@@ -434,13 +470,15 @@ class MongoOuterLoopStore:
                 )
             for rule in rules:
                 self._insert_immutable("rules", _document(rule, "id"), session=session)
-            self._insert_immutable(
-                "harness_versions", _document(version, "version_id"), session=session
-            )
             for event in events:
                 self._insert_immutable(
                     "memory_events", _document(event, "event_id"), session=session
                 )
+            # The manifest is the visibility authority. Insert it last even though
+            # the transaction makes the whole bundle visible atomically.
+            self._insert_immutable(
+                "harness_versions", _document(version, "version_id"), session=session
+            )
 
     def get_version(self, version_id: str) -> HarnessVersionRecord | None:
         raw = self._database.harness_versions.find_one({"_id": version_id})
@@ -532,7 +570,8 @@ class MongoOuterLoopStore:
         kinds: Sequence[str] | None,
         limit: int,
     ) -> list[tuple[MemoryRevision, float]]:
-        revision_ids = [reference.revision_id for reference in version.memory_refs]
+        manifest = {reference.revision_id: reference.memory_id for reference in version.memory_refs}
+        revision_ids = list(manifest)
         match: dict[str, Any] = {
             "_id": {"$in": revision_ids},
             "experiment_id": version.experiment_id,
@@ -556,9 +595,19 @@ class MongoOuterLoopStore:
         subject_filter = set(subjects or ())
         results: list[tuple[MemoryRevision, float]] = []
         total_bytes = 0
-        for raw in self._database.memories.aggregate(pipeline):
+        for stored in self._database.memories.aggregate(pipeline):
+            raw = dict(stored)
             score = raw.pop("_vectorSearchScore")
+            revision_id = raw.get("_id")
+            # Atlas enforces these constraints in $vectorSearch too, but the
+            # manifest remains the application-level retrieval authority.
+            if revision_id not in manifest or raw.get("experiment_id") != version.experiment_id:
+                continue
             revision = _model(MemoryRevision, raw, "revision_id")
+            if revision.memory_id != manifest[revision.revision_id]:
+                raise ValueError(
+                    f"revision {revision.revision_id!r} does not match its manifest memory_id"
+                )
             if subject_filter and subject_filter.isdisjoint(revision.subjects):
                 continue
             serialized = json.dumps(revision.model_dump(mode="json"), sort_keys=True)
@@ -570,6 +619,102 @@ class MongoOuterLoopStore:
             if len(results) == limit:
                 break
         return results
+
+    def get_game_evaluations(
+        self,
+        *,
+        chain: str | None = None,
+        retrieval_query: str | None = None,
+        retrieval_limit: int = DEFAULT_RECALL_LIMIT,
+    ) -> list[GameEvaluation]:
+        """Build per-game evidence rows without materializing another state store.
+
+        Published diffs count only a committed audit event whose child manifest
+        exists and matches the run's played version. Optional retrieval scores are
+        computed live against that exact played manifest.
+        """
+        run_filter: dict[str, Any] = {} if chain is None else {"chain": chain}
+        run_cursor = self._database.runs.find(run_filter).sort(
+            [("chain", ASCENDING), ("game_index", ASCENDING), ("started_at", ASCENDING)]
+        )
+        runs = [RunRecord.model_validate(_without_id(raw)) for raw in run_cursor]
+        if not runs:
+            return []
+
+        run_ids = [run.run_id for run in runs]
+        version_raws = self._database.harness_versions.find({"source_run_id": {"$in": run_ids}})
+        children_by_run: dict[str, list[HarnessVersionRecord]] = {}
+        for raw in version_raws:
+            child = _model(HarnessVersionRecord, raw, "version_id")
+            if child.source_run_id is not None:
+                children_by_run.setdefault(child.source_run_id, []).append(child)
+
+        event_raws = self._database.memory_events.find(
+            {"source_run_id": {"$in": run_ids}, "phase": "committed"}
+        )
+        events_by_child: dict[str, MemoryEvent] = {}
+        for raw in event_raws:
+            event = _model(MemoryEvent, raw, "event_id")
+            if event.child_version_id is not None:
+                events_by_child[event.child_version_id] = event
+
+        next_versions = {
+            current.run_id: following.version_id
+            for current, following in pairwise(runs)
+            if current.chain is not None
+            and current.chain == following.chain
+            and current.game_index is not None
+            and following.game_index == current.game_index + 1
+        }
+        rows: list[GameEvaluation] = []
+        for run in runs:
+            selected_child = _published_child(
+                run,
+                children_by_run.get(run.run_id, []),
+                events_by_child,
+                preferred_version_id=next_versions.get(run.run_id),
+            )
+            committed_event = (
+                None if selected_child is None else events_by_child.get(selected_child.version_id)
+            )
+            memory_diffs = _diff_counts(
+                [] if committed_event is None else committed_event.operations
+            )
+            rule_diffs = _diff_counts(
+                []
+                if committed_event is None or committed_event.proposal is None
+                else committed_event.proposal.rule_diffs
+            )
+            retrieval_scores: list[RetrievalScore] | None = None
+            if retrieval_query is not None and run.version_id is not None:
+                scored = self.recall_scored(run.version_id, retrieval_query, limit=retrieval_limit)
+                retrieval_scores = [
+                    RetrievalScore(
+                        memory_id=revision.memory_id,
+                        revision_id=revision.revision_id,
+                        score=score,
+                    )
+                    for revision, score in scored
+                ]
+            rows.append(
+                GameEvaluation(
+                    run_id=run.run_id,
+                    chain=run.chain,
+                    game_index=run.game_index,
+                    version_id=run.version_id,
+                    child_version_id=(
+                        None if selected_child is None else selected_child.version_id
+                    ),
+                    score=run.score,
+                    end_reason=run.end_reason,
+                    death_move=run.death_move,
+                    cost_usd=run.cost_usd,
+                    memory_diffs=memory_diffs,
+                    rule_diffs=rule_diffs,
+                    retrieval_scores=retrieval_scores,
+                )
+            )
+        return rows
 
     def _manifest_scan(
         self,
@@ -644,6 +789,49 @@ class MongoOuterLoopStore:
                 raise ValueError(
                     f"immutable document {document['_id']!r} already exists with different content"
                 ) from None
+
+
+def _published_child(
+    run: RunRecord,
+    candidates: Sequence[HarnessVersionRecord],
+    events_by_child: dict[str, MemoryEvent],
+    *,
+    preferred_version_id: str | None,
+) -> HarnessVersionRecord | None:
+    """Select only a child backed by a matching committed audit event."""
+    published: list[HarnessVersionRecord] = []
+    for child in candidates:
+        event = events_by_child.get(child.version_id)
+        if (
+            child.parent_id == run.version_id
+            and child.source_run_id == run.run_id
+            and event is not None
+            and event.experiment_id == child.experiment_id
+            and event.proposal_id == child.proposal_id
+            and event.source_run_id == run.run_id
+            and event.parent_id == run.version_id
+        ):
+            published.append(child)
+    if preferred_version_id is not None:
+        preferred = next(
+            (child for child in published if child.version_id == preferred_version_id), None
+        )
+        if preferred is not None:
+            return preferred
+    return max(published, key=lambda child: (child.created_at, child.version_id), default=None)
+
+
+def _diff_counts(operations: Sequence[Any]) -> PublishedDiffCounts:
+    counts = {"add": 0, "revise": 0, "retire": 0}
+    for operation in operations:
+        op = operation.get("op") if isinstance(operation, dict) else operation.op
+        if op in counts:
+            counts[op] += 1
+    return PublishedDiffCounts(
+        added=counts["add"],
+        revised=counts["revise"],
+        retired=counts["retire"],
+    )
 
 
 def _bson_round_trip(document: dict[str, Any]) -> dict[str, Any]:

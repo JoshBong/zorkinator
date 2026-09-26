@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from .. import db
-from ..models import MoveRecord
+from ..models import GameEvaluation, MoveRecord
 from . import mapping
 from .schemas import EvalSummaryOut, LifeOut, MoveOut, ReflectionOut, RuleOut, RunMapOut, RunOut
 
@@ -70,6 +70,13 @@ def get_map(run_id: str) -> RunMapOut:
 @app.get("/api/eval/summary")
 def get_eval_summary() -> EvalSummaryOut:
     return mapping.get_eval_summary()
+
+
+@app.get("/api/eval/games")
+def list_game_evaluations(
+    chain: str | None = None, retrieval_query: str | None = None
+) -> list[GameEvaluation]:
+    return mapping.list_game_evaluations(chain=chain, retrieval_query=retrieval_query)
 
 
 def _sse(event: str, data: dict[str, Any]) -> str:

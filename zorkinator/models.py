@@ -270,3 +270,35 @@ class MemoryEvent(ContractModel):
     usage: dict[StrictStr, JsonValue]
     created_at: datetime
     proposal: ReflectionProposal | None = None
+
+
+# --- Read-only Atlas evaluation view (not persisted as a second state store) ---
+
+
+class PublishedDiffCounts(ContractModel):
+    added: NonNegativeInt = 0
+    revised: NonNegativeInt = 0
+    retired: NonNegativeInt = 0
+
+
+class RetrievalScore(ContractModel):
+    memory_id: NonEmptyStr
+    revision_id: NonEmptyStr
+    score: float
+
+
+class GameEvaluation(ContractModel):
+    """Compact evidence row assembled from published Atlas records."""
+
+    run_id: NonEmptyStr
+    chain: StrictStr | None
+    game_index: NonNegativeInt | None
+    version_id: StrictStr | None
+    child_version_id: StrictStr | None
+    score: int
+    end_reason: Literal["death", "won", "game_over", "gave_up", "cap", "usd_cap", "stuck40"]
+    death_move: NonNegativeInt | None
+    cost_usd: float
+    memory_diffs: PublishedDiffCounts
+    rule_diffs: PublishedDiffCounts
+    retrieval_scores: list[RetrievalScore] | None

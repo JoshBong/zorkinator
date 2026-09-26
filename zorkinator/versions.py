@@ -1,7 +1,7 @@
-"""Fixed validation and publication of immutable harness versions.
+"""Fixed validation and atomic publication of immutable harness versions.
 
-All I/O and rule promotion are injected.  Memory revisions may be staged before
-publication, but remain invisible until the complete child manifest is written.
+All I/O and rule promotion are injected. Memory revisions, rule revisions,
+audit events, and the child manifest are published as one store bundle.
 """
 
 from __future__ import annotations
@@ -562,8 +562,12 @@ def _proposal_revision_ids(proposal: ReflectionProposal) -> list[str]:
     for index, operation in enumerate(proposal.memory_ops):
         if isinstance(operation, RetireMemoryOperation):
             continue
-        key = operation.key if isinstance(operation, AddMemoryOperation) else f"op_{index}"
-        revision_ids.append(_stable_id("memory_revision", proposal.proposal_id, key))
+        operation_key = (
+            f"add:{operation.key}"
+            if isinstance(operation, AddMemoryOperation)
+            else f"{operation.op}:{index}"
+        )
+        revision_ids.append(_stable_id("memory_revision", proposal.proposal_id, operation_key))
     return revision_ids
 
 
