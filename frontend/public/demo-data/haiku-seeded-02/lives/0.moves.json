@@ -1,0 +1,602 @@
+[
+ {
+  "move": 1,
+  "observation": "North of House\nYou are facing the north side of a white house. There is no door here, and all the windows are boarded up. To the north a narrow path winds through the trees.\n\n",
+  "command": "N",
+  "room": "West of House",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 2,
+  "observation": "Forest Path\nThis is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the edge of the path.\n\n",
+  "command": "N",
+  "room": "North of House",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 3,
+  "observation": "Up a Tree\nYou are about 10 feet above the ground nestled among some large branches. The nearest branch above you is above your reach.\nBeside you on the branch is a small bird's nest.\nIn the bird's nest is a large egg encrusted with precious jewels, apparently scavenged by a childless songbird. The egg is covered with fine gold inlay, and ornamented in lapis lazuli and mother-of-pearl. Unlike most eggs, this one is hinged and closed with a delicate looking clasp. The egg appears extremely fragile.\n\n",
+  "command": "U",
+  "room": "Forest Path",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 4,
+  "observation": "Taken.\n\n",
+  "command": "Get egg",
+  "room": "Up a Tree",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 5,
+  "observation": "Forest Path\n\n",
+  "command": "D",
+  "room": "Up a Tree",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 6,
+  "observation": "North of House\n\n",
+  "command": "S",
+  "room": "Forest Path",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 7,
+  "observation": "Behind House\nYou are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar.\n\n",
+  "command": "E",
+  "room": "North of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 8,
+  "observation": "With great effort, you open the window far enough to allow entry.\n\n",
+  "command": "Open window",
+  "room": "Behind House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 9,
+  "observation": "Kitchen\nYou are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chimney leads down and to the east is a small window which is open.\nOn the table is an elongated brown sack, smelling of hot peppers.\nA bottle is sitting on the table.\nThe glass bottle contains:\n  A quantity of water\n\n",
+  "command": "W",
+  "room": "Behind House",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 10,
+  "observation": "Opening the brown sack reveals a lunch, and a clove of garlic.\n\n",
+  "command": "Open sack",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 11,
+  "observation": "Taken.\n\n",
+  "command": "Get garlic",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 12,
+  "observation": "Living Room\nYou are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.\nAbove the trophy case hangs an elvish sword of great antiquity.\nA battery-powered brass lantern is on the trophy case.\n\n",
+  "command": "W",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 13,
+  "observation": "Taken.\n\n",
+  "command": "Get lamp",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 14,
+  "observation": "Kitchen\nA bottle is sitting on the table.\nThe glass bottle contains:\n  A quantity of water\nThere is a brown sack here.\nThe brown sack contains:\n  A lunch\n\n",
+  "command": "E",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 15,
+  "observation": "You have moved into a dark place.\nIt is pitch black. You are likely to be eaten by a grue.\n\n",
+  "command": "U",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 16,
+  "observation": "The brass lantern is now on.\n\nAttic\nThis is the attic. The only exit is a stairway leading down.\nA large coil of rope is lying in the corner.\nOn a table is a nasty-looking knife.\n\n",
+  "command": "Light lamp",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 17,
+  "observation": "Taken.\n\n",
+  "command": "Get rope",
+  "room": "Attic",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 18,
+  "observation": "Taken.\n\n",
+  "command": "Get knife",
+  "room": "Attic",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 19,
+  "observation": "Kitchen\nA bottle is sitting on the table.\nThe glass bottle contains:\n  A quantity of water\nThere is a brown sack here.\nThe brown sack contains:\n  A lunch\n\n",
+  "command": "D",
+  "room": "Attic",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 20,
+  "observation": "The brass lantern is now off.\n\n",
+  "command": "Douse lamp",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 21,
+  "observation": "Living Room\nAbove the trophy case hangs an elvish sword of great antiquity.\n\n",
+  "command": "W",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 22,
+  "observation": "Taken.\n\n",
+  "command": "Get sword",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 23,
+  "observation": "With a great effort, the rug is moved to one side of the room, revealing the dusty cover of a closed trap door.\n\n",
+  "command": "Move rug",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 24,
+  "observation": "The door reluctantly opens to reveal a rickety staircase descending into darkness.\n\n",
+  "command": "Open trapdoor",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 25,
+  "observation": "You have moved into a dark place.\nThe trap door crashes shut, and you hear someone barring it.\n\nIt is pitch black. You are likely to be eaten by a grue.\nYour sword is glowing with a faint blue glow.\n\n",
+  "command": "D",
+  "room": "Living Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 26,
+  "observation": "The brass lantern is now on.\n\nCellar\nYou are in a dark and damp cellar with a narrow passageway leading north, and a crawlway to the south. On the west is the bottom of a steep metal ramp which is unclimbable.\n\n",
+  "command": "Light lamp",
+  "room": "Living Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 27,
+  "observation": "The Troll Room\nThis is a small room with passages to the east and south and a forbidding hole leading west. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.\nA nasty-looking troll, brandishing a bloody axe, blocks all passages out of the room.\nYour sword has begun to glow very brightly.\n\n",
+  "command": "N",
+  "room": "Cellar",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 28,
+  "observation": "The fatal blow strikes the troll square in the heart:  He dies.\nAlmost as soon as the troll breathes his last breath, a cloud of sinister black fog envelops him, and when the fog lifts, the carcass has disappeared.\nYour sword is no longer glowing.\n\n",
+  "command": "Kill troll with sword",
+  "room": "The Troll Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 29,
+  "observation": "Dropped.\n\n",
+  "command": "drop egg",
+  "room": "The Troll Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 30,
+  "observation": "East-West Passage\nThis is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.\n\n",
+  "command": "E",
+  "room": "The Troll Room",
+  "score": 45,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 31,
+  "observation": "Round Room\nThis is a circular stone room with passages in all directions. Several of them have unfortunately been blocked by cave-ins.\n\n",
+  "command": "E",
+  "room": "East-West Passage",
+  "score": 45,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 32,
+  "observation": "Engravings Cave\nYou have entered a low cave with passages leading northwest and east.\nThere are old engravings on the walls here.\n\n",
+  "command": "Se",
+  "room": "Round Room",
+  "score": 45,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 33,
+  "observation": "Dome Room\nYou are at the periphery of a large dome, which forms the ceiling of another room below. Protecting you from a precipitous drop is a wooden railing which circles the dome.\n\n",
+  "command": "E",
+  "room": "Engravings Cave",
+  "score": 45,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 34,
+  "observation": "The rope drops over the side and comes within ten feet of the floor.\n\n",
+  "command": "Tie rope to railing",
+  "room": "Dome Room",
+  "score": 45,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 35,
+  "observation": "Torch Room\nThis is a large room with a prominent doorway leading to a down staircase. Above you is a large dome. Up around the edge of the dome (20 feet up) is a wooden railing. In the center of the room sits a white marble pedestal.\nA piece of rope descends from the railing above, ending some five feet above your head.\nSitting on the pedestal is a flaming torch, made of ivory.\n\n",
+  "command": "D",
+  "room": "Dome Room",
+  "score": 45,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 36,
+  "observation": "The brass lantern is now off.\n\n",
+  "command": "Douse lamp",
+  "room": "Torch Room",
+  "score": 45,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 37,
+  "observation": "Taken.\n\n",
+  "command": "Get torch",
+  "room": "Torch Room",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 38,
+  "observation": "Temple\nThis is the north end of a large temple. On the east wall is an ancient inscription, probably a prayer in a long-forgotten language. Below the prayer is a staircase leading down. The west wall is solid granite. The exit to the north end of the room is through huge marble pillars.\nThere is a brass bell here.\n\n",
+  "command": "D",
+  "room": "Torch Room",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 39,
+  "observation": "Altar\nThis is the south end of a large temple. In front of you is what appears to be an altar. In one corner is a small hole in the floor which leads into darkness. You probably could not get back up it.\nOn the two ends of the altar are burning candles.\nOn the altar is a large black book, open to page 569.\n\n",
+  "command": "S",
+  "room": "Temple",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 40,
+  "observation": "Dropped.\n\n",
+  "command": "Drop sword",
+  "room": "Altar",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 41,
+  "observation": "Taken.\n\n",
+  "command": "Get candles",
+  "room": "Altar",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 42,
+  "observation": "The flame is extinguished.\n\n",
+  "command": "Douse candles",
+  "room": "Altar",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 43,
+  "observation": "Taken.\n\n",
+  "command": "Get book",
+  "room": "Altar",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 44,
+  "observation": "Temple\nThere is a brass bell here.\n\n",
+  "command": "N",
+  "room": "Altar",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 45,
+  "observation": "Taken.\n\n",
+  "command": "Get bell",
+  "room": "Temple",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 46,
+  "observation": "Egyptian Room\nThis is a room which looks like an Egyptian tomb. There is an ascending staircase to the west.\nThe solid-gold coffin used for the burial of Ramses II is here.\n\n",
+  "command": "E",
+  "room": "Temple",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 47,
+  "observation": "The gold coffin opens.\nA sceptre, possibly that of ancient Egypt itself, is in the coffin. The sceptre is ornamented with colored enamel, and tapers to a sharp point.\n\n",
+  "command": "Open coffin",
+  "room": "Egyptian Room",
+  "score": 59,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 48,
+  "observation": "Taken.\n\n",
+  "command": "Get sceptre",
+  "room": "Egyptian Room",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 49,
+  "observation": "Temple\n\n",
+  "command": "W",
+  "room": "Egyptian Room",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 50,
+  "observation": "Altar\nThere is a sword here.\n\n",
+  "command": "S",
+  "room": "Temple",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 51,
+  "observation": "Forest\nThis is a forest, with trees in all directions. To the east, there appears to be sunlight.\n\n",
+  "command": "Pray",
+  "room": "Altar",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 52,
+  "observation": "Forest Path\n\n",
+  "command": "E",
+  "room": "Forest",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 53,
+  "observation": "North of House\n\n",
+  "command": "S",
+  "room": "Forest Path",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 54,
+  "observation": "Behind House\n\n",
+  "command": "E",
+  "room": "North of House",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 55,
+  "observation": "Kitchen\nA bottle is sitting on the table.\nThe glass bottle contains:\n  A quantity of water\nThere is a brown sack here.\nThe brown sack contains:\n  A lunch\n\n",
+  "command": "W",
+  "room": "Behind House",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 56,
+  "observation": "Living Room\n\n",
+  "command": "W",
+  "room": "Kitchen",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 57,
+  "observation": "Commandment #12592\n\nOh ye who go about saying unto each:  \"Hello sailor\":\nDost thou know the magnitude of thy sin before the gods?\nYea, verily, thou shalt be ground between two stones.\nShall the angry gods cast thy body into the whirlpool?\nSurely, thy eye shall be put out with a sharp stick!\nEven unto the ends of the earth shalt thou wander and\nUnto the land of the dead shalt thou be sent at last.\nSurely thou shalt repent of thy cunning.\n\n",
+  "command": "Read book",
+  "room": "Living Room",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 58,
+  "observation": "sceptre: Dropped.\nbrass bell: Dropped.\nblack book: Dropped.\npair of candles: Dropped.\ntorch: Dropped.\nnasty knife: Dropped.\nbrass lantern: Dropped.\nclove of garlic: Dropped.\n\n",
+  "command": "Drop all",
+  "room": "Living Room",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 59,
+  "observation": "Taken.\n\n",
+  "command": "get torch",
+  "room": "Living Room",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 60,
+  "observation": "Taken.\n\n",
+  "command": "get lamp",
+  "room": "Living Room",
+  "score": 63,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ }
+]

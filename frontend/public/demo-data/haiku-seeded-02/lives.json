@@ -1,0 +1,25 @@
+[
+ {
+  "life": 0,
+  "score": 63,
+  "moves": 60,
+  "death_cause": "survived (hit the move cap)",
+  "rules_learned": []
+ },
+ {
+  "life": 1,
+  "score": 25,
+  "moves": 48,
+  "death_cause": "died",
+  "rules_learned": []
+ },
+ {
+  "life": 2,
+  "score": 25,
+  "moves": 13,
+  "death_cause": "died",
+  "rules_learned": [
+   "rule_2f246b1b46dec437a8b67129"
+  ]
+ }
+]

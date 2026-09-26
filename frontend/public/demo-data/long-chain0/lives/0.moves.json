@@ -1,0 +1,2362 @@
+[
+ {
+  "move": 1,
+  "observation": "Opening the small mailbox reveals a leaflet.\n\n",
+  "command": "open mailbox",
+  "room": "",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 2,
+  "observation": "(Taken)\n\"WELCOME TO ZORK!\n\nZORK is a game of adventure, danger, and low cunning. In it you will explore some of the most amazing territory ever seen by mortals. No computer should be without one!\"\n\n\n",
+  "command": "read leaflet",
+  "room": "",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 3,
+  "observation": "You already have that!\n\n",
+  "command": "get leaflet",
+  "room": "",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 4,
+  "observation": "The house is a beautiful colonial house which is painted white. It is clear that the owners must have been extremely wealthy.\n\n",
+  "command": "examine house",
+  "room": "",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 5,
+  "observation": "The door is boarded and you can't remove the boards.\n\n",
+  "command": "go east",
+  "room": "",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 6,
+  "observation": "North of House\nYou are facing the north side of a white house. There is no door here, and all the windows are boarded up. To the north a narrow path winds through the trees.\n\n",
+  "command": "go north",
+  "room": "North of House",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 7,
+  "observation": "Forest Path\nThis is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the edge of the path.\n\n",
+  "command": "go north",
+  "room": "Forest Path",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 8,
+  "observation": "Up a Tree\nYou are about 10 feet above the ground nestled among some large branches. The nearest branch above you is above your reach.\nBeside you on the branch is a small bird's nest.\nIn the bird's nest is a large egg encrusted with precious jewels, apparently scavenged by a childless songbird. The egg is covered with fine gold inlay, and ornamented in lapis lazuli and mother-of-pearl. Unlike most eggs, this one is hinged and closed with a delicate looking clasp. The egg appears extremely fragile.\n\n",
+  "command": "climb tree",
+  "room": "Up a Tree",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 9,
+  "observation": "Taken.\n\n",
+  "command": "take egg",
+  "room": "Up a Tree",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 10,
+  "observation": "Forest Path\n\n",
+  "command": "go down",
+  "room": "Forest Path",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 11,
+  "observation": "North of House\n\n",
+  "command": "go south",
+  "room": "North of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 12,
+  "observation": "The windows are all boarded.\n\n",
+  "command": "go south",
+  "room": "North of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 13,
+  "observation": "West of House\nThere is a small mailbox here.\n\n",
+  "command": "go west",
+  "room": "West of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 14,
+  "observation": "South of House\nYou are facing the south side of a white house. There is no door here, and all the windows are boarded.\n\n",
+  "command": "go south",
+  "room": "South of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 15,
+  "observation": "West of House\nThere is a small mailbox here.\n\n",
+  "command": "go west",
+  "room": "West of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 16,
+  "observation": "South of House\n\n",
+  "command": "go south",
+  "room": "South of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 17,
+  "observation": "Forest\nThis is a dimly lit forest, with large trees all around.\n\n",
+  "command": "go south",
+  "room": "Forest",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 18,
+  "observation": "Storm-tossed trees block your way.\n\n",
+  "command": "go south",
+  "room": "Forest",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 19,
+  "observation": "The rank undergrowth prevents eastward movement.\n\n",
+  "command": "go east",
+  "room": "Forest",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 20,
+  "observation": "Forest\nThis is a forest, with trees in all directions. To the east, there appears to be sunlight.\nYou hear in the distance the chirping of a song bird.\n\n",
+  "command": "go west",
+  "room": "Forest",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 21,
+  "observation": "Forest Path\nYou hear in the distance the chirping of a song bird.\n\n",
+  "command": "go east",
+  "room": "Forest Path",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 22,
+  "observation": "North of House\n\n",
+  "command": "go south",
+  "room": "North of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 23,
+  "observation": "The windows are all boarded.\n\n",
+  "command": "go south",
+  "room": "North of House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 24,
+  "observation": "Behind House\nYou are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar.\n\n",
+  "command": "go east",
+  "room": "Behind House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 25,
+  "observation": "With great effort, you open the window far enough to allow entry.\n\n",
+  "command": "open window",
+  "room": "Behind House",
+  "score": 5,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 26,
+  "observation": "Kitchen\nYou are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chimney leads down and to the east is a small window which is open.\nOn the table is an elongated brown sack, smelling of hot peppers.\nA bottle is sitting on the table.\nThe glass bottle contains:\n  A quantity of water\n\n",
+  "command": "go through window",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 27,
+  "observation": "Taken.\n\n",
+  "command": "take bottle",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 28,
+  "observation": "Taken.\n\n",
+  "command": "take sack",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 29,
+  "observation": "Living Room\nYou are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.\nAbove the trophy case hangs an elvish sword of great antiquity.\nA battery-powered brass lantern is on the trophy case.\n\n",
+  "command": "go west",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 30,
+  "observation": "Taken.\n\n",
+  "command": "take lantern",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 31,
+  "observation": "Taken.\n\n",
+  "command": "take sword",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 32,
+  "observation": "The door is nailed shut.\n\n",
+  "command": "go west",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 33,
+  "observation": "Kitchen\n\n",
+  "command": "go east",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 34,
+  "observation": "You have moved into a dark place.\nIt is pitch black. You are likely to be eaten by a grue.\n\n",
+  "command": "go up",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 35,
+  "observation": "The brass lantern is now on.\n\nAttic\nThis is the attic. The only exit is a stairway leading down.\nA large coil of rope is lying in the corner.\nOn a table is a nasty-looking knife.\n\n",
+  "command": "turn on lantern",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 36,
+  "observation": "Taken.\n\n",
+  "command": "take rope",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 37,
+  "observation": "Taken.\n\n",
+  "command": "take knife",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 38,
+  "observation": "Kitchen\n\n",
+  "command": "go down",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 39,
+  "observation": "Only Santa Claus climbs down chimneys.\n\n",
+  "command": "go down",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 40,
+  "observation": "Behind House\n\n",
+  "command": "go east",
+  "room": "Behind House",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 41,
+  "observation": "Clearing\nYou are in a small clearing in a well marked forest path that extends to the east and west.\n\n",
+  "command": "go east",
+  "room": "Clearing",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 42,
+  "observation": "Canyon View\nYou are at the top of the Great Canyon on its west wall. From here there is a marvelous view of the canyon and parts of the Frigid River upstream. Across the canyon, the walls of the White Cliffs join the mighty ramparts of the Flathead Mountains to the east. Following the Canyon upstream to the north, Aragain Falls may be seen, complete with rainbow. The mighty Frigid River flows out from a great dark cavern. To the west and south can be seen an immense forest, stretching for miles around. A path leads northwest. It is possible to climb down into the canyon from here.\n\n",
+  "command": "go east",
+  "room": "Canyon View",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 43,
+  "observation": "Rocky Ledge\nYou are on a ledge about halfway up the wall of the river canyon. You can see from here that the main flow from Aragain Falls twists along a passage which it is impossible for you to enter. Below you is the canyon bottom. Above you is more cliff, which appears climbable.\n\n",
+  "command": "go down",
+  "room": "Rocky Ledge",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 44,
+  "observation": "Canyon Bottom\nYou are beneath the walls of the river canyon which may be climbable here. The lesser part of the runoff of Aragain Falls flows by below. To the north is a narrow path.\n\n",
+  "command": "go down",
+  "room": "Canyon Bottom",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 45,
+  "observation": "End of Rainbow\nYou are on a small, rocky beach on the continuation of the Frigid River past the Falls. The beach is narrow due to the presence of the White Cliffs. The river canyon opens here and sunlight shines in from above. A rainbow crosses over the falls to the east and a narrow path continues to the southwest.\n\n",
+  "command": "go north",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 46,
+  "observation": "Canyon Bottom\n\n",
+  "command": "go southwest",
+  "room": "Canyon Bottom",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 47,
+  "observation": "End of Rainbow\n\n",
+  "command": "go north",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 48,
+  "observation": "You can't go that way.\n\n",
+  "command": "go east",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 49,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 50,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 51,
+  "observation": "You can't go that way.\n\n",
+  "command": "go north",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 52,
+  "observation": "I don't know the word \"beach\".\n\n",
+  "command": "examine beach",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 53,
+  "observation": "I don't know the word \"area\".\n\n",
+  "command": "examine area",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 54,
+  "observation": "End of Rainbow\nYou are on a small, rocky beach on the continuation of the Frigid River past the Falls. The beach is narrow due to the presence of the White Cliffs. The river canyon opens here and sunlight shines in from above. A rainbow crosses over the falls to the east and a narrow path continues to the southwest.\n\n",
+  "command": "look",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 55,
+  "observation": "Canyon Bottom\n\n",
+  "command": "go southwest",
+  "room": "Canyon Bottom",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 56,
+  "observation": "End of Rainbow\n\n",
+  "command": "go north",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 57,
+  "observation": "There's nothing special about the rainbow.\n\n",
+  "command": "examine rainbow",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 58,
+  "observation": "Swimming isn't usually allowed in the dungeon.\n\n",
+  "command": "swim",
+  "room": "End of Rainbow",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 59,
+  "observation": "Canyon Bottom\n\n",
+  "command": "go southwest",
+  "room": "Canyon Bottom",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 60,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Canyon Bottom",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 61,
+  "observation": "You can't go that way.\n\n",
+  "command": "go east",
+  "room": "Canyon Bottom",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 62,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Canyon Bottom",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 63,
+  "observation": "Canyon Bottom\nYou are beneath the walls of the river canyon which may be climbable here. The lesser part of the runoff of Aragain Falls flows by below. To the north is a narrow path.\n\n",
+  "command": "look",
+  "room": "Canyon Bottom",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 64,
+  "observation": "Rocky Ledge\n\n",
+  "command": "go up",
+  "room": "Rocky Ledge",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 65,
+  "observation": "Canyon View\n\n",
+  "command": "go up",
+  "room": "Canyon View",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 66,
+  "observation": "Clearing\n\n",
+  "command": "go northwest",
+  "room": "Clearing",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 67,
+  "observation": "Behind House\n\n",
+  "command": "go west",
+  "room": "Behind House",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 68,
+  "observation": "Kitchen\n\n",
+  "command": "go west",
+  "room": "Kitchen",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 69,
+  "observation": "Living Room\n\n",
+  "command": "go west",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 70,
+  "observation": "Living Room\nYou are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.\n\n",
+  "command": "look",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 71,
+  "observation": "There's nothing special about the carpet.\n\n",
+  "command": "examine rug",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 72,
+  "observation": "The rug is too heavy to lift, but in trying to take it you have noticed an irregularity beneath it.\n\n",
+  "command": "lift rug",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 73,
+  "observation": "With a great effort, the rug is moved to one side of the room, revealing the dusty cover of a closed trap door.\n\n",
+  "command": "move rug",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 74,
+  "observation": "The door reluctantly opens to reveal a rickety staircase descending into darkness.\n\n",
+  "command": "open trap door",
+  "room": "Living Room",
+  "score": 15,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 75,
+  "observation": "The trap door crashes shut, and you hear someone barring it.\n\nCellar\nYou are in a dark and damp cellar with a narrow passageway leading north, and a crawlway to the south. On the west is the bottom of a steep metal ramp which is unclimbable.\nYour sword is glowing with a faint blue glow.\n\n",
+  "command": "go down",
+  "room": "Living Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 76,
+  "observation": "The Troll Room\nThis is a small room with passages to the east and south and a forbidding hole leading west. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.\nA nasty-looking troll, brandishing a bloody axe, blocks all passages out of the room.\nYour sword has begun to glow very brightly.\n\n",
+  "command": "go north",
+  "room": "The Troll Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 77,
+  "observation": "What do you want to kill the troll with?\n\n",
+  "command": "kill troll",
+  "room": "The Troll Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 78,
+  "observation": "It's curtains for the troll as your sword removes his head.\nAlmost as soon as the troll breathes his last breath, a cloud of sinister black fog envelops him, and when the fog lifts, the carcass has disappeared.\nYour sword is no longer glowing.\n\n",
+  "command": "kill troll with sword",
+  "room": "The Troll Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 79,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 80,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 81,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 82,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go east",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 83,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 84,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 85,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 86,
+  "observation": "You can't go that way.\n\n",
+  "command": "go east",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 87,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 88,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 89,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 90,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 91,
+  "observation": "Dead End\nYou have come to a dead end in the maze.\n\n",
+  "command": "go east",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 92,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 93,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 94,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 95,
+  "observation": "Dead End\nYou have come to a dead end in the maze.\n\n",
+  "command": "go east",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 96,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 97,
+  "observation": "You can't go that way.\n\n",
+  "command": "go north",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 98,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 99,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 100,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 101,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 102,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 103,
+  "observation": "You can't go that way.\n\n",
+  "command": "go east",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 104,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 105,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 106,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 107,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 108,
+  "observation": "You can't go that way.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 109,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\nA seedy-looking individual with a large bag just wandered through the room. On the way through, he quietly abstracted some valuables from the room and from your possession, mumbling something about \"Doing unto others before...\"\n\n",
+  "command": "go east",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 110,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 111,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 112,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 113,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 114,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 115,
+  "observation": "You can't go that way.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 116,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go east",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 117,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 118,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 119,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go east",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 120,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 121,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 122,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 123,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go west",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 124,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 125,
+  "observation": "Dead End\nYou have come to a dead end in the maze.\n\n",
+  "command": "go east",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 126,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 127,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 128,
+  "observation": "Dead End\nYou have come to a dead end in the maze.\n\n",
+  "command": "go east",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 129,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 130,
+  "observation": "You can't go that way.\n\n",
+  "command": "go north",
+  "room": "Dead End",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 131,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go south",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 132,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 133,
+  "observation": "Maze\nThis is part of a maze of twisty little passages, all alike.\n\n",
+  "command": "go north",
+  "room": "Maze",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 134,
+  "observation": "The Troll Room\nThere is a bloody axe here.\n\n",
+  "command": "go east",
+  "room": "The Troll Room",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 135,
+  "observation": "Cellar\n\n",
+  "command": "go south",
+  "room": "Cellar",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 136,
+  "observation": "East of Chasm\nYou are on the east edge of a chasm, the bottom of which cannot be seen. A narrow passage goes north, and the path you are on continues to the east.\n\n",
+  "command": "go south",
+  "room": "East of Chasm",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 137,
+  "observation": "Gallery\nThis is an art gallery. Most of the paintings have been stolen by vandals with exceptional taste. The vandals left through either the north or west exits.\nFortunately, there is still one chance for you to be a vandal, for on the far wall is a painting of unparalleled beauty.\n\n",
+  "command": "go east",
+  "room": "Gallery",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 138,
+  "observation": "Your load is too heavy.\n\n",
+  "command": "take painting",
+  "room": "Gallery",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 139,
+  "observation": "You are carrying:\n  A nasty knife\n  A rope\n  A sword\n  A brass lantern (providing light)\n  A brown sack\n  A glass bottle\n  The glass bottle contains:\n    A quantity of water\n  A leaflet\n\n",
+  "command": "inventory",
+  "room": "Gallery",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 140,
+  "observation": "Dropped.\n\n",
+  "command": "drop knife",
+  "room": "Gallery",
+  "score": 40,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 141,
+  "observation": "Taken.\n\n",
+  "command": "take painting",
+  "room": "Gallery",
+  "score": 44,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 142,
+  "observation": "East of Chasm\n\n",
+  "command": "go west",
+  "room": "East of Chasm",
+  "score": 44,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 143,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "East of Chasm",
+  "score": 44,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 144,
+  "observation": "Cellar\n\n",
+  "command": "go north",
+  "room": "Cellar",
+  "score": 44,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 145,
+  "observation": "The Troll Room\nThere is a bloody axe here.\n\n",
+  "command": "go north",
+  "room": "The Troll Room",
+  "score": 44,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 146,
+  "observation": "East-West Passage\nThis is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.\nSomeone carrying a large bag is casually leaning against one of the walls here. He does not speak, but it is clear from his aspect that the bag will be taken only over his dead body.\nYour sword has begun to glow very brightly.\n\n",
+  "command": "go east",
+  "room": "East-West Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 147,
+  "observation": "The thief's weapon is knocked to the floor, leaving him unarmed.\nThe robber, somewhat surprised at this turn of events, nimbly retrieves his stiletto.\n\n",
+  "command": "kill thief with sword",
+  "room": "East-West Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 148,
+  "observation": "A quick stroke, but the thief is on guard.\nThe thief just left, still carrying his large bag. You may not have noticed that he robbed you blind first.\n\n",
+  "command": "kill thief with sword",
+  "room": "East-West Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 149,
+  "observation": "Chasm\nA chasm runs southwest to northeast and the path follows it. You are on the south side of the chasm, where a crack opens into a passage.\n\n",
+  "command": "go down",
+  "room": "Chasm",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 150,
+  "observation": "East-West Passage\n\n",
+  "command": "go southwest",
+  "room": "East-West Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 151,
+  "observation": "Chasm\n\n",
+  "command": "go down",
+  "room": "Chasm",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 152,
+  "observation": "Reservoir South\nYou are in a long room on the south shore of a large lake, far too deep and wide for crossing.\nThere is a path along the stream to the east or west, a steep pathway climbing southwest along the edge of a chasm, and a path leading into a canyon to the southeast.\n\n",
+  "command": "go northeast",
+  "room": "Reservoir South",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 153,
+  "observation": "Deep Canyon\nYou are on the south edge of a deep canyon. Passages lead off to the east, northwest and southwest. A stairway leads down. You can hear the sound of flowing water from below.\n\n",
+  "command": "go southeast",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 154,
+  "observation": "Loud Room\nThis is a large room with a ceiling which cannot be detected from the ground. There is a narrow passage from east to west and a stone stairway leading upward. The room is deafeningly loud with an undetermined rushing sound. The sound seems to reverberate from all of the walls, making it difficult even to think.\nOn the ground is a large platinum bar.\n\n",
+  "command": "go down",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 155,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 156,
+  "observation": "sack sack ...\n\n",
+  "command": "drop sack",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 157,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 158,
+  "observation": "bottle bottle ...\n\n",
+  "command": "drop bottle",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 159,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 160,
+  "observation": "rope rope ...\n\n",
+  "command": "drop rope",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 161,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 162,
+  "observation": "leaflet leaflet ...\n\n",
+  "command": "drop leaflet",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 163,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 164,
+  "observation": "painting painting ...\n\n",
+  "command": "drop painting",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 165,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 166,
+  "observation": "lantern lantern ...\n\n",
+  "command": "drop lantern",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 167,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 168,
+  "observation": "sword sword ...\n\n",
+  "command": "drop sword",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 169,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 170,
+  "observation": "egg egg ...\n\n",
+  "command": "drop egg",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 171,
+  "observation": "bar bar ...\n\n",
+  "command": "take platinum bar",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 172,
+  "observation": "lantern lantern ...\n\n",
+  "command": "turn off lantern",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 173,
+  "observation": "Deep Canyon\n\n",
+  "command": "go up",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 174,
+  "observation": "You can't go that way.\n\n",
+  "command": "go up",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 175,
+  "observation": "Dam\nYou are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. There are paths to the north, south, and west, and a scramble down.\nThe sluice gates on the dam are closed. Behind the dam, there can be seen a wide reservoir. Water is pouring over the top of the now abandoned dam.\nThere is a control panel here, on which a large metal bolt is mounted. Directly above the bolt is a small green plastic bubble.\n\n",
+  "command": "go east",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 176,
+  "observation": "Pushing the bolt has no effect.\n\n",
+  "command": "push bolt",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 177,
+  "observation": "What do you want to turn the bolt with?\n\n",
+  "command": "turn bolt",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 178,
+  "observation": "You don't have that!\n\n",
+  "command": "turn bolt with wrench",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 179,
+  "observation": "There's nothing special about the bolt.\n\n",
+  "command": "examine bolt",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 180,
+  "observation": "There's nothing special about the control panel.\n\n",
+  "command": "examine panel",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 181,
+  "observation": "There's nothing special about the green bubble.\n\n",
+  "command": "examine bubble",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 182,
+  "observation": "Dam Base\nYou are at the base of Flood Control Dam #3, which looms above you and to the north. The river Frigid is flowing by here. Along the river are the White Cliffs which seem to form giant walls stretching from north to south along the shores of the river as it winds its way downstream.\nThere is a folded pile of plastic here which has a small valve attached.\n\n",
+  "command": "go down",
+  "room": "Dam Base",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 183,
+  "observation": "Taken.\n\n",
+  "command": "take plastic",
+  "room": "Dam Base",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 184,
+  "observation": "Dam\n\n",
+  "command": "go north",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 185,
+  "observation": "Deep Canyon\n\n",
+  "command": "go south",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 186,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 187,
+  "observation": "You can't go that way.\n\n",
+  "command": "go north",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 188,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 189,
+  "observation": "Deep Canyon\nYou are on the south edge of a deep canyon. Passages lead off to the east, northwest and southwest. A stairway leads down. You can hear the sound of flowing water from below.\n\n",
+  "command": "look",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 190,
+  "observation": "Reservoir South\n\n",
+  "command": "go northwest",
+  "room": "Reservoir South",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 191,
+  "observation": "Stream View\nYou are standing on a path beside a gently flowing stream. The path follows the stream, which flows from west to east.\n\n",
+  "command": "go west",
+  "room": "Stream View",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 192,
+  "observation": "The stream emerges from a spot too small for you to enter.\n\n",
+  "command": "go west",
+  "room": "Stream View",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 193,
+  "observation": "Reservoir South\n\n",
+  "command": "go east",
+  "room": "Reservoir South",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 194,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Reservoir South",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 195,
+  "observation": "Dam\n\n",
+  "command": "go east",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 196,
+  "observation": "Deep Canyon\n\n",
+  "command": "go south",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 197,
+  "observation": "Loud Room\nOn the ground is a large platinum bar.\n\n",
+  "command": "go down",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 198,
+  "observation": "plastic plastic ...\n\n",
+  "command": "examine plastic",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 199,
+  "observation": "plastic plastic ...\n\n",
+  "command": "open plastic",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 200,
+  "observation": "lantern lantern ...\n\n",
+  "command": "turn off lantern",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 201,
+  "observation": "Deep Canyon\n\n",
+  "command": "go up",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 202,
+  "observation": "Dam\n\n",
+  "command": "go east",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 203,
+  "observation": "Dam Base\n\n",
+  "command": "go down",
+  "room": "Dam Base",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 204,
+  "observation": "There's nothing special about the pile of plastic.\n\n",
+  "command": "examine plastic",
+  "room": "Dam Base",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 205,
+  "observation": "Dam\n\n",
+  "command": "go north",
+  "room": "Dam",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 206,
+  "observation": "Deep Canyon\n\n",
+  "command": "go south",
+  "room": "Deep Canyon",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 207,
+  "observation": "Loud Room\nOn the ground is a large platinum bar.\n\n",
+  "command": "go down",
+  "room": "Loud Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 208,
+  "observation": "Round Room\nThis is a circular stone room with passages in all directions. Several of them have unfortunately been blocked by cave-ins.\n\n",
+  "command": "go west",
+  "room": "Round Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 209,
+  "observation": "Narrow Passage\nThis is a long and narrow corridor where a long north-south passageway briefly narrows even further.\n\n",
+  "command": "go south",
+  "room": "Narrow Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 210,
+  "observation": "Round Room\n\n",
+  "command": "go north",
+  "room": "Round Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 211,
+  "observation": "Narrow Passage\n\n",
+  "command": "go south",
+  "room": "Narrow Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 212,
+  "observation": "Mirror Room\nYou are in a large square room with tall ceilings. On the south wall is an enormous mirror which fills the entire wall. There are exits on the other three sides of the room.\n\n",
+  "command": "go south",
+  "room": "Mirror Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 213,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Mirror Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 214,
+  "observation": "There is an ugly person staring back at you.\n\n",
+  "command": "examine mirror",
+  "room": "Mirror Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 215,
+  "observation": "Winding Passage\nThis is a winding passage. It seems that there are only exits on the east and north.\n\n",
+  "command": "go west",
+  "room": "Winding Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 216,
+  "observation": "Mirror Room\n\n",
+  "command": "go north",
+  "room": "Mirror Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 217,
+  "observation": "Cave\nThis is a tiny cave with entrances west and north, and a dark, forbidding staircase leading down.\n\n",
+  "command": "go east",
+  "room": "Cave",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 218,
+  "observation": "Entrance to Hades\nYou are outside a large gateway, on which is inscribed\n\n  Abandon every hope all ye who enter here!\n\nThe gate is open; through it you can see a desolation, with a pile of mangled bodies in one corner. Thousands of voices, lamenting some hideous fate, can be heard.\nThe way through the gate is barred by evil spirits, who jeer at your attempts to pass.\n\n",
+  "command": "go down",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 219,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 220,
+  "observation": "You can't go that way.\n\n",
+  "command": "go north",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 221,
+  "observation": "You can't go that way.\n\n",
+  "command": "go east",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 222,
+  "observation": "Some invisible force prevents you from passing through the gate.\n\n",
+  "command": "go south",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 223,
+  "observation": "Cave\n\n",
+  "command": "go up",
+  "room": "Cave",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 224,
+  "observation": "Mirror Room\n\n",
+  "command": "go north",
+  "room": "Mirror Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 225,
+  "observation": "Winding Passage\n\n",
+  "command": "go west",
+  "room": "Winding Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 226,
+  "observation": "You can't go that way.\n\n",
+  "command": "go west",
+  "room": "Winding Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 227,
+  "observation": "You can't go that way.\n\n",
+  "command": "go south",
+  "room": "Winding Passage",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 228,
+  "observation": "Cave\n\n",
+  "command": "go east",
+  "room": "Cave",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 229,
+  "observation": "Entrance to Hades\n\n",
+  "command": "go down",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 230,
+  "observation": "The gate is protected by an invisible force. It makes your teeth ache to touch it.\n\n",
+  "command": "examine gate",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 231,
+  "observation": "You seem unable to interact with these spirits.\n\n",
+  "command": "examine spirits",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 232,
+  "observation": "Cave\n\n",
+  "command": "go up",
+  "room": "Cave",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 233,
+  "observation": "Mirror Room\n\n",
+  "command": "go north",
+  "room": "Mirror Room",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 234,
+  "observation": "Cave\n\n",
+  "command": "go east",
+  "room": "Cave",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 235,
+  "observation": "Entrance to Hades\n\n",
+  "command": "go down",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 236,
+  "observation": "",
+  "command": "I give up",
+  "room": "Entrance to Hades",
+  "score": 49,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ }
+]

@@ -1,0 +1,812 @@
+{
+ "rooms": [
+  {
+   "name": "North of House",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Forest Path",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Up a Tree",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "West of House",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "South of House",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Forest",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Behind House",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Kitchen",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Living Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Clearing",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Canyon View",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Rocky Ledge",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Canyon Bottom",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "End of Rainbow",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "The Troll Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": [
+    1,
+    5,
+    12,
+    15
+   ]
+  },
+  {
+   "name": "Maze",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": [
+    19,
+    22
+   ]
+  },
+  {
+   "name": "Dead End",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": [
+    4
+   ]
+  },
+  {
+   "name": "Cellar",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": [
+    24
+   ]
+  },
+  {
+   "name": "East of Chasm",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Gallery",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "East-West Passage",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Chasm",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Reservoir South",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Deep Canyon",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": [
+    23
+   ]
+  },
+  {
+   "name": "Loud Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Dam",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Dam Base",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Stream View",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Round Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Narrow Passage",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Mirror Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Winding Passage",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Cave",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": [
+    3
+   ]
+  },
+  {
+   "name": "Entrance to Hades",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Attic",
+   "dark": false,
+   "first_seen_life": 2,
+   "death_lives": []
+  },
+  {
+   "name": "North-South Passage",
+   "dark": false,
+   "first_seen_life": 2,
+   "death_lives": []
+  },
+  {
+   "name": "Dam Lobby",
+   "dark": false,
+   "first_seen_life": 2,
+   "death_lives": []
+  },
+  {
+   "name": "Maintenance Room",
+   "dark": false,
+   "first_seen_life": 2,
+   "death_lives": [
+    20
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "North of House",
+   "to": "Forest Path",
+   "direction": "north"
+  },
+  {
+   "from": "Up a Tree",
+   "to": "Forest Path",
+   "direction": "down"
+  },
+  {
+   "from": "Forest Path",
+   "to": "North of House",
+   "direction": "south"
+  },
+  {
+   "from": "North of House",
+   "to": "West of House",
+   "direction": "west"
+  },
+  {
+   "from": "West of House",
+   "to": "South of House",
+   "direction": "south"
+  },
+  {
+   "from": "South of House",
+   "to": "West of House",
+   "direction": "west"
+  },
+  {
+   "from": "South of House",
+   "to": "Forest",
+   "direction": "south"
+  },
+  {
+   "from": "Forest",
+   "to": "Forest Path",
+   "direction": "east"
+  },
+  {
+   "from": "North of House",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Living Room",
+   "direction": "west"
+  },
+  {
+   "from": "Living Room",
+   "to": "Kitchen",
+   "direction": "east"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "Behind House",
+   "to": "Clearing",
+   "direction": "east"
+  },
+  {
+   "from": "Clearing",
+   "to": "Canyon View",
+   "direction": "east"
+  },
+  {
+   "from": "Canyon View",
+   "to": "Rocky Ledge",
+   "direction": "down"
+  },
+  {
+   "from": "Rocky Ledge",
+   "to": "Canyon Bottom",
+   "direction": "down"
+  },
+  {
+   "from": "Canyon Bottom",
+   "to": "End of Rainbow",
+   "direction": "north"
+  },
+  {
+   "from": "End of Rainbow",
+   "to": "Canyon Bottom",
+   "direction": "southwest"
+  },
+  {
+   "from": "Canyon Bottom",
+   "to": "Rocky Ledge",
+   "direction": "up"
+  },
+  {
+   "from": "Rocky Ledge",
+   "to": "Canyon View",
+   "direction": "up"
+  },
+  {
+   "from": "Canyon View",
+   "to": "Clearing",
+   "direction": "northwest"
+  },
+  {
+   "from": "Clearing",
+   "to": "Behind House",
+   "direction": "west"
+  },
+  {
+   "from": "Behind House",
+   "to": "Kitchen",
+   "direction": "west"
+  },
+  {
+   "from": "Living Room",
+   "to": "The Troll Room",
+   "direction": "north"
+  },
+  {
+   "from": "The Troll Room",
+   "to": "Maze",
+   "direction": "west"
+  },
+  {
+   "from": "Maze",
+   "to": "Dead End",
+   "direction": "east"
+  },
+  {
+   "from": "Dead End",
+   "to": "Maze",
+   "direction": "south"
+  },
+  {
+   "from": "Maze",
+   "to": "The Troll Room",
+   "direction": "east"
+  },
+  {
+   "from": "The Troll Room",
+   "to": "Cellar",
+   "direction": "south"
+  },
+  {
+   "from": "Cellar",
+   "to": "East of Chasm",
+   "direction": "south"
+  },
+  {
+   "from": "East of Chasm",
+   "to": "Gallery",
+   "direction": "east"
+  },
+  {
+   "from": "Gallery",
+   "to": "East of Chasm",
+   "direction": "west"
+  },
+  {
+   "from": "East of Chasm",
+   "to": "Cellar",
+   "direction": "north"
+  },
+  {
+   "from": "Cellar",
+   "to": "The Troll Room",
+   "direction": "north"
+  },
+  {
+   "from": "The Troll Room",
+   "to": "East-West Passage",
+   "direction": "east"
+  },
+  {
+   "from": "East-West Passage",
+   "to": "Chasm",
+   "direction": "down"
+  },
+  {
+   "from": "Chasm",
+   "to": "East-West Passage",
+   "direction": "southwest"
+  },
+  {
+   "from": "Chasm",
+   "to": "Reservoir South",
+   "direction": "northeast"
+  },
+  {
+   "from": "Reservoir South",
+   "to": "Deep Canyon",
+   "direction": "southeast"
+  },
+  {
+   "from": "Deep Canyon",
+   "to": "Loud Room",
+   "direction": "down"
+  },
+  {
+   "from": "Loud Room",
+   "to": "Deep Canyon",
+   "direction": "up"
+  },
+  {
+   "from": "Deep Canyon",
+   "to": "Dam",
+   "direction": "east"
+  },
+  {
+   "from": "Dam",
+   "to": "Dam Base",
+   "direction": "down"
+  },
+  {
+   "from": "Dam Base",
+   "to": "Dam",
+   "direction": "north"
+  },
+  {
+   "from": "Dam",
+   "to": "Deep Canyon",
+   "direction": "south"
+  },
+  {
+   "from": "Deep Canyon",
+   "to": "Reservoir South",
+   "direction": "northwest"
+  },
+  {
+   "from": "Reservoir South",
+   "to": "Stream View",
+   "direction": "west"
+  },
+  {
+   "from": "Stream View",
+   "to": "Reservoir South",
+   "direction": "east"
+  },
+  {
+   "from": "Reservoir South",
+   "to": "Dam",
+   "direction": "east"
+  },
+  {
+   "from": "Loud Room",
+   "to": "Round Room",
+   "direction": "west"
+  },
+  {
+   "from": "Round Room",
+   "to": "Narrow Passage",
+   "direction": "south"
+  },
+  {
+   "from": "Narrow Passage",
+   "to": "Round Room",
+   "direction": "north"
+  },
+  {
+   "from": "Narrow Passage",
+   "to": "Mirror Room",
+   "direction": "south"
+  },
+  {
+   "from": "Mirror Room",
+   "to": "Winding Passage",
+   "direction": "west"
+  },
+  {
+   "from": "Winding Passage",
+   "to": "Mirror Room",
+   "direction": "north"
+  },
+  {
+   "from": "Mirror Room",
+   "to": "Cave",
+   "direction": "east"
+  },
+  {
+   "from": "Cave",
+   "to": "Entrance to Hades",
+   "direction": "down"
+  },
+  {
+   "from": "Entrance to Hades",
+   "to": "Cave",
+   "direction": "up"
+  },
+  {
+   "from": "Cave",
+   "to": "Mirror Room",
+   "direction": "north"
+  },
+  {
+   "from": "Winding Passage",
+   "to": "Cave",
+   "direction": "east"
+  },
+  {
+   "from": "Forest Path",
+   "to": "Clearing",
+   "direction": "north"
+  },
+  {
+   "from": "Clearing",
+   "to": "Forest Path",
+   "direction": "south"
+  },
+  {
+   "from": "Behind House",
+   "to": "South of House",
+   "direction": "south"
+  },
+  {
+   "from": "Forest",
+   "to": "Clearing",
+   "direction": "north"
+  },
+  {
+   "from": "Canyon View",
+   "to": "Rocky Ledge",
+   "direction": "east"
+  },
+  {
+   "from": "Canyon View",
+   "to": "Forest",
+   "direction": "west"
+  },
+  {
+   "from": "Behind House",
+   "to": "Kitchen",
+   "direction": "in"
+  },
+  {
+   "from": "Forest Path",
+   "to": "Forest",
+   "direction": "east"
+  },
+  {
+   "from": "Forest",
+   "to": "Clearing",
+   "direction": "south"
+  },
+  {
+   "from": "Behind House",
+   "to": "North of House",
+   "direction": "north"
+  },
+  {
+   "from": "Clearing",
+   "to": "Forest",
+   "direction": "south"
+  },
+  {
+   "from": "Forest Path",
+   "to": "Forest",
+   "direction": "west"
+  },
+  {
+   "from": "Clearing",
+   "to": "Forest",
+   "direction": "east"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Attic",
+   "direction": "up"
+  },
+  {
+   "from": "Attic",
+   "to": "Kitchen",
+   "direction": "down"
+  },
+  {
+   "from": "East-West Passage",
+   "to": "Chasm",
+   "direction": "north"
+  },
+  {
+   "from": "Chasm",
+   "to": "North-South Passage",
+   "direction": "south"
+  },
+  {
+   "from": "North-South Passage",
+   "to": "Round Room",
+   "direction": "south"
+  },
+  {
+   "from": "Mirror Room",
+   "to": "Narrow Passage",
+   "direction": "north"
+  },
+  {
+   "from": "Round Room",
+   "to": "Loud Room",
+   "direction": "east"
+  },
+  {
+   "from": "Dam",
+   "to": "Reservoir South",
+   "direction": "west"
+  },
+  {
+   "from": "Deep Canyon",
+   "to": "North-South Passage",
+   "direction": "southwest"
+  },
+  {
+   "from": "Cave",
+   "to": "Winding Passage",
+   "direction": "west"
+  },
+  {
+   "from": "Round Room",
+   "to": "East-West Passage",
+   "direction": "west"
+  },
+  {
+   "from": "East-West Passage",
+   "to": "The Troll Room",
+   "direction": "west"
+  },
+  {
+   "from": "Dam",
+   "to": "Dam Lobby",
+   "direction": "north"
+  },
+  {
+   "from": "Dam Lobby",
+   "to": "Maintenance Room",
+   "direction": "north"
+  },
+  {
+   "from": "Maintenance Room",
+   "to": "Dam Lobby",
+   "direction": "west"
+  },
+  {
+   "from": "Maintenance Room",
+   "to": "Dam Lobby",
+   "direction": "south"
+  },
+  {
+   "from": "Dam Lobby",
+   "to": "Dam",
+   "direction": "south"
+  },
+  {
+   "from": "South of House",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "Gallery",
+   "to": "Studio",
+   "direction": "north"
+  },
+  {
+   "from": "Studio",
+   "to": "Gallery",
+   "direction": "south"
+  },
+  {
+   "from": "Loud Room",
+   "to": "Damp Cave",
+   "direction": "east"
+  },
+  {
+   "from": "Damp Cave",
+   "to": "White Cliffs Beach",
+   "direction": "east"
+  },
+  {
+   "from": "White Cliffs Beach",
+   "to": "Damp Cave",
+   "direction": "west"
+  },
+  {
+   "from": "Damp Cave",
+   "to": "Loud Room",
+   "direction": "west"
+  },
+  {
+   "from": "Dam Lobby",
+   "to": "Maintenance Room",
+   "direction": "east"
+  },
+  {
+   "from": "Reservoir South",
+   "to": "Chasm",
+   "direction": "southwest"
+  },
+  {
+   "from": "North-South Passage",
+   "to": "Deep Canyon",
+   "direction": "northeast"
+  },
+  {
+   "from": "Round Room",
+   "to": "North-South Passage",
+   "direction": "north"
+  },
+  {
+   "from": "North-South Passage",
+   "to": "Chasm",
+   "direction": "north"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Behind House",
+   "direction": "out"
+  },
+  {
+   "from": "West of House",
+   "to": "North of House",
+   "direction": "north"
+  },
+  {
+   "from": "Clearing",
+   "to": "Forest",
+   "direction": "west"
+  },
+  {
+   "from": "Living Room",
+   "to": "East of Chasm",
+   "direction": "south"
+  },
+  {
+   "from": "Studio",
+   "to": "Kitchen",
+   "direction": "up"
+  },
+  {
+   "from": "East-West Passage",
+   "to": "Round Room",
+   "direction": "east"
+  },
+  {
+   "from": "Clearing",
+   "to": "Forest",
+   "direction": "north"
+  },
+  {
+   "from": "Forest",
+   "to": "Forest Path",
+   "direction": "west"
+  },
+  {
+   "from": "West of House",
+   "to": "Forest",
+   "direction": "west"
+  },
+  {
+   "from": "Rocky Ledge",
+   "to": "Clearing",
+   "direction": "northwest"
+  }
+ ]
+}

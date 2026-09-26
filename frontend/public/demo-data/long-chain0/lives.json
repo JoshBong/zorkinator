@@ -1,0 +1,23 @@
+[
+ {
+  "life": 0,
+  "score": 49,
+  "moves": 236,
+  "death_cause": "survived (gave up)",
+  "rules_learned": []
+ },
+ {
+  "life": 1,
+  "score": 30,
+  "moves": 98,
+  "death_cause": "died",
+  "rules_learned": []
+ },
+ {
+  "life": 2,
+  "score": 45,
+  "moves": 446,
+  "death_cause": "survived (gave up)",
+  "rules_learned": []
+ }
+]

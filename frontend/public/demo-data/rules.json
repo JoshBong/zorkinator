@@ -1,0 +1,212 @@
+[
+ {
+  "rule_id": "rule_c3c450660635159c87cf119a",
+  "version": 1,
+  "type": "memory",
+  "text": "Moving west from Forest requires a machete",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T182638316105",
+   "life": 1,
+   "move": 5
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_9e40d0b1c0a2cdceed576c41",
+  "version": 1,
+  "type": "memory",
+  "text": "When examining carried items, use short generic names (egg, leaflet, leaves) rather than full descriptive names (jewel-encrusted egg, pile of leaves)",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T191303947401",
+   "life": 0,
+   "move": 83
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_f4e5f6438faa71ab8cb9585a",
+  "version": 1,
+  "type": "memory",
+  "text": "Attempt to open or interact with the mailbox at West of House before other exploration",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T191303947401",
+   "life": 0,
+   "move": 1
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_4beae255a7edd31580f7664d",
+  "version": 1,
+  "type": "memory",
+  "text": "Entering pitch-black areas without functional light source causes grue attack and death",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T191143669570",
+   "life": 2,
+   "move": 497
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_b1cc6235ac9f18772afced93",
+  "version": 1,
+  "type": "memory",
+  "text": "Brass lantern battery depletes with repeated on/off cycles; should be used sparingly before attempting dark areas",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T191143669570",
+   "life": 2,
+   "move": 471
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_aea4a6120330263d129358ba",
+  "version": 1,
+  "type": "memory",
+  "text": "Do not attempt 'south' from North of House repeatedly; it is a dead-end. Navigate backward via 'north' to Forest Path, then 'south' to Clearing, then 'south' to Forest, then 'east' to West of House.",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T192447451887",
+   "life": 3,
+   "move": 19
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_ff0e5050a795460b96cdc122",
+  "version": 1,
+  "type": "memory",
+  "text": "The large tree with low branches at Forest Path (move 7) has not been climbed or examined. Try 'climb tree' or 'climb branches' to discover hidden exits or items.",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T192447451887",
+   "life": 3,
+   "move": 7
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_6c6eac87635e91a862bc54ca",
+  "version": 1,
+  "type": "memory",
+  "text": "Moving in pitch-black rooms without a light source triggers a fatal grue attack.",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T201837748416",
+   "life": 7,
+   "move": 10
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_46e3d5af3de3610b5ec48cbe",
+  "version": 1,
+  "type": "memory",
+  "text": "Moving through dark areas without a lit lantern will result in death by grue encounter.",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T202030004223",
+   "life": 3,
+   "move": 46
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_561a007349992e2c205cae52",
+  "version": 1,
+  "type": "memory",
+  "text": "Attempting to turn on a brass lantern while in complete darkness fails with 'It's too dark to see!' Lantern must be activated in a lit location before entering darkness.",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T202030004223",
+   "life": 3,
+   "move": 33
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_a32dc618ff665b6dedbfe24c",
+  "version": 1,
+  "type": "memory",
+  "text": "Moving through dark areas without a lit lantern in inventory will result in death by grue encounter. Lantern must be obtained and lit in a lit room before entering darkness.",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T202911651252",
+   "life": 6,
+   "move": 37
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_361329f4de5326685898cf46",
+  "version": 1,
+  "type": "rule",
+  "text": "Do not descend into the dark underground when carrying no effective light source; prior descent in pitch black ended in death despite a faintly glowing sword.",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-gpt-5.6-luna-s0-20260926T203204062117",
+   "life": 2,
+   "move": 37
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_5addfec7bc0ddb6d7a122090",
+  "version": 1,
+  "type": "memory",
+  "text": "Do not issue a descent command through the trap door when the destination is dark unless a usable light source has already been successfully activated.",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-gpt-5.6-luna-s0-20260926T203845108591",
+   "life": 1,
+   "move": 69
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ },
+ {
+  "rule_id": "rule_2f246b1b46dec437a8b67129",
+  "version": 1,
+  "type": "memory",
+  "text": "Moving in darkness without a light source results in grue attack and death",
+  "status": "active",
+  "learned_from": {
+   "run_id": "harness-claude-haiku-4-5-s0-20260926T204029738047",
+   "life": 2,
+   "move": 13
+  },
+  "score_impact": 0.0,
+  "parent_version": null,
+  "created_at": ""
+ }
+]

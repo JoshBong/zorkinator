@@ -1,0 +1,30 @@
+[
+ {
+  "run_id": "haiku-seeded-02",
+  "condition": "harness",
+  "model": "claude-haiku-4-5",
+  "config": {
+   "reflection": true,
+   "rules": true,
+   "memory": true,
+   "guardrails": true
+  },
+  "status": "done",
+  "lives_count": 3,
+  "created_at": "2026-09-26T20:34:58.159000"
+ },
+ {
+  "run_id": "long-chain0",
+  "condition": "baseline",
+  "model": "claude-haiku-4-5",
+  "config": {
+   "reflection": false,
+   "rules": false,
+   "memory": false,
+   "guardrails": false
+  },
+  "status": "done",
+  "lives_count": 3,
+  "created_at": "2026-09-26T17:20:25.298000"
+ }
+]

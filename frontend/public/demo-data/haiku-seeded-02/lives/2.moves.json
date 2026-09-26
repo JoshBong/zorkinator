@@ -1,0 +1,132 @@
+[
+ {
+  "move": 1,
+  "observation": "North of House\nYou are facing the north side of a white house. There is no door here, and all the windows are boarded up. To the north a narrow path winds through the trees.\n\n",
+  "command": "north",
+  "room": "West of House",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 2,
+  "observation": "Behind House\nYou are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar.\n\n",
+  "command": "east",
+  "room": "North of House",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 3,
+  "observation": "The kitchen window is closed.\n\n",
+  "command": "west",
+  "room": "Behind House",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 4,
+  "observation": "With great effort, you open the window far enough to allow entry.\n\n",
+  "command": "open window",
+  "room": "Behind House",
+  "score": 0,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 5,
+  "observation": "Kitchen\nYou are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chimney leads down and to the east is a small window which is open.\nOn the table is an elongated brown sack, smelling of hot peppers.\nA bottle is sitting on the table.\nThe glass bottle contains:\n  A quantity of water\n\n",
+  "command": "climb through window",
+  "room": "Behind House",
+  "score": 10,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 6,
+  "observation": "You can't see any sword here!\n\n",
+  "command": "get sword",
+  "room": "Kitchen",
+  "score": 10,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 7,
+  "observation": "Living Room\nYou are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.\nAbove the trophy case hangs an elvish sword of great antiquity.\nA battery-powered brass lantern is on the trophy case.\n\n",
+  "command": "west",
+  "room": "Kitchen",
+  "score": 10,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 8,
+  "observation": "Taken.\n\n",
+  "command": "get sword",
+  "room": "Living Room",
+  "score": 10,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 9,
+  "observation": "You can't go that way.\n\n",
+  "command": "down",
+  "room": "Living Room",
+  "score": 10,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 10,
+  "observation": "With a great effort, the rug is moved to one side of the room, revealing the dusty cover of a closed trap door.\n\n",
+  "command": "move rug",
+  "room": "Living Room",
+  "score": 10,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 11,
+  "observation": "The door reluctantly opens to reveal a rickety staircase descending into darkness.\n\n",
+  "command": "open trap door",
+  "room": "Living Room",
+  "score": 10,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 12,
+  "observation": "You have moved into a dark place.\nThe trap door crashes shut, and you hear someone barring it.\n\nIt is pitch black. You are likely to be eaten by a grue.\nYour sword is glowing with a faint blue glow.\n\n",
+  "command": "down",
+  "room": "Living Room",
+  "score": 35,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ },
+ {
+  "move": 13,
+  "observation": "Oh, no! A lurking grue slithered into the room and devoured you!\n \n   ****  You have died  **** \n\nNow, let's take a look here... Well, you probably deserve another chance. I can't quite fix you up completely, but you can't have everything.\n\nForest\nThis is a forest, with trees in all directions. To the east, there appears to be sunlight.\n\n",
+  "command": "north",
+  "room": "Living Room",
+  "score": 25,
+  "retrieved_rules": [],
+  "guardrail": null,
+  "repeated_action": false
+ }
+]

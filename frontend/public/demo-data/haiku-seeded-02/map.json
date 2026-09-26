@@ -1,0 +1,548 @@
+{
+ "rooms": [
+  {
+   "name": "North of House",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Forest Path",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Up a Tree",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Behind House",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Kitchen",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Living Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": [
+    2
+   ]
+  },
+  {
+   "name": "The Troll Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": [
+    1
+   ]
+  },
+  {
+   "name": "East-West Passage",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Round Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Engravings Cave",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Dome Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Torch Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Temple",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Altar",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Egyptian Room",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Forest",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Attic",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Cellar",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "West of House",
+   "dark": false,
+   "first_seen_life": 0,
+   "death_lives": []
+  },
+  {
+   "name": "Clearing",
+   "dark": false,
+   "first_seen_life": 1,
+   "death_lives": []
+  },
+  {
+   "name": "East of Chasm",
+   "dark": false,
+   "first_seen_life": 1,
+   "death_lives": []
+  },
+  {
+   "name": "Gallery",
+   "dark": false,
+   "first_seen_life": 1,
+   "death_lives": []
+  },
+  {
+   "name": "Studio",
+   "dark": false,
+   "first_seen_life": 1,
+   "death_lives": []
+  }
+ ],
+ "edges": [
+  {
+   "from": "North of House",
+   "to": "Forest Path",
+   "direction": "north"
+  },
+  {
+   "from": "Forest Path",
+   "to": "Up a Tree",
+   "direction": "up"
+  },
+  {
+   "from": "Up a Tree",
+   "to": "Forest Path",
+   "direction": "down"
+  },
+  {
+   "from": "Forest Path",
+   "to": "North of House",
+   "direction": "south"
+  },
+  {
+   "from": "North of House",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "Behind House",
+   "to": "Kitchen",
+   "direction": "west"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Living Room",
+   "direction": "west"
+  },
+  {
+   "from": "Living Room",
+   "to": "Kitchen",
+   "direction": "east"
+  },
+  {
+   "from": "Living Room",
+   "to": "The Troll Room",
+   "direction": "north"
+  },
+  {
+   "from": "The Troll Room",
+   "to": "East-West Passage",
+   "direction": "east"
+  },
+  {
+   "from": "East-West Passage",
+   "to": "Round Room",
+   "direction": "east"
+  },
+  {
+   "from": "Round Room",
+   "to": "Engravings Cave",
+   "direction": "southeast"
+  },
+  {
+   "from": "Engravings Cave",
+   "to": "Dome Room",
+   "direction": "east"
+  },
+  {
+   "from": "Dome Room",
+   "to": "Torch Room",
+   "direction": "down"
+  },
+  {
+   "from": "Torch Room",
+   "to": "Temple",
+   "direction": "down"
+  },
+  {
+   "from": "Temple",
+   "to": "Altar",
+   "direction": "south"
+  },
+  {
+   "from": "Altar",
+   "to": "Temple",
+   "direction": "north"
+  },
+  {
+   "from": "Temple",
+   "to": "Egyptian Room",
+   "direction": "east"
+  },
+  {
+   "from": "Egyptian Room",
+   "to": "Temple",
+   "direction": "west"
+  },
+  {
+   "from": "Forest",
+   "to": "Forest Path",
+   "direction": "east"
+  },
+  {
+   "from": "Altar",
+   "to": "Temple",
+   "direction": "north"
+  },
+  {
+   "from": "Attic",
+   "to": "Kitchen",
+   "direction": "down"
+  },
+  {
+   "from": "Behind House",
+   "to": "Kitchen",
+   "direction": "west"
+  },
+  {
+   "from": "Cellar",
+   "to": "The Troll Room",
+   "direction": "north"
+  },
+  {
+   "from": "Dome Room",
+   "to": "Torch Room",
+   "direction": "down"
+  },
+  {
+   "from": "East-West Passage",
+   "to": "Round Room",
+   "direction": "east"
+  },
+  {
+   "from": "Egyptian Room",
+   "to": "Temple",
+   "direction": "west"
+  },
+  {
+   "from": "Engravings Cave",
+   "to": "Dome Room",
+   "direction": "east"
+  },
+  {
+   "from": "Forest",
+   "to": "Forest Path",
+   "direction": "east"
+  },
+  {
+   "from": "Forest Path",
+   "to": "North of House",
+   "direction": "south"
+  },
+  {
+   "from": "Forest Path",
+   "to": "Up a Tree",
+   "direction": "up"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Living Room",
+   "direction": "west"
+  },
+  {
+   "from": "Living Room",
+   "to": "Kitchen",
+   "direction": "east"
+  },
+  {
+   "from": "North of House",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "North of House",
+   "to": "Forest Path",
+   "direction": "north"
+  },
+  {
+   "from": "Round Room",
+   "to": "Engravings Cave",
+   "direction": "southeast"
+  },
+  {
+   "from": "Temple",
+   "to": "Egyptian Room",
+   "direction": "east"
+  },
+  {
+   "from": "Temple",
+   "to": "Altar",
+   "direction": "south"
+  },
+  {
+   "from": "The Troll Room",
+   "to": "East-West Passage",
+   "direction": "east"
+  },
+  {
+   "from": "Torch Room",
+   "to": "Temple",
+   "direction": "down"
+  },
+  {
+   "from": "Up a Tree",
+   "to": "Forest Path",
+   "direction": "down"
+  },
+  {
+   "from": "West of House",
+   "to": "North of House",
+   "direction": "north"
+  },
+  {
+   "from": "West of House",
+   "to": "Forest",
+   "direction": "west"
+  },
+  {
+   "from": "Forest Path",
+   "to": "Clearing",
+   "direction": "north"
+  },
+  {
+   "from": "Clearing",
+   "to": "Forest Path",
+   "direction": "south"
+  },
+  {
+   "from": "Behind House",
+   "to": "Clearing",
+   "direction": "east"
+  },
+  {
+   "from": "Clearing",
+   "to": "Behind House",
+   "direction": "west"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "Living Room",
+   "to": "East of Chasm",
+   "direction": "south"
+  },
+  {
+   "from": "East of Chasm",
+   "to": "Gallery",
+   "direction": "east"
+  },
+  {
+   "from": "Gallery",
+   "to": "Studio",
+   "direction": "north"
+  },
+  {
+   "from": "Studio",
+   "to": "Gallery",
+   "direction": "south"
+  },
+  {
+   "from": "Gallery",
+   "to": "East of Chasm",
+   "direction": "west"
+  },
+  {
+   "from": "East of Chasm",
+   "to": "Cellar",
+   "direction": "north"
+  },
+  {
+   "from": "Cellar",
+   "to": "The Troll Room",
+   "direction": "north"
+  },
+  {
+   "from": "The Troll Room",
+   "to": "Cellar",
+   "direction": "south"
+  },
+  {
+   "from": "Behind House",
+   "to": "Clearing",
+   "direction": "east"
+  },
+  {
+   "from": "Behind House",
+   "to": "Kitchen",
+   "direction": "west"
+  },
+  {
+   "from": "Cellar",
+   "to": "Forest",
+   "direction": "north"
+  },
+  {
+   "from": "Cellar",
+   "to": "East of Chasm",
+   "direction": "south"
+  },
+  {
+   "from": "Clearing",
+   "to": "Forest Path",
+   "direction": "south"
+  },
+  {
+   "from": "Clearing",
+   "to": "Behind House",
+   "direction": "west"
+  },
+  {
+   "from": "East of Chasm",
+   "to": "Gallery",
+   "direction": "east"
+  },
+  {
+   "from": "East of Chasm",
+   "to": "Cellar",
+   "direction": "north"
+  },
+  {
+   "from": "Forest",
+   "to": "Forest Path",
+   "direction": "east"
+  },
+  {
+   "from": "Forest Path",
+   "to": "Clearing",
+   "direction": "north"
+  },
+  {
+   "from": "Forest Path",
+   "to": "North of House",
+   "direction": "south"
+  },
+  {
+   "from": "Gallery",
+   "to": "Studio",
+   "direction": "north"
+  },
+  {
+   "from": "Gallery",
+   "to": "East of Chasm",
+   "direction": "west"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Living Room",
+   "direction": "west"
+  },
+  {
+   "from": "Living Room",
+   "to": "Cellar",
+   "direction": "down"
+  },
+  {
+   "from": "North of House",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "Studio",
+   "to": "Gallery",
+   "direction": "south"
+  },
+  {
+   "from": "The Troll Room",
+   "to": "Cellar",
+   "direction": "south"
+  },
+  {
+   "from": "West of House",
+   "to": "Forest",
+   "direction": "west"
+  },
+  {
+   "from": "Kitchen",
+   "to": "Living Room",
+   "direction": "west"
+  },
+  {
+   "from": "Living Room",
+   "to": "Forest",
+   "direction": "north"
+  },
+  {
+   "from": "North of House",
+   "to": "Behind House",
+   "direction": "east"
+  },
+  {
+   "from": "West of House",
+   "to": "North of House",
+   "direction": "north"
+  }
+ ]
+}

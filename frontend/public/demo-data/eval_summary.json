@@ -1,0 +1,246 @@
+{
+ "conditions": [
+  {
+   "condition": "baseline",
+   "config": {
+    "reflection": false,
+    "rules": false,
+    "memory": false,
+    "guardrails": false
+   },
+   "n_runs": 11,
+   "per_life": [
+    {
+     "life": 0,
+     "mean": 28.3,
+     "min": 0.0,
+     "max": 49.0
+    },
+    {
+     "life": 1,
+     "mean": 30.90909090909091,
+     "min": 0.0,
+     "max": 49.0
+    },
+    {
+     "life": 2,
+     "mean": 35.90909090909091,
+     "min": 15.0,
+     "max": 45.0
+    },
+    {
+     "life": 3,
+     "mean": 31.818181818181817,
+     "min": 0.0,
+     "max": 45.0
+    },
+    {
+     "life": 4,
+     "mean": 31.363636363636363,
+     "min": 15.0,
+     "max": 44.0
+    },
+    {
+     "life": 5,
+     "mean": 32.72727272727273,
+     "min": 25.0,
+     "max": 49.0
+    },
+    {
+     "life": 6,
+     "mean": 31.90909090909091,
+     "min": 5.0,
+     "max": 49.0
+    },
+    {
+     "life": 7,
+     "mean": 33.54545454545455,
+     "min": 15.0,
+     "max": 44.0
+    },
+    {
+     "life": 8,
+     "mean": 36.63636363636363,
+     "min": 10.0,
+     "max": 59.0
+    },
+    {
+     "life": 9,
+     "mean": 34.45454545454545,
+     "min": 10.0,
+     "max": 49.0
+    },
+    {
+     "life": 10,
+     "mean": 44.0,
+     "min": 44.0,
+     "max": 44.0
+    },
+    {
+     "life": 11,
+     "mean": 45.0,
+     "min": 45.0,
+     "max": 45.0
+    },
+    {
+     "life": 12,
+     "mean": 34.0,
+     "min": 34.0,
+     "max": 34.0
+    },
+    {
+     "life": 13,
+     "mean": 39.0,
+     "min": 39.0,
+     "max": 39.0
+    },
+    {
+     "life": 14,
+     "mean": 44.0,
+     "min": 44.0,
+     "max": 44.0
+    },
+    {
+     "life": 15,
+     "mean": 25.0,
+     "min": 25.0,
+     "max": 25.0
+    },
+    {
+     "life": 16,
+     "mean": 44.0,
+     "min": 44.0,
+     "max": 44.0
+    },
+    {
+     "life": 17,
+     "mean": 39.0,
+     "min": 39.0,
+     "max": 39.0
+    },
+    {
+     "life": 18,
+     "mean": 44.0,
+     "min": 44.0,
+     "max": 44.0
+    },
+    {
+     "life": 19,
+     "mean": 30.0,
+     "min": 30.0,
+     "max": 30.0
+    },
+    {
+     "life": 20,
+     "mean": 34.0,
+     "min": 34.0,
+     "max": 34.0
+    },
+    {
+     "life": 21,
+     "mean": 0.0,
+     "min": 0.0,
+     "max": 0.0
+    },
+    {
+     "life": 22,
+     "mean": 30.0,
+     "min": 30.0,
+     "max": 30.0
+    },
+    {
+     "life": 23,
+     "mean": 30.0,
+     "min": 30.0,
+     "max": 30.0
+    },
+    {
+     "life": 24,
+     "mean": 30.0,
+     "min": 30.0,
+     "max": 30.0
+    }
+   ],
+   "avg_score": 32.95967741935484,
+   "avg_moves": 250.31451612903226,
+   "repeated_actions": 0,
+   "guardrail_blocks": 0
+  },
+  {
+   "condition": "harness",
+   "config": {
+    "reflection": true,
+    "rules": true,
+    "memory": true,
+    "guardrails": true
+   },
+   "n_runs": 13,
+   "per_life": [
+    {
+     "life": 0,
+     "mean": 19.5,
+     "min": 0.0,
+     "max": 63.0
+    },
+    {
+     "life": 1,
+     "mean": 10.416666666666666,
+     "min": 0.0,
+     "max": 30.0
+    },
+    {
+     "life": 2,
+     "mean": 10.5,
+     "min": 0.0,
+     "max": 30.0
+    },
+    {
+     "life": 3,
+     "mean": 2.5,
+     "min": 0.0,
+     "max": 5.0
+    },
+    {
+     "life": 4,
+     "mean": 8.75,
+     "min": 5.0,
+     "max": 15.0
+    },
+    {
+     "life": 5,
+     "mean": 12.5,
+     "min": 10.0,
+     "max": 15.0
+    },
+    {
+     "life": 6,
+     "mean": 12.5,
+     "min": 10.0,
+     "max": 15.0
+    },
+    {
+     "life": 7,
+     "mean": 7.5,
+     "min": 0.0,
+     "max": 15.0
+    },
+    {
+     "life": 8,
+     "mean": 5.0,
+     "min": 0.0,
+     "max": 10.0
+    },
+    {
+     "life": 9,
+     "mean": 15.0,
+     "min": 15.0,
+     "max": 15.0
+    }
+   ],
+   "avg_score": 11.807692307692308,
+   "avg_moves": 98.4423076923077,
+   "repeated_actions": 0,
+   "guardrail_blocks": 0
+  }
+ ]
+}
