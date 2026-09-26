@@ -126,9 +126,15 @@ def build_tail(
             "Recent moves:\n"
             + "\n".join(f"- {s.n}. {s.command} -> {s.outcome}" for s in state.recent)
         )
-    if status == "repeat":
+    if status in {"repeat", "idle"}:
+        why = (
+            "you just repeated a command here with the same result"
+            if status == "repeat"
+            else "no new room, item, or score for a while"
+        )
         lines.append(
-            "Note: you just repeated a command here with the same result. Try something new."
+            f"Note: {why}. Pick one of the open leads above and pursue it (walk the map you "
+            "know to get there), or try an action nobody has tried in this room."
         )
 
     if cautions:
