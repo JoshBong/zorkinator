@@ -136,3 +136,18 @@ class PromoteTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HarnessProtocolTest(unittest.TestCase):
+    def test_command_pattern_alias(self) -> None:
+        alias = rule({"command_pattern": "(kill|attack) troll.*"}, [], "hard")
+        self.assertFalse(check("attack troll", State(), [alias]).ok)
+
+    def test_expect_and_surprise_lines(self) -> None:
+        from zorkinator.player import _tag, parse_surprise
+        from zorkinator.runner import extract_command
+
+        reply = "Surprise: no\nopen door\nGoal: get inside\nExpect: the door opens"
+        self.assertEqual(extract_command(reply), "open door")
+        self.assertEqual(_tag(reply, "expect:"), "the door opens")
+        self.assertFalse(parse_surprise(reply))

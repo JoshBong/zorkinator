@@ -379,9 +379,12 @@ Rule diffs are separate objects; new rules must cite public evidence and are bor
 are valid. Use add {op,key,text,when,verdict,evidence}, revise
 {op,rule_id,key,text,when,verdict,evidence}, or retire {op,rule_id}. Never invent an evidence
 reference that is absent from the supplied transcript. For add/revise, when MUST be a JSON object
-(for example {"command_pattern":"ready"}) and verdict MUST be exactly "warn" or "block"; do not
-write natural-language strings for when or use "soft" as the verdict. Prefer an empty rule_diffs
-array when no precise machine-checkable condition follows directly from the evidence.
+using only these fields: command (regex), room, room_is_dark (true/false), carrying and
+not_carrying (lists of items); for example
+{"command":"(kill|attack) troll.*","not_carrying":["sword"]}.
+verdict MUST be exactly "warn" or "block"; do not write natural-language strings for when
+or use "soft" as the verdict. Prefer an empty rule_diffs array when no precise
+machine-checkable condition follows directly from the evidence.
 """
         return f"{instructions}\nEVIDENCE_PACKET\n{json.dumps(packet, sort_keys=True)}"
 
