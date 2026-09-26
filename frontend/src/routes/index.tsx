@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
-import { Brain, ShieldAlert, Trophy } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Brain, Play, ShieldAlert, Trophy } from "lucide-react";
 
 import { api } from "@/api/client";
 import { MOVES_PER_GAME } from "@/api/mock";
@@ -47,8 +47,14 @@ function streak(moves: Move[], i: number) {
   return n;
 }
 
+const LAST_GAME = 10;
+/** Pause after a game finishes so its final state (including any death) is visible
+ * before demo mode cuts away to the next game. */
+const DEMO_ADVANCE_DELAY_MS = 1500;
+
 function HeadToHead() {
   const [game, setGame] = useState(1);
+  const [demoMode, setDemoMode] = useState(false);
 
   const baseLives = useQuery({
     queryKey: ["lives", BASE_RUN],
@@ -73,6 +79,29 @@ function HeadToHead() {
   const harn = useMemo(() => (harnQ.data ?? []).slice(0, MOVES_PER_GAME), [harnQ.data]);
   const length = Math.max(base.length, harn.length);
   const replay = useReplay(length);
+
+  // Demo mode: once a game's replay stops because it *finished* (sitting on the last move,
+  // not paused mid-game), wait a beat so the final state is visible, then move to the next
+  // game. `advancedForGame` stops the effect from scheduling a second advance for the same
+  // game while the first timeout is still pending or the next game's data hasn't loaded yet.
+  const advancedForGame = useRef<number | null>(null);
+  useEffect(() => {
+    if (!demoMode || length === 0) return;
+    const finished = replay.index === length - 1 && !replay.playing;
+    if (!finished || game >= LAST_GAME) {
+      advancedForGame.current = null;
+      return;
+    }
+    if (advancedForGame.current === game) return;
+    advancedForGame.current = game;
+    const timer = setTimeout(() => {
+      setGame((g) => Math.min(LAST_GAME, g + 1));
+      replay.setIndex(0);
+      replay.setPlaying(true);
+    }, DEMO_ADVANCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [demoMode, replay.index, replay.playing, replay.setIndex, replay.setPlaying, length, game]);
+
   const bIdx = Math.min(replay.index, Math.max(0, base.length - 1));
   const hIdx = Math.min(replay.index, Math.max(0, harn.length - 1));
   const bScore = base[bIdx]?.score ?? 0;
@@ -135,6 +164,15 @@ function HeadToHead() {
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setDemoMode((d) => !d)}
+          className={`ml-auto flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-xs ${
+            demoMode ? "bg-harness/20 text-harness" : "text-muted-foreground hover:bg-secondary"
+          }`}
+        >
+          <Play className="h-3 w-3" />
+          Demo mode {demoMode ? "on" : "off"}
+        </button>
       </div>
 
       {/* Scoreboard */}
@@ -236,8 +274,7 @@ function HeadToHead() {
                 className="h-[250px]"
               />
               <p className="presenter-hide mt-1 px-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                Persisted in Atlas · world_facts, upserted on every move · brighter = discovered
-                more recently · red = died here
+                Persisted in Atlas · red = died here
               </p>
             </div>
           ) : (

@@ -266,11 +266,18 @@ export function getLives(runId: string): Life[] {
         : DEATH_CAUSES[Math.floor(rnd() * DEATH_CAUSES.length)]!;
     const learned =
       cond === "baseline" ? [] : life <= RULE_TEXTS.length ? [RULE_TEXTS[life - 1]!.rule_id] : [];
+
+    // Baseline never learns, so every life ends in death. The harness (and ablations) die less
+    // often as rules/memory accumulate: life 1 always dies (the death the harness learns its
+    // first lesson from), then death probability decays with life.
+    const dies = cond === "baseline" || life === 1 || rnd() < Math.max(0.15, 0.9 - life * 0.12);
+    const deathCause = dies ? cause : "survived (hit the move cap)";
+
     return {
       life,
       score: lifeScore(runId, life),
       moves: lifeMoves(runId, life),
-      death_cause: life === 10 && cond !== "baseline" ? "survived (run ended)" : cause,
+      death_cause: life === 10 && cond !== "baseline" ? "survived (run ended)" : deathCause,
       rules_learned: learned,
     };
   });

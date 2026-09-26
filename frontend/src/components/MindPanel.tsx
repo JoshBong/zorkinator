@@ -84,9 +84,6 @@ export function MindPanel({
             <Sparkles className="h-4 w-4 text-harness" />
             <span className="font-mono text-base text-harness">{move?.command ?? "—"}</span>
           </div>
-          <p className="mt-2 font-mono text-[11px] text-muted-foreground">
-            room: {move?.room ?? "unknown"}
-          </p>
         </section>
       </div>
     </div>

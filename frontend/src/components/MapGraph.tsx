@@ -130,9 +130,9 @@ export function MapGraph({
                         ? "fill-baseline"
                         : isCurrent
                           ? "room-pulse fill-harness"
-                          : r.dark
-                            ? "fill-muted stroke-border"
-                            : "fill-phosphor-dim"
+                          : seen
+                            ? "fill-phosphor-dim"
+                            : "fill-muted stroke-border"
                     }
                   />
                   {isGrave && (
