@@ -2,8 +2,10 @@ import os
 import unittest
 import uuid
 from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
 
 from bson import ObjectId
+from pymongo.errors import OperationFailure
 
 from zorkinator import db
 from zorkinator.models import MoveRecord, RuleDoc, RunRecord, WorldFactDoc
@@ -53,6 +55,83 @@ class MongoMappingTest(unittest.TestCase):
     def test_without_id_strips_natural_key_id(self) -> None:
         raw = {"_id": "run1", "run_id": "run1", "score": 0}
         self.assertEqual(db._without_id(raw), {"run_id": "run1", "score": 0})
+
+
+class MongoMockTest(unittest.TestCase):
+    def setUp(self) -> None:
+        db.close()
+
+    def tearDown(self) -> None:
+        db.close()
+
+    def test_client_close_indexes_sink_and_simple_queries(self) -> None:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            self.assertRaisesRegex(RuntimeError, "MONGODB_URI"),
+        ):
+            db.get_client()
+        client = MagicMock()
+        database = MagicMock()
+        client.__getitem__.return_value = database
+        with (
+            patch.dict(os.environ, {"MONGODB_URI": "mongodb://example"}),
+            patch.object(db, "MongoClient", return_value=client),
+        ):
+            self.assertIs(db.get_db(), database)
+            db.ensure_indexes()
+            db.close()
+        client.close.assert_called_once()
+
+        with patch.object(db, "get_db", return_value=database):
+            sink = db.MongoSink()
+            sink.move(_move_record("run", 1))
+            sink.run(_run_record("run"))
+            database.runs.find_one.return_value = None
+            self.assertIsNone(db.get_run("none"))
+            database.runs.find.return_value.sort.return_value = []
+            database.moves.find.return_value.sort.return_value = []
+            self.assertEqual(db.get_runs("paper"), [])
+            self.assertEqual(db.get_moves("run"), [])
+
+    def test_fact_rule_and_store_error_paths(self) -> None:
+        database = MagicMock()
+        fact = WorldFactDoc(run_id="run", subject="lamp", attr="lit", value=True, move=2)
+        with patch.object(db, "get_db", return_value=database):
+            database.world_facts.find_one.return_value = {"move": 3}
+            db.upsert_world_fact(fact)
+            database.world_facts.update_one.assert_not_called()
+            database.world_facts.find_one.return_value = None
+            db.upsert_world_fact(fact)
+            database.world_facts.find.return_value = []
+            self.assertEqual(db.get_world_facts("run", "lamp"), [])
+            rule = RuleDoc(
+                id="r", text="t", when={}, verdict="warn", status="soft", born_version="v"
+            )
+            self.assertEqual(db.insert_rule(rule), "r")
+            database.rules.find.return_value = []
+            self.assertEqual(db.get_rules("soft"), [])
+            db.record_rule_fired("r")
+            db.promote_rule("r", "v2")
+
+        with self.assertRaises(ValueError):
+            db.MongoOuterLoopStore(database, max_recall_limit=0)
+        store = db.MongoOuterLoopStore(database)
+        with self.assertRaises(RuntimeError):
+            store.publish_bundle(MagicMock(), [], [], [])
+        with (
+            patch.dict(os.environ, {"MONGODB_URI": ""}),
+            self.assertRaisesRegex(RuntimeError, "MONGODB_URI"),
+        ):
+            db.MongoOuterLoopStore.from_env()
+
+    def test_vector_index_swallows_only_duplicate_failures(self) -> None:
+        database = MagicMock()
+        store = db.MongoOuterLoopStore(database)
+        database.memories.create_search_index.side_effect = OperationFailure("already exists")
+        store._ensure_vector_index()
+        database.memories.create_search_index.side_effect = OperationFailure("bad")
+        with self.assertRaises(OperationFailure):
+            store._ensure_vector_index()
 
 
 def _run_record(run_id: str) -> RunRecord:

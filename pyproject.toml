@@ -26,3 +26,18 @@ pythonVersion = "3.11"
 typeCheckingMode = "strict"
 stubPath = "typings"
 include = ["zorkinator", "tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["zorkinator"]
+omit = [
+    "zorkinator/__main__.py",
+    "zorkinator/analyze.py",
+    "zorkinator/cli.py",
+    "zorkinator/import_runs.py",
+    "zorkinator/test_connection.py",
+]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
