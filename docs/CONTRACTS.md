@@ -16,6 +16,9 @@ moves           {run_id, n, room, command, proposals: [str], rejections: [{cmd, 
 
 world_facts     {run_id, subject, attr, value, move}       upsert on (run_id, subject, attr)
 
+lessons         {_id, kind: "procedure", text, evidence: ["<run_id>:<n>"], born_version}
+                 (cross-game; general only — no room names)
+
 rules           {_id: "r12", text, when: {...}, verdict: "warn"|"block",
                  status: "soft"|"hard", evidence: ["<run_id>:<n>"], fired: int,
                  born_version, promoted_version}
