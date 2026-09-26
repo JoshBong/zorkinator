@@ -11,7 +11,7 @@ from . import db, verifier
 from .adapter import GameAdapter
 from .driver import BetweenGameDriver, MongoRunRepository, ReflectorProposalCreator
 from .openai_chat import OpenAIChat
-from .reflector import OpenAIReflectionModel
+from .reflector import AnthropicReflectionModel, OpenAIReflectionModel
 from .runner import (
     BASELINE_MODEL,
     OPENAI_DEV_MODEL,
@@ -83,7 +83,14 @@ def harness(
     try:
         store.ensure_indexes()
         run_repository = MongoRunRepository()
-        proposals = ReflectorProposalCreator(store, OpenAIReflectionModel(resolved_model))
+        # claude-* runs on Anthropic (the benchmark model); anything else on OpenAI (dev default).
+        anthropic_model = resolved_model.startswith("claude")
+        reflection_model = (
+            AnthropicReflectionModel(resolved_model)
+            if anthropic_model
+            else OpenAIReflectionModel(resolved_model)
+        )
+        proposals = ReflectorProposalCreator(store, reflection_model)
         # Soft -> hard only by replay: cited runs plus every logged harness game.
         promoter = verifier.Promoter(db.get_moves, history=lambda: db.get_runs("harness"))
         versions = VersionManager(store, store, store, promoter)
@@ -92,7 +99,7 @@ def harness(
             games,
             driver=driver,
             repository=store,
-            chat=OpenAIChat(resolved_model),
+            chat=AnthropicChat(resolved_model) if anthropic_model else OpenAIChat(resolved_model),
             sink=db.MongoSink(),
             seed=seed,
             move_cap=moves,
