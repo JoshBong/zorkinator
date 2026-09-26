@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="470" viewBox="0 0 1240 470" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="13" markerHeight="13" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2B3A4A"/>
+    </marker>
+    <style>
+      .t { font-weight: 700; text-anchor: middle; }
+      .s { font-size: 13.5px; text-anchor: middle; }
+      .ln { stroke: #2B3A4A; stroke-width: 2.2; fill: none; marker-end: url(#a); }
+      .lbl { font-size: 13px; fill: #2B3A4A; }
+      .llm { fill: #F8E6CB; stroke: #C27C1E; stroke-width: 2.5; }
+      .llm-t { fill: #9A5A0C; font-size: 19px; }
+      .llm-s { fill: #9A5A0C; }
+      .code { fill: #E3EFD9; stroke: #5A8A3A; stroke-width: 2.5; }
+      .code-t { fill: #3F6B25; font-size: 19px; }
+      .code-s { fill: #3F6B25; }
+      .env { fill: #E4ECF5; stroke: #4A6E93; stroke-width: 2.5; }
+      .env-t { fill: #2F5275; font-size: 19px; }
+      .env-s { fill: #2F5275; }
+      .plain { fill: #FFFFFF; stroke: #555; stroke-width: 2.2; }
+      .plain-t { fill: #444; font-size: 19px; }
+      .plain-s { fill: #444; }
+    </style>
+  </defs>
+  <rect width="1240" height="470" fill="#FFFFFF"/>
+
+  <rect x="18" y="120" width="205" height="150" rx="14" class="plain"/>
+  <text x="120" y="152" class="t plain-t">Paper prompt</text>
+  <text class="s plain-s"><tspan x="120" y="178">arXiv 2602.15867,</tspan><tspan x="120" y="198">word for word:</tspan><tspan x="120" y="218">"respond with ONLY</tspan><tspan x="120" y="236">the command", may say</tspan><tspan x="120" y="254">"I give up"</tspan></text>
+
+  <rect x="250" y="30" width="745" height="360" rx="30" fill="#F3F6FA" stroke="#C9D6E3" stroke-width="1.5"/>
+  <text x="272" y="377" font-weight="700" font-size="16" fill="#1E2A36">Bare loop · every move of one game</text>
+
+  <path d="M223,195 L262,195 L262,140 L290,140" class="ln"/>
+  <rect x="292" y="80" width="230" height="120" rx="14" class="llm"/>
+  <text x="407" y="113" class="t llm-t">Player LLM</text>
+  <text class="s llm-s"><tspan x="407" y="139">Rereads the whole chat,</tspan><tspan x="407" y="158">replies with one command.</tspan><tspan x="407" y="177">No map, no notes, no rules</tspan></text>
+
+  <rect x="720" y="80" width="235" height="120" rx="14" class="env"/>
+  <text x="837" y="113" class="t env-t">Zork I (Jericho)</text>
+  <text class="s env-s"><tspan x="837" y="139">Runs the command,</tspan><tspan x="837" y="158">returns game text</tspan></text>
+
+  <rect x="480" y="250" width="290" height="95" rx="14" class="plain"/>
+  <text x="625" y="282" class="t plain-t">Chat history</text>
+  <text class="s plain-s"><tspan x="625" y="307">Every command and response, appended.</tspan><tspan x="625" y="326">Grows every move, up to 500 moves</tspan></text>
+
+  <path d="M522,120 L718,120" class="ln"/>
+  <text x="620" y="110" class="lbl" text-anchor="middle">command</text>
+  <path d="M837,200 L837,297 L772,297" class="ln"/>
+  <text x="847" y="252" class="lbl">game text</text>
+  <path d="M480,297 L407,297 L407,202" class="ln"/>
+  <text x="397" y="252" class="lbl" text-anchor="end">whole chat, every move</text>
+
+  <g transform="translate(620,196) scale(0.8)">
+    <path d="M-20,-4 A20,20 0 0 1 16,-12" stroke="#1E2A36" stroke-width="5" fill="none" marker-end="url(#a)"/>
+    <path d="M20,4 A20,20 0 0 1 -16,12" stroke="#1E2A36" stroke-width="5" fill="none" marker-end="url(#a)"/>
+  </g>
+
+  <rect x="250" y="405" width="745" height="44" rx="14" fill="#FFFFFF" stroke="#9AA5B1" stroke-width="1.8" stroke-dasharray="7 5"/>
+  <text x="622" y="432" class="s" fill="#444">Between games: nothing is learned. With lookup tools over its past games, the model used them <tspan font-weight="700">6 times in 100 games</tspan></text>
+
+  <path d="M995,195 L1030,195" class="ln"/>
+  <rect x="1032" y="95" width="192" height="200" rx="14" class="plain"/>
+  <text x="1128" y="127" class="t plain-t">Result</text>
+  <text class="s plain-s"><tspan x="1128" y="153">Haiku 4.5, 100 games:</tspan><tspan x="1128" y="175" font-weight="700" font-size="16">mean 32 / 350</tspan><tspan x="1128" y="199">45% say "I give up"</tspan><tspan x="1128" y="219">44% die (29 to the troll)</tspan><tspan x="1128" y="243">Paper, best frontier run:</tspan><tspan x="1128" y="262">about 75 / 350</tspan></text>
+</svg>

@@ -30,6 +30,11 @@ chat apps let those models see earlier chats), Claude Haiku 4.5 looked something
 and its score did not improve. Raw memory is not enough. The experience has to be turned into knowledge the
 agent can actually use, and the agent must not be allowed to act on beliefs it cannot back up.
 
+<p align="center">
+  <img src="docs/img/baseline.png" alt="Baseline: the paper's bare loop. The player LLM rereads the whole chat and replies with one command; nothing is learned between games." width="100%">
+  <br><em>Before: the paper's bare loop. Nothing is learned between games.</em>
+</p>
+
 ## What makes it different
 
 | Typical self-improving harness | Zorkinator |
@@ -42,32 +47,10 @@ agent can actually use, and the agent must not be allowed to act on beliefs it c
 
 ## How it works
 
-```mermaid
-flowchart TB
-    subgraph inner["One game (inner loop)"]
-        direction LR
-        T["Game text<br/>(human-visible only)"] --> S["Scribe<br/>builds the game's world model"]
-        S --> B["Builder<br/>fresh ~500-token prompt"]
-        B --> P["Player LLM<br/>command + Goal<br/>(+ Expect: in progress)"]
-        P --> V{"Verifier<br/>(wiring in progress)"}
-        V -- "hard rule: block" --> P
-        V -- "ok / soft warning" --> J["Jericho"]
-        J --> O["Outcome"]
-        O -- "surprise?<br/>prediction vs reality" --> S
-    end
-
-    inner -- "every move + its evidence" --> DB[("MongoDB Atlas<br/>runs · moves · world facts<br/>memories · rules · versions")]
-
-    subgraph outer["Between games (outer loop)"]
-        direction LR
-        R["Reflector<br/>reads deaths and score changes first"] --> C["Version manager<br/>checks evidence, all-or-nothing commit"]
-        C --> PR["Promoter<br/>soft → hard only if replay proves it"]
-        PR --> NV["Harness v(N+1)"]
-    end
-
-    DB --> R
-    NV -- "exact version for the next game" --> inner
-```
+<p align="center">
+  <img src="docs/img/harness.png" alt="Zorkinator: an inner loop of builder, player, verifier, Jericho and scribe on every move, and an outer loop of Atlas, reflector, versions and promoter between games." width="100%">
+  <br><em>After: Zorkinator. The inner loop plays each move; the outer loop turns each game into the next harness version.</em>
+</p>
 
 1. **Inner loop, one move.** The scribe updates the game's working knowledge (rooms, exits, items, what was
    tried and what happened). The builder writes a fresh, compact prompt from it, with no chat history. The player
