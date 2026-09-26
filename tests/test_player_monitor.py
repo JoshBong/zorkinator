@@ -60,7 +60,7 @@ class PlayerTests(unittest.TestCase):
         messages = chat.messages[0]
         blocks = cast(list[TextBlockParam], messages[0]["content"])
         self.assertEqual(blocks[0]["text"], "fixed instructions")
-        self.assertEqual(blocks[1]["text"], "state\n\nRejected: A hard rule blocks that command.")
+        self.assertEqual(blocks[1]["text"], "state\n\nA hard rule blocks that command.")
 
     def test_optional_response_tags_accept_protocol_case_and_reject_unknown_surprise(self) -> None:
         self.assertEqual(parse_goal("GOAL: Explore the cellar"), "Explore the cellar")
