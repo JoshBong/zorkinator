@@ -25,7 +25,8 @@ from pydantic import JsonValue
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.client_session import ClientSession
 from pymongo.database import Database
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, OperationFailure
+from pymongo.operations import SearchIndexModel
 
 from .models import (
     ContractModel,
@@ -45,6 +46,12 @@ DB_NAME = "zork"
 DEFAULT_RECALL_LIMIT = 10
 MAX_RECALL_LIMIT = 50
 MAX_RECALL_BYTES = 64 * 1024
+
+# Atlas Vector Search index on memories.content.text, using Automated Embedding: Atlas
+# calls a Voyage AI model to embed both the indexed text and each query itself, so there
+# is no embedding API key or pipeline code in this codebase. Public preview as of 2026-05.
+VECTOR_INDEX_NAME = "memories_vector"
+VECTOR_EMBED_MODEL = "voyage-4-lite"
 
 _T = TypeVar("_T", bound=ContractModel)
 
@@ -315,6 +322,37 @@ class MongoOuterLoopStore:
             partialFilterExpression={"proposal_id": {"$type": "string"}},
             name="published_proposal",
         )
+        self._ensure_vector_index()
+
+    def _ensure_vector_index(self) -> None:
+        """Create the memories.content.text Atlas Vector Search index. create_search_index
+        isn't naturally idempotent like create_index, so an "already exists" failure is
+        swallowed; any other failure (e.g. a genuinely bad definition) still raises."""
+        model = SearchIndexModel(
+            name=VECTOR_INDEX_NAME,
+            type="vectorSearch",
+            definition={
+                "fields": [
+                    {
+                        "type": "autoEmbed",
+                        "modality": "text",
+                        "path": "content.text",
+                        "model": VECTOR_EMBED_MODEL,
+                    },
+                    {"type": "filter", "path": "experiment_id"},
+                    {"type": "filter", "path": "_id"},
+                    {"type": "filter", "path": "kind"},
+                ]
+            },
+        )
+        try:
+            self._database.memories.create_search_index(model)
+        except OperationFailure as exc:
+            if (
+                "already exists" not in str(exc).casefold()
+                and "duplicate" not in str(exc).casefold()
+            ):
+                raise
 
     def record_proposal(
         self,
@@ -422,13 +460,101 @@ class MongoOuterLoopStore:
         kinds: Sequence[str] | None = None,
         limit: int = DEFAULT_RECALL_LIMIT,
     ) -> list[MemoryRevision]:
-        """Search only immutable revisions active in the requested version."""
+        """Search only immutable revisions active in the requested version.
+
+        `query` here is a plain substring filter, unchanged from before. For real
+        semantic ranking via Atlas Vector Search, see recall_scored() below — kept
+        as a separate method rather than changed in place here, since this one
+        already has callers and tests that depend on the substring behavior and
+        don't require a live Vector Search index to run.
+        """
         if limit < 1 or limit > self._max_recall_limit:
             raise ValueError(f"limit must be between 1 and {self._max_recall_limit}")
         version = self._require_version(version_id)
         if not version.memory_refs:
             return []
+        return self._manifest_scan(
+            version, query=query, subjects=subjects, kinds=kinds, limit=limit
+        )
 
+    def recall_scored(
+        self,
+        version_id: str,
+        query: str,
+        *,
+        subjects: Sequence[str] | None = None,
+        kinds: Sequence[str] | None = None,
+        limit: int = DEFAULT_RECALL_LIMIT,
+    ) -> list[tuple[MemoryRevision, float]]:
+        """Real semantic search via Atlas Vector Search (see _ensure_vector_index: an
+        autoEmbed index on content.text, so Atlas calls Voyage AI to embed the query
+        itself — no embedding call on our side). Keeps each result's vectorSearchScore
+        (0-1) for display, e.g. the frontend's "retrieved from Atlas, similarity 0.94"
+        panel. Requires ensure_indexes() to have been run at least once."""
+        if limit < 1 or limit > self._max_recall_limit:
+            raise ValueError(f"limit must be between 1 and {self._max_recall_limit}")
+        version = self._require_version(version_id)
+        if not version.memory_refs:
+            return []
+        return self._vector_recall(version, query, subjects=subjects, kinds=kinds, limit=limit)
+
+    def _vector_recall(
+        self,
+        version: HarnessVersionRecord,
+        query: str,
+        *,
+        subjects: Sequence[str] | None,
+        kinds: Sequence[str] | None,
+        limit: int,
+    ) -> list[tuple[MemoryRevision, float]]:
+        revision_ids = [reference.revision_id for reference in version.memory_refs]
+        match: dict[str, Any] = {
+            "_id": {"$in": revision_ids},
+            "experiment_id": version.experiment_id,
+        }
+        if kinds:
+            match["kind"] = {"$in": list(kinds)}
+        over_fetch = min(self._max_recall_limit, limit * 3)
+        pipeline: list[dict[str, Any]] = [
+            {
+                "$vectorSearch": {
+                    "index": VECTOR_INDEX_NAME,
+                    "path": "content.text",
+                    "query": query,
+                    "filter": match,
+                    "numCandidates": max(over_fetch * 10, 50),
+                    "limit": over_fetch,
+                }
+            },
+            {"$set": {"_vectorSearchScore": {"$meta": "vectorSearchScore"}}},
+        ]
+        subject_filter = set(subjects or ())
+        results: list[tuple[MemoryRevision, float]] = []
+        total_bytes = 0
+        for raw in self._database.memories.aggregate(pipeline):
+            score = raw.pop("_vectorSearchScore")
+            revision = _model(MemoryRevision, raw, "revision_id")
+            if subject_filter and subject_filter.isdisjoint(revision.subjects):
+                continue
+            serialized = json.dumps(revision.model_dump(mode="json"), sort_keys=True)
+            item_bytes = len(serialized.encode("utf-8"))
+            if total_bytes + item_bytes > self._max_recall_bytes:
+                break
+            results.append((revision, score))
+            total_bytes += item_bytes
+            if len(results) == limit:
+                break
+        return results
+
+    def _manifest_scan(
+        self,
+        version: HarnessVersionRecord,
+        *,
+        query: str | None,
+        subjects: Sequence[str] | None,
+        kinds: Sequence[str] | None,
+        limit: int,
+    ) -> list[MemoryRevision]:
         revision_ids = [reference.revision_id for reference in version.memory_refs]
         raws = self._database.memories.find(
             {"_id": {"$in": revision_ids}, "experiment_id": version.experiment_id}
@@ -446,7 +572,8 @@ class MongoOuterLoopStore:
             revision = revisions_by_id.get(reference.revision_id)
             if revision is None:
                 raise ValueError(
-                    f"version {version_id!r} references missing revision {reference.revision_id!r}"
+                    f"version {version.version_id!r} references missing revision "
+                    f"{reference.revision_id!r}"
                 )
             if revision.memory_id != reference.memory_id:
                 raise ValueError(

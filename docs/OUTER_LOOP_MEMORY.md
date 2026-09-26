@@ -53,7 +53,7 @@ memories.recall(
 ) -> list[MemoryRevision]
 ```
 
-The service resolves experiment scope from the trusted version/run records and enforces a configured maximum `limit` and total serialized byte/token budget. Query text is plain text, never a Mongo query or executable expression. Recall searches only the exact revisions active in that version. Start with subject/kind filters and bounded text lookup; vector retrieval is deferred.
+The service resolves experiment scope from the trusted version/run records and enforces a configured maximum `limit` and total serialized byte/token budget. Query text is plain text, never a Mongo query or executable expression. Recall searches only the exact revisions active in that version. `recall()` itself stays a plain subject/kind/bounded-text scan (unchanged, no live index required). Real semantic ranking is `db.MongoOuterLoopStore.recall_scored(version_id, query, ...)` (Hiamil): Atlas Vector Search with Automated Embedding on `memories.content.text` — Atlas calls a Voyage AI model to embed both the indexed text and the query itself at query time, so there is no embedding pipeline or API key in this codebase. Results keep `vectorSearchScore` (0-1) for display. `ensure_indexes()` creates and idempotently re-creates the index (`memories_vector`); verified live against a seeded 3-memory manifest, where a query sharing no keywords with the correct memory still ranked it first.
 
 `ReflectionProposal` has this logical shape:
 

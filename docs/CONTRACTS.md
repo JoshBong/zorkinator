@@ -44,6 +44,8 @@ indexes          memories unique (experiment_id, proposal_id, operation_key)
                  memories (experiment_id, memory_id)
                  memory_events unique (experiment_id, proposal_id, phase)
                  harness_versions unique partial (experiment_id, proposal_id)
+                 memories_vector: Atlas Vector Search, autoEmbed on content.text
+                 (voyage-4-lite), filter fields experiment_id/_id/kind
 
 ## Function signatures
 
@@ -63,7 +65,10 @@ J  verifier.promote(rule, runs) -> "hard"|"soft"                 # death replay 
 C  versions.commit(parent_id, proposal, run_id) -> version_id    # calls verifier.promote
 C  memories.read(version_id, memory_id) -> MemoryRevision | None
 C  memories.recall(version_id, *, query=None, subjects=None, kinds=None, limit=10)
-      -> list[MemoryRevision]                                    # exact version only
+      -> list[MemoryRevision]                                    # exact version only, substring query
+H  memories.recall_scored(version_id, query, *, subjects=None, kinds=None, limit=10)
+      -> list[tuple[MemoryRevision, float]]                      # Atlas Vector Search, Automated
+      # Embedding (voyage-4-lite, no key/pipeline needed); score = vectorSearchScore, 0-1
 
 ReflectionProposal = {proposal_id, run_id, parent_id, memory_ops, rule_diffs, summary}
 memory_ops = Add | Revise | Retire; add/revise carry complete payloads and public evidence.
