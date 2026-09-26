@@ -12,3 +12,5 @@ games/
 .claude/
 .mypy_cache/
 .ruff_cache/
+runs/
+chats/
