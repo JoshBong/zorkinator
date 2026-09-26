@@ -239,6 +239,7 @@ class ViewMappingMockTests(unittest.TestCase):
         with (
             patch.object(mapping_db.db, "get_runs", return_value=[chained]),
             patch.object(mapping_db.db, "get_world_facts", return_value=facts),
+            patch.object(mapping_db.db, "get_moves", return_value=[]),
         ):
             mapped = mapping.get_map("chain")
         self.assertTrue(mapped.rooms[0].dark)

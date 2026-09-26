@@ -9,6 +9,7 @@ Each gap is called out in a comment below rather than filled with invented numbe
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
 from itertools import groupby
 from typing import Any, Literal
 
@@ -246,7 +247,7 @@ def _rule_type_of(rule: RuleDoc) -> Literal["rule", "guardrail", "memory"]:
     return "rule"
 
 
-def rule_out(r: RuleDoc) -> RuleOut:
+def rule_out(r: RuleDoc, life_of_run: Callable[[str], int] | None = None) -> RuleOut:
     """Best-effort mapping: RuleDoc has no version field the way the frontend expects
     (no rule-level version history is modeled yet), so every rule is its own v1 row.
     """
@@ -260,7 +261,7 @@ def rule_out(r: RuleDoc) -> RuleOut:
         status="active",
         learned_from=LearnedFromOut(
             run_id=ev_run_id,
-            life=_life_of(ev_run) if (ev_run := db.get_run(ev_run_id)) else 1,
+            life=life_of_run(ev_run_id) if life_of_run and ev_run_id else 1,
             move=int(ev_move) if ev_move.isdigit() else 0,
         ),
         score_impact=0.0,  # Verifier promotion doesn't record a score delta yet
@@ -270,7 +271,10 @@ def rule_out(r: RuleDoc) -> RuleOut:
 
 
 def list_rules() -> list[RuleOut]:
-    return [rule_out(r) for r in db.get_rules()]
+    runs = {run.run_id: run for run in db.get_runs()}
+    return [
+        rule_out(r, lambda rid: _life_of(runs[rid]) if rid in runs else 1) for r in db.get_rules()
+    ]
 
 
 def get_map(group_id: str) -> RunMapOut:
