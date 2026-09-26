@@ -19,6 +19,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, Literal, Protocol, TypeVar
 
+from bson import BSON
 from dotenv import load_dotenv
 from pydantic import JsonValue
 from pymongo import ASCENDING, DESCENDING, MongoClient
@@ -439,7 +440,9 @@ class MongoOuterLoopStore:
         results: list[MemoryRevision] = []
         total_bytes = 0
 
-        for reference in version.memory_refs:
+        # Additions append to the manifest. Prefer recent learning whenever the
+        # item or byte limit means reflection can only inspect a subset.
+        for reference in reversed(version.memory_refs):
             revision = revisions_by_id.get(reference.revision_id)
             if revision is None:
                 raise ValueError(
@@ -483,10 +486,17 @@ class MongoOuterLoopStore:
             collection.insert_one(document, session=session)
         except DuplicateKeyError:
             existing = collection.find_one({"_id": document["_id"]}, session=session)
-            if existing != document:
+            # Compare the representation MongoDB persists: BSON truncates
+            # datetimes to milliseconds and decodes them without tzinfo.
+            if existing != _bson_round_trip(document):
                 raise ValueError(
                     f"immutable document {document['_id']!r} already exists with different content"
                 ) from None
+
+
+def _bson_round_trip(document: dict[str, Any]) -> dict[str, Any]:
+    """Canonicalize a document exactly as a MongoDB BSON write/read does."""
+    return BSON(BSON.encode(document)).decode()
 
 
 def _document(model: ContractModel, id_field: str) -> dict[str, Any]:

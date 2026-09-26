@@ -230,13 +230,15 @@ class VersionManager:
         revisions: list[MemoryRevision] = []
         for index, operation in enumerate(proposal.memory_ops):
             operation_key = (
-                operation.key if isinstance(operation, AddMemoryOperation) else f"op_{index}"
+                f"add:{operation.key}"
+                if isinstance(operation, AddMemoryOperation)
+                else f"{operation.op}:{index}"
             )
             if isinstance(operation, AddMemoryOperation):
                 memory_id = _stable_id("memory", proposal.proposal_id, operation.key)
                 if memory_id in positions:
                     raise CommitError(f"generated duplicate memory id: {memory_id}")
-                revision_id = _stable_id("memory_revision", proposal.proposal_id, operation.key)
+                revision_id = _stable_id("memory_revision", proposal.proposal_id, operation_key)
                 revision = MemoryRevision(
                     revision_id=revision_id,
                     experiment_id=self._require_parent(proposal.parent_id).experiment_id,

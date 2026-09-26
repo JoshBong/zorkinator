@@ -8,6 +8,7 @@ from typing import Any
 
 from zorkinator.models import (
     HarnessVersionRecord,
+    MemoryRef,
     MemoryRevision,
     MoveRecord,
     ReflectionProposal,
@@ -173,6 +174,25 @@ class ReflectorTests(unittest.TestCase):
 
         packet = json.loads(model.prompts[0].split("EVIDENCE_PACKET\n", 1)[1])
         self.assertEqual([item["n"] for item in packet["transcript"]], [2, 5])
+
+    def test_packet_discloses_memories_omitted_from_reflection(self) -> None:
+        repository = FakeRepository(run(), [move(1), move(2, died=True)])
+        parent = root().model_copy(
+            update={
+                "memory_refs": [
+                    MemoryRef(memory_id="mem_old", revision_id="rev_old"),
+                    MemoryRef(memory_id="mem_new", revision_id="rev_new"),
+                ]
+            }
+        )
+        repository.get_version = lambda version_id: parent  # type: ignore[method-assign]
+        model = FakeModel({"memory_ops": [], "rule_diffs": [], "summary": "No change."})
+
+        Reflector(repository, model).propose("run_2")
+
+        packet = json.loads(model.prompts[0].split("EVIDENCE_PACKET\n", 1)[1])
+        self.assertEqual(packet["memory_selection"]["active_count"], 2)
+        self.assertEqual(packet["memory_selection"]["omitted_memory_ids"], ["mem_old", "mem_new"])
 
     def test_rejects_evidence_not_shown_to_model(self) -> None:
         repository = FakeRepository(run(), [move(1), move(2, died=True)])

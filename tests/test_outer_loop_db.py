@@ -5,8 +5,10 @@ from datetime import UTC, datetime
 from typing import Any, cast
 from unittest.mock import MagicMock
 
+from bson import BSON
 from pydantic import ValidationError
 from pymongo.database import Database
+from pymongo.errors import DuplicateKeyError
 
 from zorkinator.db import MongoOuterLoopStore
 from zorkinator.models import (
@@ -142,7 +144,17 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
             mongo_document(first, "revision_id"),
         ]
 
-        self.assertEqual(self.store.recall("v2", limit=1), [first])
+        self.assertEqual(self.store.recall("v2", limit=1), [second])
+
+    def test_immutable_retry_accepts_bson_canonical_datetime(self) -> None:
+        document = mongo_document(revision(), "revision_id")
+        collection = self.database.__getitem__.return_value
+        collection.insert_one.side_effect = DuplicateKeyError("duplicate")
+        collection.find_one.return_value = BSON(BSON.encode(document)).decode()
+
+        self.store.put_memory_revision(revision())
+
+        collection.find_one.assert_called_once_with({"_id": "memrev_1_1"}, session=None)
 
     def test_recall_excludes_nonmatching_filters_and_inactive_revision(self) -> None:
         active = revision(text="The north exit reaches room_b.")

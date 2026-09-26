@@ -246,6 +246,33 @@ class VersionManagerTests(unittest.TestCase):
         self.assertIn("proposal_1:validated", self.store.events)
         self.assertIn("proposal_1:committed", self.store.events)
 
+    def test_add_key_cannot_collide_with_revision_operation_namespace(self) -> None:
+        proposal = add_proposal()
+        proposal = proposal.model_copy(
+            update={
+                "memory_ops": [
+                    proposal.memory_ops[0].model_copy(update={"key": "revise:1"}),
+                    ReviseMemoryOperation(
+                        op="revise",
+                        memory_id="mem_old",
+                        expected_revision_id="rev_old",
+                        kind="fact",
+                        subjects=["room"],
+                        content={"text": "corrected"},
+                        status="supported",
+                        evidence=[EvidenceRef(run_id="run_1", n=3)],
+                        rationale="correct it",
+                    ),
+                ]
+            }
+        )
+
+        self.manager.commit("v1", proposal, "run_1")
+
+        operation_keys = {revision.operation_key for revision in self.store.revisions.values()}
+        self.assertIn("add:revise:1", operation_keys)
+        self.assertIn("revise:1", operation_keys)
+
     def test_revise_replaces_exact_revision_and_retire_removes_only_child_ref(self) -> None:
         revise = ReflectionProposal(
             proposal_id="proposal_revise",

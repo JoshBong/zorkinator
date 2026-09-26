@@ -134,8 +134,16 @@ class Reflector:
         self._validate_transcript(run, moves)
         selected_moves = _select_moves(moves, self._limits.max_moves)
         memories = list(self._repository.recall(run.version_id, limit=self._limits.max_memories))
+        selected_memory_ids = {memory.memory_id for memory in memories}
+        omitted_memory_ids = [
+            reference.memory_id
+            for reference in parent.memory_refs
+            if reference.memory_id not in selected_memory_ids
+        ]
         rules = list(self._repository.get_rules(parent.rule_ids))
-        prompt = self._build_prompt(run, parent, selected_moves, memories, rules)
+        prompt = self._build_prompt(
+            run, parent, selected_moves, memories, omitted_memory_ids, rules
+        )
         if len(prompt.encode("utf-8")) > self._limits.max_prompt_bytes:
             raise ReflectionError("bounded reflection prompt exceeds max_prompt_bytes")
 
@@ -202,6 +210,7 @@ class Reflector:
         parent: HarnessVersionRecord,
         moves: Sequence[MoveRecord],
         memories: Sequence[MemoryRevision],
+        omitted_memory_ids: Sequence[str],
         rules: Sequence[RuleDoc],
     ) -> str:
         packet = {
@@ -239,6 +248,12 @@ class Reflector:
                 }
                 for memory in memories
             ],
+            "memory_selection": {
+                "strategy": "newest_first",
+                "active_count": len(parent.memory_refs),
+                "included_count": len(memories),
+                "omitted_memory_ids": list(omitted_memory_ids),
+            },
             "active_rules": [rule.model_dump(mode="json") for rule in rules],
             "allowed_parent": parent.version_id,
         }
