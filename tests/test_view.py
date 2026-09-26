@@ -2,9 +2,18 @@ import os
 import unittest
 import uuid
 from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
 
 from zorkinator import db
-from zorkinator.models import MoveRecord, RuleDoc, RunRecord
+from zorkinator.models import (
+    EvidenceRef,
+    HarnessVersionRecord,
+    MemoryRef,
+    MemoryRevision,
+    MoveRecord,
+    RuleDoc,
+    RunRecord,
+)
 from zorkinator.view import mapping
 
 
@@ -131,6 +140,67 @@ class RuleMappingTest(unittest.TestCase):
         out = mapping.rule_out(self._rule(evidence=[]))
         self.assertEqual(out.learned_from.run_id, "")
         self.assertEqual(out.learned_from.move, 0)
+
+
+class MemoryMappingTest(unittest.TestCase):
+    def test_list_memories_reads_exact_manifest_in_order(self) -> None:
+        run = _run_record("run", version_id="version")
+        version = HarnessVersionRecord(
+            version_id="version",
+            experiment_id="experiment",
+            parent_id="parent",
+            source_run_id="run",
+            proposal_id="proposal",
+            memory_refs=[
+                MemoryRef(memory_id="memory-1", revision_id="revision-1"),
+                MemoryRef(memory_id="memory-2", revision_id="revision-2"),
+            ],
+            rule_ids=[],
+            context_policy={},
+            scores=[],
+            created_at=datetime.now(UTC),
+        )
+        memories = [
+            MemoryRevision(
+                revision_id=f"revision-{i}",
+                experiment_id="experiment",
+                memory_id=f"memory-{i}",
+                supersedes_revision_id=None,
+                kind="lesson",
+                subjects=["lamp"],
+                content={"text": f"Lesson {i}"},
+                status="supported",
+                evidence=[EvidenceRef(run_id="run", n=i)],
+                rationale="Observed in the game.",
+                source_run_id="run",
+                proposal_id="proposal",
+                operation_key=f"add_{i}",
+                born_version_id="version",
+                created_at=datetime.now(UTC),
+            )
+            for i in (1, 2)
+        ]
+        store = MagicMock()
+        store.get_version.return_value = version
+        store.read.side_effect = memories
+        with (
+            patch.object(db, "get_run", return_value=run),
+            patch.object(db, "get_db", return_value=MagicMock()),
+            patch.object(db, "MongoOuterLoopStore", return_value=store),
+        ):
+            result = mapping.list_memories("run")
+        assert result is not None
+        self.assertEqual([memory.memory_id for memory in result], ["memory-1", "memory-2"])
+        self.assertEqual(store.read.call_args_list[0].args, ("version", "memory-1"))
+        self.assertEqual(store.read.call_args_list[1].args, ("version", "memory-2"))
+
+    def test_list_memories_returns_empty_for_known_run_without_version(self) -> None:
+        with patch.object(db, "get_run", return_value=_run_record("run")):
+            self.assertEqual(mapping.list_memories("run"), [])
+
+    def test_list_memories_returns_none_for_unknown_run(self) -> None:
+        with patch.object(db, "get_run", return_value=None):
+            self.assertIsNone(mapping.list_memories("missing"))
 
 
 @unittest.skipUnless(os.environ.get("MONGODB_URI"), "MONGODB_URI is not set")

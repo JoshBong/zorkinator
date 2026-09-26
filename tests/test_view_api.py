@@ -13,6 +13,8 @@ from zorkinator.view import mapping
 from zorkinator.view.schemas import (
     HarnessConfig,
     LifeOut,
+    MemoryEvidenceOut,
+    MemoryOut,
     MoveOut,
     ReflectionOut,
     RunMapOut,
@@ -106,6 +108,36 @@ class ViewApiTests(unittest.TestCase):
             self.assertEqual(app.get_map("run"), expected_map)
             self.assertEqual(app.get_eval_summary(), {})
             self.assertEqual(app.list_game_evaluations("chain", "query"), [])
+
+    def test_memories_endpoint_delegates_and_handles_unknown_run(self) -> None:
+        memories = [
+            MemoryOut(
+                revision_id="revision",
+                schema_version=1,
+                experiment_id="experiment",
+                memory_id="memory",
+                supersedes_revision_id=None,
+                kind="lesson",
+                subjects=["lamp"],
+                content={"text": "Carry the lamp."},
+                status="supported",
+                evidence=[MemoryEvidenceOut(run_id="run", n=2)],
+                rationale="It prevented a death.",
+                source_run_id="run",
+                proposal_id="proposal",
+                operation_key="add_0",
+                born_version_id="version",
+                created_at=NOW.isoformat(),
+            )
+        ]
+        with patch.object(app.mapping, "list_memories", return_value=memories):
+            self.assertEqual(app.list_memories("run"), memories)
+        with (
+            patch.object(app.mapping, "list_memories", return_value=None),
+            self.assertRaises(HTTPException) as raised,
+        ):
+            app.list_memories("missing")
+        self.assertEqual(raised.exception.status_code, 404)
 
     def test_reflection_endpoint_handles_found_and_missing(self) -> None:
         reflection = ReflectionOut(cause="c", effect="e", lesson_text="l", rule_id="r")

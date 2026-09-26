@@ -1,5 +1,15 @@
 import * as mock from "./mock";
-import type { EvalSummary, Life, Move, Reflection, Rule, Run, RunMap, StreamEvent } from "./types";
+import type {
+  EvalSummary,
+  Life,
+  Memory,
+  Move,
+  Reflection,
+  Rule,
+  Run,
+  RunMap,
+  StreamEvent,
+} from "./types";
 
 /**
  * Flip USE_MOCK to false (or set VITE_USE_MOCK="false") once the FastAPI
@@ -35,6 +45,9 @@ export const api = {
     return USE_MOCK
       ? delay(mock.getMoves(runId, life))
       : get<Move[]>(`/api/runs/${runId}/lives/${life}/moves`);
+  },
+  listMemories(runId: string): Promise<Memory[]> {
+    return USE_MOCK ? Promise.resolve([]) : get<Memory[]>(`/api/runs/${runId}/memories`);
   },
   getReflection(runId: string, life: number): Promise<Reflection> {
     return USE_MOCK

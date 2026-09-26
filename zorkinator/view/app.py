@@ -17,7 +17,16 @@ from fastapi.responses import StreamingResponse
 from .. import db
 from ..models import GameEvaluation, MoveRecord
 from . import mapping
-from .schemas import EvalSummaryOut, LifeOut, MoveOut, ReflectionOut, RuleOut, RunMapOut, RunOut
+from .schemas import (
+    EvalSummaryOut,
+    LifeOut,
+    MemoryOut,
+    MoveOut,
+    ReflectionOut,
+    RuleOut,
+    RunMapOut,
+    RunOut,
+)
 
 app = FastAPI(title="GRUE LAB API")
 
@@ -47,6 +56,14 @@ def list_lives(run_id: str) -> list[LifeOut]:
 @app.get("/api/runs/{run_id}/lives/{life}/moves")
 def list_moves(run_id: str, life: int) -> list[MoveOut]:
     return mapping.list_moves(run_id, life)
+
+
+@app.get("/api/runs/{run_id}/memories")
+def list_memories(run_id: str) -> list[MemoryOut]:
+    memories = mapping.list_memories(run_id)
+    if memories is None:
+        raise HTTPException(404, f"run {run_id!r} was not found")
+    return memories
 
 
 @app.get("/api/runs/{run_id}/lives/{life}/reflection")

@@ -57,6 +57,26 @@ export interface Reflection {
   rule_id: string;
 }
 
+export interface Memory {
+  revision_id: string;
+  schema_version: 1;
+  experiment_id: string;
+  memory_id: string;
+  supersedes_revision_id: string | null;
+  kind: string;
+  subjects: string[];
+  locations: string[];
+  content: Record<string, unknown>;
+  status: "hypothesis" | "supported" | "contradicted";
+  evidence: { run_id: string; n: number }[];
+  rationale: string;
+  source_run_id: string;
+  proposal_id: string;
+  operation_key: string;
+  born_version_id: string;
+  created_at: string;
+}
+
 export type RuleType = "rule" | "guardrail" | "memory";
 export type RuleStatus = "active" | "superseded" | "rolled_back";
 

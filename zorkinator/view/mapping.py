@@ -13,7 +13,7 @@ from itertools import groupby
 from typing import Any, Literal
 
 from .. import db
-from ..models import GameEvaluation, MoveRecord, RuleDoc, RunRecord
+from ..models import GameEvaluation, MemoryRevision, MoveRecord, RuleDoc, RunRecord
 from .schemas import (
     Condition,
     EvalConditionOut,
@@ -24,6 +24,7 @@ from .schemas import (
     LifeOut,
     MapEdgeOut,
     MapRoomOut,
+    MemoryOut,
     MoveOut,
     PerLifePointOut,
     ReflectionOut,
@@ -145,6 +146,39 @@ def list_moves(group_id: str, life: int) -> list[MoveOut]:
     if run is None:
         return []
     return [move_out(m) for m in db.get_moves(run.run_id)]
+
+
+def _memory_out(memory: MemoryRevision) -> MemoryOut:
+    return MemoryOut.model_validate(memory.model_dump(mode="json"))
+
+
+def list_memories(run_id: str) -> list[MemoryOut] | None:
+    """Return the active memory manifest for one exact persisted run.
+
+    Memories are resolved through the run's version rather than queried globally,
+    so historical, sibling, or uncommitted revisions cannot leak into the API.
+    ``None`` distinguishes an unknown run from a known run with no memory version.
+    """
+    run = db.get_run(run_id)
+    if run is None:
+        return None
+    if run.version_id is None:
+        return []
+
+    store = db.MongoOuterLoopStore(db.get_db())
+    version = store.get_version(run.version_id)
+    if version is None:
+        raise ValueError(f"run {run_id!r} references missing version {run.version_id!r}")
+
+    memories: list[MemoryOut] = []
+    for reference in version.memory_refs:
+        memory = store.read(version.version_id, reference.memory_id)
+        if memory is None:
+            raise ValueError(
+                f"version {version.version_id!r} references missing memory {reference.memory_id!r}"
+            )
+        memories.append(_memory_out(memory))
+    return memories
 
 
 def get_reflection(group_id: str, life: int) -> ReflectionOut | None:
