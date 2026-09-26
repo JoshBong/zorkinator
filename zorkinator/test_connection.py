@@ -25,14 +25,16 @@ def main() -> int:
 
     print(f"Connected. Server version: {client.server_info()['version']}")
 
+    collections = ("runs", "moves", "world_facts", "rules", "lessons", "harness_versions")
+
     db.ensure_indexes()
     print(f"Indexes ready on database {db.DB_NAME!r}:")
-    for name in ("runs", "moves", "world_facts", "rules", "harness_versions"):
+    for name in collections:
         indexes = sorted(db.get_db()[name].index_information().keys())
         print(f"  {name}: {indexes}")
 
     print("\nCollection counts (documents already logged by the team):")
-    for name in ("runs", "moves", "world_facts", "rules", "harness_versions"):
+    for name in collections:
         count = db.get_db()[name].count_documents({})
         print(f"  {name}: {count}")
 
