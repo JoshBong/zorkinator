@@ -42,7 +42,7 @@ agent can actually use, and the agent must not be allowed to act on beliefs it c
 | Learns from a **reward**: compares winning and losing runs and rewrites the prompt | Learns from **consequences**: "went down with no light → eaten by a grue". The score is measured, never trained on. |
 | What it learns is a new prompt | What it learns is **versioned memory**: every belief cites the move that produced it, and every game plays one exact, immutable harness version, so game 1 and game N can be compared directly |
 | An LLM critic (or nothing) decides what is allowed | **Blocking is earned.** Memories only advise. A rule may block a command only after a mechanical replay shows it would have prevented a death and never blocked progress, and the harness cannot edit its own verifier |
-| Reports a score | Reports the score **and a surprise rate** (being added): the agent predicts each outcome, and wrong predictions show exactly where its picture of the world was wrong |
+| Reports a score | Reports the score **and a surprise rate**: the agent predicts each outcome, and wrong predictions show exactly where its picture of the world was wrong |
 | Often has privileged state (valid-action lists, save/restore, object trees) | Uses **only human-visible information**: game text and the status line. No save/restore, no walkthrough, no valid-action list |
 
 ## How it works
@@ -54,8 +54,8 @@ agent can actually use, and the agent must not be allowed to act on beliefs it c
 
 1. **Inner loop, one move.** The scribe updates the game's working knowledge (rooms, exits, items, what was
    tried and what happened). The builder writes a fresh, compact prompt from it, with no chat history. The player
-   replies with a command and its current goal; a predicted outcome is being added. The verifier will check the
-   command against learned rules before it reaches the game.
+   replies with a command, its current goal, and what it expects to happen. The verifier checks the command
+   against learned rules before it reaches the game.
 2. **Outer loop, after each game.** The reflector reads the finished game (deaths and score changes first) and
    proposes memory changes: add, revise, or retire. The version manager checks every cited move exists, then
    commits the whole batch or none of it, and publishes a new harness version. The next game plays exactly that
@@ -71,8 +71,8 @@ agent can actually use, and the agent must not be allowed to act on beliefs it c
 | Paper baseline, past-chat condition, chains, analysis | Working; 100+ games logged |
 | Inner loop: world model, builder, player with goal, stall monitor | Working |
 | Outer loop: reflector, immutable versions, sequential chain on Atlas | Working; two-game smoke chain passed |
-| Verifier `check` and replay promoter (`verifier.py`) | Built and tested; not yet wired into the chain, which currently keeps every rule soft |
-| Predicted outcomes and surprise rate | Designed (`docs/DECISIONS.md`); fields exist, not yet in the player |
+| Verifier `check` and replay promoter (`verifier.py`) | Working: hard rules block in the harness; the chain promotes rules only by replay |
+| Predicted outcomes and surprise rate | Working: every move logs `expected`; the model rates its last prediction as a surprise or not |
 | GRUE LAB dashboard | Working on mock data; moving to live Atlas data |
 
 ## Results so far
