@@ -5,12 +5,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Brain, Play, ShieldAlert, Trophy } from "lucide-react";
 
 import { api } from "@/api/client";
-import { MOVES_PER_GAME } from "@/api/mock";
 import { Terminal } from "@/components/Terminal";
 import { MindPanel } from "@/components/MindPanel";
 import { MapGraph } from "@/components/MapGraph";
 import { ReplayControls } from "@/components/ReplayControls";
-import { ErrorState, LoadingState } from "@/components/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useReplay } from "@/lib/use-replay";
 import type { Move } from "@/api/types";
 
@@ -36,9 +35,6 @@ export const Route = createFileRoute("/")({
   component: HeadToHead,
 });
 
-const BASE_RUN = "baseline-1";
-const HARN_RUN = "harness-1";
-
 function streak(moves: Move[], i: number) {
   const cur = moves[i];
   if (!cur) return 0;
@@ -47,60 +43,107 @@ function streak(moves: Move[], i: number) {
   return n;
 }
 
-const LAST_GAME = 10;
 /** Pause after a game finishes so its final state (including any death) is visible
  * before demo mode cuts away to the next game. */
 const DEMO_ADVANCE_DELAY_MS = 1500;
 
 function HeadToHead() {
-  const [game, setGame] = useState(1);
+  const runsQ = useQuery({ queryKey: ["runs"], queryFn: () => api.listRuns() });
+
+  // Real Atlas chains vary in length, have no baseline (paper-mode) run logged yet, and
+  // number lives from 0 (mock data numbers them from 1) — so the run to feature and its
+  // game list are derived from what's actually there instead of fixed IDs/counts.
+  const harnRun = useMemo(() => {
+    const harnRuns = (runsQ.data ?? []).filter((r) => r.condition === "harness");
+    return [...harnRuns].sort(
+      (a, b) => b.lives_count - a.lives_count || b.created_at.localeCompare(a.created_at),
+    )[0];
+  }, [runsQ.data]);
+  const baseRun = useMemo(
+    () => (runsQ.data ?? []).find((r) => r.condition === "baseline"),
+    [runsQ.data],
+  );
+
+  const [game, setGame] = useState(0);
   const [demoMode, setDemoMode] = useState(false);
 
   const baseLives = useQuery({
-    queryKey: ["lives", BASE_RUN],
-    queryFn: () => api.listLives(BASE_RUN),
+    queryKey: ["lives", baseRun?.run_id],
+    queryFn: () => api.listLives(baseRun!.run_id),
+    enabled: !!baseRun,
   });
   const harnLives = useQuery({
-    queryKey: ["lives", HARN_RUN],
-    queryFn: () => api.listLives(HARN_RUN),
+    queryKey: ["lives", harnRun?.run_id],
+    queryFn: () => api.listLives(harnRun!.run_id),
+    enabled: !!harnRun,
   });
   const baseQ = useQuery({
-    queryKey: ["moves", BASE_RUN, game],
-    queryFn: () => api.listMoves(BASE_RUN, game),
+    queryKey: ["moves", baseRun?.run_id, game],
+    queryFn: () => api.listMoves(baseRun!.run_id, game),
+    enabled: !!baseRun,
   });
   const harnQ = useQuery({
-    queryKey: ["moves", HARN_RUN, game],
-    queryFn: () => api.listMoves(HARN_RUN, game),
+    queryKey: ["moves", harnRun?.run_id, game],
+    queryFn: () => api.listMoves(harnRun!.run_id, game),
+    enabled: !!harnRun,
   });
-  const mapQ = useQuery({ queryKey: ["map", HARN_RUN], queryFn: () => api.getMap(HARN_RUN) });
+  const mapQ = useQuery({
+    queryKey: ["map", harnRun?.run_id],
+    queryFn: () => api.getMap(harnRun!.run_id),
+    enabled: !!harnRun,
+  });
   const rulesQ = useQuery({ queryKey: ["rules"], queryFn: () => api.listRules() });
 
-  const base = useMemo(() => (baseQ.data ?? []).slice(0, MOVES_PER_GAME), [baseQ.data]);
-  const harn = useMemo(() => (harnQ.data ?? []).slice(0, MOVES_PER_GAME), [harnQ.data]);
+  // The games available to step through, and a display offset so a 0-based real chain still
+  // reads as "Game 1, 2, 3…" while already-1-based data (mock) is shown unchanged.
+  const games = useMemo(
+    () => [...new Set((harnLives.data ?? []).map((l) => l.life))].sort((a, b) => a - b),
+    [harnLives.data],
+  );
+  const gameOffset = games[0] === 0 ? 1 : 0;
+
+  useEffect(() => {
+    if (games.length > 0 && !games.includes(game)) setGame(games[0]!);
+  }, [games, game]);
+
+  const base = useMemo(() => baseQ.data ?? [], [baseQ.data]);
+  const harn = useMemo(() => harnQ.data ?? [], [harnQ.data]);
   const length = Math.max(base.length, harn.length);
   const replay = useReplay(length);
 
   // Demo mode: once a game's replay stops because it *finished* (sitting on the last move,
   // not paused mid-game), wait a beat so the final state is visible, then move to the next
-  // game. `advancedForGame` stops the effect from scheduling a second advance for the same
-  // game while the first timeout is still pending or the next game's data hasn't loaded yet.
+  // game in `games`. `advancedForGame` stops the effect from scheduling a second advance for
+  // the same game while the first timeout is still pending or the next game hasn't loaded.
   const advancedForGame = useRef<number | null>(null);
   useEffect(() => {
     if (!demoMode || length === 0) return;
     const finished = replay.index === length - 1 && !replay.playing;
-    if (!finished || game >= LAST_GAME) {
+    const idx = games.indexOf(game);
+    const isLastGame = idx === -1 || idx >= games.length - 1;
+    if (!finished || isLastGame) {
       advancedForGame.current = null;
       return;
     }
     if (advancedForGame.current === game) return;
     advancedForGame.current = game;
+    const nextGame = games[idx + 1]!;
     const timer = setTimeout(() => {
-      setGame((g) => Math.min(LAST_GAME, g + 1));
+      setGame(nextGame);
       replay.setIndex(0);
       replay.setPlaying(true);
     }, DEMO_ADVANCE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [demoMode, replay.index, replay.playing, replay.setIndex, replay.setPlaying, length, game]);
+  }, [
+    demoMode,
+    replay.index,
+    replay.playing,
+    replay.setIndex,
+    replay.setPlaying,
+    length,
+    game,
+    games,
+  ]);
 
   const bIdx = Math.min(replay.index, Math.max(0, base.length - 1));
   const hIdx = Math.min(replay.index, Math.max(0, harn.length - 1));
@@ -131,6 +174,9 @@ function HeadToHead() {
     return { base: sum(baseLives.data), harn: sum(harnLives.data) };
   }, [baseLives.data, harnLives.data, game]);
 
+  if (runsQ.isError) return <ErrorState error={runsQ.error} onRetry={() => runsQ.refetch()} />;
+  if (runsQ.isLoading) return <LoadingState label="Loading runs from Atlas" />;
+  if (!harnRun) return <EmptyState label="No harness runs logged in Atlas yet" />;
   if (baseQ.isError || harnQ.isError)
     return (
       <ErrorState
@@ -143,14 +189,15 @@ function HeadToHead() {
     );
 
   const lead = hScore - bScore;
+  const moveCap = harn.length || base.length;
 
   return (
     <div className="space-y-3">
       {/* Game selector */}
       <div className="presenter-hide flex flex-wrap items-center gap-2">
-        <span className="panel-title">Game · {MOVES_PER_GAME} moves each</span>
+        <span className="panel-title">Game{moveCap ? ` · ${moveCap} moves each` : ""}</span>
         <div className="flex flex-wrap gap-1">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((g) => (
+          {games.map((g) => (
             <button
               key={g}
               onClick={() => setGame(g)}
@@ -160,7 +207,7 @@ function HeadToHead() {
                   : "text-muted-foreground hover:bg-secondary"
               }`}
             >
-              G{g}
+              G{g + gameOffset}
             </button>
           ))}
         </div>
@@ -182,11 +229,17 @@ function HeadToHead() {
           score={bScore}
           total={totals.base}
           tone="baseline"
-          note={bStreak >= 3 ? `Repeated action x${bStreak}` : undefined}
+          note={
+            !baseRun
+              ? "No baseline run logged yet"
+              : bStreak >= 3
+                ? `Repeated action x${bStreak}`
+                : undefined
+          }
         />
         <div className="text-center font-mono">
           <p className="panel-title">
-            Game {game} · move {replay.index + 1}/{length || MOVES_PER_GAME}
+            Game {game + gameOffset} · move {replay.index + 1}/{length || 1}
           </p>
           <p className={`mt-1 text-sm ${lead >= 0 ? "text-harness" : "text-baseline"}`}>
             {lead >= 0 ? "Harness leads by" : "Baseline leads by"} {Math.abs(lead)}
@@ -202,7 +255,7 @@ function HeadToHead() {
         />
       </div>
 
-      {baseQ.isLoading || harnQ.isLoading ? (
+      {harnQ.isLoading || (!!baseRun && baseQ.isLoading) ? (
         <LoadingState label="Syncing both agents" />
       ) : (
         <>
@@ -211,7 +264,13 @@ function HeadToHead() {
               neither is squeezed into a shared sidebar. */}
           <div className="grid gap-3 xl:grid-cols-[1fr_1fr_290px_290px]">
             <div className="rounded-xl border border-baseline/40 p-1">
-              <Terminal moves={base} index={bIdx} life={game} className="h-[250px]" />
+              {baseRun ? (
+                <Terminal moves={base} index={bIdx} life={game} className="h-[250px]" />
+              ) : (
+                <div className="panel flex h-[250px] items-center justify-center">
+                  <EmptyState label="No baseline run logged yet" />
+                </div>
+              )}
             </div>
             <div className="rounded-xl border border-harness/40 p-1">
               <Terminal moves={harn} index={hIdx} life={game} className="h-[250px]" />
@@ -292,17 +351,20 @@ function HeadToHead() {
             <p className="panel-title flex items-center gap-2">
               <Trophy className="h-4 w-4" /> Final score per game
             </p>
-            <div className="mt-3 grid grid-cols-10 gap-1">
-              {Array.from({ length: 10 }, (_, i) => {
-                const b = baseLives.data?.[i]?.score ?? 0;
-                const h = harnLives.data?.[i]?.score ?? 0;
+            <div
+              className="mt-3 grid gap-1"
+              style={{ gridTemplateColumns: `repeat(${games.length || 1}, minmax(0, 1fr))` }}
+            >
+              {games.map((g) => {
+                const b = baseLives.data?.find((l) => l.life === g)?.score ?? 0;
+                const h = harnLives.data?.find((l) => l.life === g)?.score ?? 0;
                 return (
                   <button
-                    key={i}
-                    onClick={() => setGame(i + 1)}
-                    className={`rounded-md p-1 text-center font-mono text-xs ${i + 1 === game ? "bg-secondary" : "hover:bg-secondary/50"}`}
+                    key={g}
+                    onClick={() => setGame(g)}
+                    className={`rounded-md p-1 text-center font-mono text-xs ${g === game ? "bg-secondary" : "hover:bg-secondary/50"}`}
                   >
-                    <div className="text-muted-foreground">G{i + 1}</div>
+                    <div className="text-muted-foreground">G{g + gameOffset}</div>
                     <div className="text-baseline">{b}</div>
                     <div className="text-harness">{h}</div>
                   </button>
