@@ -1,6 +1,8 @@
 # Outer-loop memory design
 
-Status: agreed product direction from Elliott's discussion; the concrete interface and storage design below are the implementation proposal. No runtime changes are implemented by this document.
+Status: agreed product direction from Elliott's discussion. The base typed interface, MongoDB
+representation, indexes, and exact-version read path below are implemented; reflection and version-commit
+orchestration remain follow-up work.
 
 ## Scope and decisions
 
@@ -14,9 +16,11 @@ This document covers Elliott's outer-loop interfaces and persistence only. It do
 
 ### Reconciliation with existing documents
 
-The latest discussion explicitly allows persistent maps. This supersedes the obsolete “L2 (general only)” restriction in `DECISIONS.md`; any memory type is allowed. This product decision is settled, not awaiting approval. The existing `lessons` schema and `[rule diffs]` Reflector return contract do not yet express the new design. `CONTRACTS.md` remains the implementation authority until the coordinated amendment lands.
+The latest discussion explicitly allows persistent maps. This supersedes the obsolete “L2 (general only)” restriction in `DECISIONS.md`; any memory type is allowed. This product decision is settled, not awaiting approval. `CONTRACTS.md` now defines the memory collections and Reflector proposal contract and remains the implementation authority.
 
-Before implementation, Elliott coordinates with Josh (rules/promotion and removal of the room-name restriction), Hiamil (Atlas helpers/indexes/publication), and Seb (consuming an exact version's memories). Update the shared contract in the same change as its implementation. Do not maintain two conflicting authoritative memories in both `lessons` and `memories`; agree whether existing lessons migrate or remain a compatibility projection.
+The base implementation replaces the old `lessons` contract rather than maintaining two conflicting
+authoritative memory stores. Rule promotion remains Josh's separate fixed path, and exact-version memory
+consumption remains an integration point for Seb's inner loop.
 
 ## Lifecycle
 
