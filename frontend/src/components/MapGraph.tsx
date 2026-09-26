@@ -3,28 +3,48 @@ import { useMemo } from "react";
 import type { RunMap } from "@/api/types";
 import { layoutMap } from "@/lib/map-layout";
 
+/** How much a room's brightness drops per game since it was first discovered. Floors at 0.45
+ * so nothing already-known ever fully disappears — it just fades into "older territory". */
+const AGE_FADE_PER_GAME = 0.15;
+const AGE_FADE_FLOOR = 0.45;
+
 export function MapGraph({
   map,
   visited,
   currentRoom,
   previousRoom,
+  currentGame,
   className = "",
 }: {
   map: RunMap;
   visited: Set<string>;
   currentRoom?: string | undefined;
   previousRoom?: string | undefined;
+  /** The game/life currently being viewed. Rooms first seen in an earlier game are shown as
+   * already-known (no need to wait for today's replay to reach them); rooms first seen later
+   * than this stay hidden, so stepping G1 -> G10 reveals the map's real learning curve instead
+   * of spoiling it. */
+  currentGame: number;
   className?: string;
 }) {
   const { positions, width, height } = useMemo(() => layoutMap(map), [map]);
   const current = currentRoom ? positions.get(currentRoom) : undefined;
+  const roomsByName = useMemo(() => new Map(map.rooms.map((r) => [r.name, r])), [map.rooms]);
+
+  const knownByNow = (name: string) => {
+    const room = roomsByName.get(name);
+    if (room && room.first_seen_life < currentGame) return true;
+    return visited.has(name);
+  };
+
+  const discoveredCount = map.rooms.filter((r) => knownByNow(r.name)).length;
 
   return (
     <div className={`panel flex flex-col overflow-hidden ${className}`}>
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <span className="panel-title">The Map</span>
         <span className="font-mono text-[11px] text-muted-foreground">
-          {visited.size}/{map.rooms.length} rooms discovered
+          {discoveredCount}/{map.rooms.length} rooms discovered
         </span>
       </div>
       <div className="flex-1 overflow-hidden p-2">
@@ -43,7 +63,7 @@ export function MapGraph({
               const a = positions.get(e.from);
               const b = positions.get(e.to);
               if (!a || !b) return null;
-              const on = visited.has(e.from) && visited.has(e.to);
+              const on = knownByNow(e.from) && knownByNow(e.to);
               const justWalked =
                 (e.from === previousRoom && e.to === currentRoom) ||
                 (e.to === previousRoom && e.from === currentRoom);
@@ -72,15 +92,21 @@ export function MapGraph({
             {map.rooms.map((r, i) => {
               const p = positions.get(r.name);
               if (!p) return null;
-              const seen = visited.has(r.name);
+              const seen = knownByNow(r.name);
               const isCurrent = r.name === currentRoom;
+              const deathsSoFar = r.death_lives.filter((life) => life <= currentGame);
+              // Gated on `seen` too: a death can never predate its own room's discovery, but
+              // this guards against that invariant breaking upstream (e.g. inconsistent data).
+              const isGrave = seen && deathsSoFar.length > 0;
+              const age = Math.max(0, currentGame - r.first_seen_life);
+              const ageOpacity = Math.max(AGE_FADE_FLOOR, 1 - age * AGE_FADE_PER_GAME);
               return (
                 // Keying on `seen` remounts the group the moment a room is first
                 // discovered, retriggering the pop-in spring below.
                 <motion.g
                   key={`${r.name}-${seen}`}
                   initial={seen ? { opacity: 0, scale: 0.3 } : { opacity: 0.22, scale: 1 }}
-                  animate={{ opacity: seen ? 1 : 0.22, scale: 1 }}
+                  animate={{ opacity: seen ? ageOpacity : 0.22, scale: 1 }}
                   transition={{ type: "spring", stiffness: 260, damping: 18 }}
                 >
                   {r.dark && <circle cx={p.x} cy={p.y} r={18} className="fill-foreground/5" />}
@@ -100,14 +126,16 @@ export function MapGraph({
                     cy={p.y}
                     r={9}
                     className={
-                      isCurrent
-                        ? "room-pulse fill-harness"
-                        : r.dark
-                          ? "fill-muted stroke-border"
-                          : "fill-phosphor-dim"
+                      isGrave
+                        ? "fill-baseline"
+                        : isCurrent
+                          ? "room-pulse fill-harness"
+                          : r.dark
+                            ? "fill-muted stroke-border"
+                            : "fill-phosphor-dim"
                     }
                   />
-                  {r.death_count > 0 && (
+                  {isGrave && (
                     <text x={p.x + 10} y={p.y - 8} fontSize="12" className="fill-baseline">
                       ☠
                     </text>

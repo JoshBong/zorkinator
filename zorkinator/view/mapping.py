@@ -218,7 +218,7 @@ def get_map(group_id: str) -> RunMapOut:
                         name=fact.subject,
                         dark=False,
                         first_seen_life=_life_of(member),
-                        death_count=0,
+                        death_lives=[],  # no per-room death detection yet (Scribe doesn't write it)
                     ),
                 )
                 room.dark = bool(fact.value)

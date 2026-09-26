@@ -286,8 +286,12 @@ export function getMoves(runId: string, life: number): Move[] {
   let lastCommand = "";
   let repeatStreak = 0;
 
+  // The harness's reachable frontier grows one room per game (it learns where to go from
+  // earlier deaths); baseline never builds a map, so it always has the run of the whole house.
+  const frontier = cond === "harness" ? Math.min(ROOMS.length - 1, 1 + life) : ROOMS.length - 1;
+
   for (let i = 1; i <= total; i++) {
-    const roomIndex = Math.min(ROOMS.length - 1, Math.floor((i / total) * ROOMS.length));
+    const roomIndex = Math.min(frontier, Math.floor((i / total) * (frontier + 1)));
     room = ROOMS[roomIndex]!.name;
     let command = COMMANDS[(i - 1) % COMMANDS.length]!;
 
@@ -376,12 +380,23 @@ export function getRules(): Rule[] {
 
 export function getMap(runId: string): RunMap {
   const lives = getLives(runId);
+  // Derive first_seen_life and death_lives from the same per-life move paths, so a death
+  // can never appear "before" the room it happened in was discovered.
+  const firstSeen: Record<string, number> = {};
+  const deathLives: Record<string, number[]> = {};
+  for (const life of lives) {
+    const moves = getMoves(runId, life.life);
+    for (const m of moves) firstSeen[m.room] ??= life.life;
+    if (life.death_cause.includes("survived")) continue;
+    const lastRoom = moves[moves.length - 1]?.room;
+    if (lastRoom) (deathLives[lastRoom] ??= []).push(life.life);
+  }
   return {
-    rooms: ROOMS.map((r, i) => ({
+    rooms: ROOMS.map((r) => ({
       name: r.name,
       dark: r.dark,
-      first_seen_life: Math.max(1, Math.ceil((i + 1) / 2)),
-      death_count: r.dark ? lives.filter((l) => l.death_cause.includes("grue")).length % 3 : 0,
+      first_seen_life: firstSeen[r.name] ?? lives.length,
+      death_lives: deathLives[r.name] ?? [],
     })),
     edges: EDGES.map(([from, to, direction]) => ({ from, to, direction })),
   };
