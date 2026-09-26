@@ -59,7 +59,7 @@ def main() -> int:
     manual_parser.add_argument("--seed", type=int, default=0)
     baseline_parser = subparsers.add_parser("baseline", help="paper-mode run (arXiv 2602.15867)")
     baseline_parser.add_argument("--seed", type=int, default=0)
-    baseline_parser.add_argument("--moves", type=int, default=20, help="move cap (paper: 500)")
+    baseline_parser.add_argument("--moves", type=int, default=500, help="move cap (paper: 500)")
     baseline_parser.add_argument("--prompt", choices=["basic", "advanced"], default="basic")
     baseline_parser.add_argument("--model", default=BASELINE_MODEL)
     baseline_parser.add_argument("--usd-cap", type=float, default=15.0)
