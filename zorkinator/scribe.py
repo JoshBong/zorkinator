@@ -1,7 +1,8 @@
 """Scribe: turns each game response into working-KB updates and world_facts evidence.
 
 Code only for now. The first-visit LLM extraction (exits/items a room mentions) comes later;
-until then mentioned exits come from direction words in the room description.
+until then mentioned exits come from direction words in the room description and items from
+Zork's stock "There is a ... here." sentences.
 """
 
 from __future__ import annotations
@@ -18,6 +19,13 @@ _DIRECTION_WORDS = re.compile(
 _TAKEN = re.compile(r"^(?:(?P<item>[^:\n]+): )?Taken\.$", re.MULTILINE)
 _DROPPED = re.compile(r"^(?:(?P<item>[^:\n]+): )?Dropped\.$", re.MULTILINE)
 _ARTICLE = re.compile(r"^(?:a|an|the|some)\s+", re.IGNORECASE)
+# Zork's stock sentences for objects in a room (a stand-in for the first-visit LLM extraction).
+_ITEMS_IN_TEXT = [
+    re.compile(r"\bThere is an? (?!no\b)([^.,]+?) here\b"),
+    re.compile(r"\b(?:On|In|Beside|Under) [^.]*? (?:is|are) (?:an?|some) ([^.,]+)"),
+    re.compile(r"^An? ([^.,]+?) (?:is|are|lies) (?:on the ground|here)\b", re.MULTILINE),
+    re.compile(r"\breveals an? ([^.,]+)"),
+]
 
 
 @dataclass
@@ -109,9 +117,10 @@ def update(
     # Position and map.
     state.in_dark = parsed.dark
     if parsed.room is not None:
-        is_new = parsed.room not in world.rooms
         room = world.room(parsed.room)
+        is_new = room.visits == 0  # rooms known only from earlier games count as new here
         room.visits += 1
+        room.source = "this_game"
         if parsed.description and not room.description:
             room.description = parsed.description
         if is_new:
@@ -120,11 +129,13 @@ def update(
             for word in sorted(set(_DIRECTION_WORDS.findall(parsed.description.casefold()))):
                 room.exits.setdefault(word, Exit(word, None, "mentioned", n))
                 world.fact(room.name, f"lead_{word}", "mentioned", n)
-        if parsed.room != prev:
-            obs.moved = True
-            state.prev_room, state.room = prev, parsed.room
-
     direction = direction_of(command) if command else None
+    # A movement command answered with a room title moved us, even into a same-named room
+    # (Zork has several distinct rooms called "Forest").
+    if parsed.room is not None and (parsed.room != prev or direction is not None):
+        obs.moved = True
+        state.prev_room, state.room = prev, parsed.room
+
     if direction is not None and prev is not None:
         exits = world.room(prev).exits
         if obs.moved and state.room is not None:
@@ -135,19 +146,27 @@ def update(
                 exits[direction] = Exit(direction, None, "blocked", n, outcome)
                 world.fact(prev, f"blocked_{direction}", outcome, n)
 
+    # Items the text mentions where we are now.
+    if state.room is not None:
+        for pattern in _ITEMS_IN_TEXT:
+            for match in pattern.finditer(text):
+                _seen(world, _item_name(match.group(1)), state.room, n, obs)
+
     # Items and inventory.
     if command is not None:
-        target = _object_of(command)
+        target = _resolve(world, _object_of(command))
         for match in _TAKEN.finditer(text):
-            name = _item_name(match["item"]) if match["item"] else target
+            name = _resolve(world, _item_name(match["item"])) if match["item"] else target
             if name:
                 _carry(world, name, True, n, obs)
         for match in _DROPPED.finditer(text):
-            name = _item_name(match["item"]) if match["item"] else target
+            name = _resolve(world, _item_name(match["item"])) if match["item"] else target
             if name:
                 _carry(world, name, False, n, obs)
         if text.startswith("You are carrying:"):
-            carried = {_item_name(line) for line in text.splitlines()[1:] if line.strip()}
+            carried = {
+                _resolve(world, _item_name(line)) or "" for line in text.splitlines()[1:]
+            } - {""}
             for name in carried:
                 _carry(world, name, True, n, obs)
             for name in set(world.inventory) - carried:
@@ -169,6 +188,38 @@ def update(
             where.tried[key] = outcome
         state.recent.append(Step(n=n, room=prev, command=command, outcome=outcome))
     return obs
+
+
+def _resolve(world: WorldModel, name: str | None) -> str | None:
+    """Map a short name the player typed ("mailbox") to a known item ("small mailbox")."""
+    if not name or name in world.items:
+        return name
+    matches = [known for known in world.items if known.endswith(" " + name)]
+    return matches[0] if len(matches) == 1 else name
+
+
+def _noun_phrase(name: str) -> str:
+    """'large egg encrusted with precious jewels' -> 'large egg'."""
+    words = re.split(r"\s+(?:with|that|which|apparently)\b", name)[0].split()
+    for i, word in enumerate(words[1:], start=1):
+        if word.endswith("ed"):
+            return " ".join(words[:i])
+    return " ".join(words)
+
+
+def _seen(world: WorldModel, name: str, room: str, n: int, obs: Observation) -> None:
+    name = _noun_phrase(name)
+    if not name or len(name.split()) > 4:
+        return
+    is_new = name not in world.items
+    item = world.item(name)
+    if item.carried:
+        return
+    item.last_seen_room, item.source = room, "this_game"
+    world.room(room).items_seen.add(name)
+    if is_new:
+        obs.new_items.append(name)
+        world.fact(name, "seen_in", room, n)
 
 
 def _carry(world: WorldModel, name: str, carried: bool, n: int, obs: Observation) -> None:

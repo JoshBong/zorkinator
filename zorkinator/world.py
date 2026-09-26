@@ -119,8 +119,69 @@ class WorldModel:
         """Game 1 of an experiment: no map, no items, no objectives."""
         return cls(run_id)
 
-    # TODO(Seb): load(run_id, version_id, store) -> hydrate rooms/items/objectives from
-    # store.recall(version_id, kinds=[...]) with source="memory" once Elliott's memory kinds land.
+    # TODO(Seb): load(run_id, version_id, store) -> build via the remember_* methods below from
+    # store.recall(version_id, ...) once memory kinds are agreed with Elliott.
+
+    # --- knowledge from earlier games (outer loop -> inner loop) -----------------------
+    # Everything added here is source="memory": shown as "from earlier games", replaced as
+    # soon as this game observes the same thing.
+
+    def remember_exit(self, room: str, direction: str, to: str) -> None:
+        self.room(room).source = "memory"
+        self.room(to).source = "memory"
+        self.room(room).exits[direction] = Exit(direction, to, "known", 0, source="memory")
+
+    def remember_item(self, name: str, room: str | None, note: str = "") -> None:
+        item = self.item(name)
+        item.last_seen_room, item.source = room, "memory"
+        if note:
+            item.tried["(earlier games)"] = note
+
+    def remember_objective(self, text: str) -> None:
+        self.objectives.append(Objective(text, source="memory"))
+
+    def remember_hypothesis(self, text: str) -> None:
+        self.hypotheses.append(text)
+
+    def remember_past_run(self, summary: str) -> None:
+        self.past_runs.append(summary)
+
+    # --- final state (inner loop -> outer loop) ------------------------------------------
+
+    def summary(self) -> dict[str, object]:
+        """Compact end-of-game knowledge for the Reflector and for inspection."""
+        return {
+            "run_id": self.run_id,
+            "room": self.state.room,
+            "score": self.state.score,
+            "goal": self.state.goal,
+            "inventory": self.inventory,
+            "rooms": [
+                {
+                    "name": r.name,
+                    "visits": r.visits,
+                    "dark": r.dark,
+                    "source": r.source,
+                    "exits": {
+                        e.direction: e.to if e.status == "known" else e.status
+                        for e in r.exits.values()
+                    },
+                    "items_seen": sorted(r.items_seen),
+                    "tried": len(r.tried),
+                }
+                for r in self.rooms.values()
+            ],
+            "items": [
+                {
+                    "name": i.name,
+                    "last_seen_room": i.last_seen_room,
+                    "carried": i.carried,
+                    "source": i.source,
+                }
+                for i in self.items.values()
+            ],
+            "leads": self.leads(),
+        }
 
     # --- knowledge updates -------------------------------------------------------------
 

@@ -67,7 +67,8 @@ def build_tail(world: WorldModel, n: int, last_output: str, status: Status = "ok
         exits = []
         for e in sorted(here.exits.values(), key=lambda e: e.direction):
             if e.status == "known":
-                exits.append(f"{e.direction} -> {e.to}")
+                earlier = " (from earlier games)" if e.source == "memory" else ""
+                exits.append(f"{e.direction} -> {e.to}{earlier}")
             elif e.status == "blocked":
                 exits.append(f"{e.direction} blocked ({e.note})")
             else:
@@ -75,6 +76,14 @@ def build_tail(world: WorldModel, n: int, last_output: str, status: Status = "ok
         lines.append("Exits: " + "; ".join(exits))
     if here is not None and here.items_seen:
         lines.append("Seen here: " + ", ".join(sorted(here.items_seen)))
+    if here is not None:
+        remembered = sorted(
+            i.name
+            for i in world.items.values()
+            if i.source == "memory" and i.last_seen_room == here.name and not i.carried
+        )
+        if remembered:
+            lines.append("Earlier games saw here: " + ", ".join(remembered))
     if here is not None and here.tried:
         tried = list(here.tried.items())[-6:]
         lines.append("Already tried here: " + "; ".join(f"{c} -> {o}" for c, o in tried))
