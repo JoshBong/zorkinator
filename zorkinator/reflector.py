@@ -444,6 +444,12 @@ loaded, the moves where play confirmed or contradicted it: revise or retire cont
 notes: kind "objective" or "hypothesis" or "run_summary" with content {"text": ...}; kind "item"
 with content {"item": name, "text": what it does or needs} and locations [where it was found].
 Use other kinds (failure, strategy, advice, ...) with {"text": ...} and locations for anything else.
+Always keep the frontier current with kind "lead": content {"text": what is unresolved, "action":
+the exact command to try next, "room": where, "attempts": games spent on it}. Add a lead for every
+edge of what is known (a locked or closed thing, an exit that needs something, an item with no use
+yet, a treasure not yet in the trophy case). When this game resolved a lead, retire it. When a
+lead was pursued and nothing changed, revise it with attempts + 1; at attempts 3, retire it as a
+dead end. Leads are what the next game explores when it stalls.
 Rule diffs use add {op,key,text,when,verdict,evidence}, revise
 {op,rule_id,key,text,when,verdict,evidence}, or retire {op,rule_id}. Never invent an evidence
 reference that is absent from the supplied transcript. For add/revise, when MUST be a JSON object

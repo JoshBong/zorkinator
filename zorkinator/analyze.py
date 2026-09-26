@@ -160,6 +160,7 @@ def plot_learning_curve(
     baseline: str = "chats",
     baseline_chain: str = "long",
     harness: str = "harness",
+    cap: int | None = None,
 ) -> Path:
     """Score by game number: baseline chains as a band + mean, the long baseline chain, and the
     harness chain with its surprise rate. Regenerate as harness games land."""
@@ -167,6 +168,11 @@ def plot_learning_curve(
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+
+    def score_of(r: RunRecord) -> int:
+        # With a cap, every series is scored at that move: a 100-move harness chain is compared
+        # with the baseline at move 100, not with its final score at 500.
+        return score_at(moves[r.run_id], cap) if cap else r.score
 
     def by_game(name: str) -> dict[int, list[RunRecord]]:
         out: dict[int, list[RunRecord]] = defaultdict(list)
@@ -179,9 +185,9 @@ def plot_learning_curve(
     band = by_game(baseline)
     if band:
         xs = sorted(band)
-        lo = [min(r.score for r in band[g]) for g in xs]
-        hi = [max(r.score for r in band[g]) for g in xs]
-        mean = [st.mean(r.score for r in band[g]) for g in xs]
+        lo = [min(score_of(r) for r in band[g]) for g in xs]
+        hi = [max(score_of(r) for r in band[g]) for g in xs]
+        mean = [st.mean(score_of(r) for r in band[g]) for g in xs]
         ax.fill_between(
             [x + 1 for x in xs],
             lo,
@@ -196,7 +202,7 @@ def plot_learning_curve(
         xs = sorted(long_chain)
         ax.plot(
             [x + 1 for x in xs],
-            [long_chain[g][0].score for g in xs],
+            [score_of(long_chain[g][0]) for g in xs],
             color="#2B3A4A",
             lw=1.6,
             marker="o",
@@ -208,7 +214,7 @@ def plot_learning_curve(
         xs = sorted(harness_games)
         ax.plot(
             [x + 1 for x in xs],
-            [harness_games[g][0].score for g in xs],
+            [score_of(harness_games[g][0]) for g in xs],
             color="#C27C1E",
             lw=2.4,
             marker="o",
@@ -230,7 +236,7 @@ def plot_learning_curve(
             ax2.set_ylim(0, 100)
             ax2.legend(loc="lower right", frameon=False)
     ax.set_xlabel("game number in chain")
-    ax.set_ylabel("score (of 350)")
+    ax.set_ylabel(f"score at move {cap} (of 350)" if cap else "score (of 350)")
     ax.set_ylim(0, max(80, ax.get_ylim()[1]))
     ax.set_title("Same model (Claude Haiku 4.5), same seed: bare loop vs harness")
     ax.grid(alpha=0.25)
@@ -268,7 +274,8 @@ def main() -> int:
         print()
         print(at_move_table(runs, moves, args.at))
     if args.plot:
-        print("wrote", plot_learning_curve(runs, moves, args.plot, harness=args.harness))
+        chart = plot_learning_curve(runs, moves, args.plot, harness=args.harness, cap=args.at)
+        print("wrote", chart)
     if args.compare:
         print()
         print(compare(runs, *args.compare))

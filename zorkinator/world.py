@@ -92,6 +92,16 @@ class Item:
 
 
 @dataclass
+class Lead:
+    """An open question from an earlier game: what is unresolved, and the action to try next."""
+
+    text: str
+    action: str
+    room: str | None = None
+    attempts: int = 0
+
+
+@dataclass
 class Objective:
     text: str
     status: Literal["open", "done", "dropped"] = "open"
@@ -126,6 +136,7 @@ class WorldModel:
         self.items: dict[str, Item] = {}
         self.objectives: list[Objective] = []
         self.hypotheses: list[str] = []
+        self.frontier: list[Lead] = []  # unfinished business from earlier games
         self.past_runs: list[str] = []  # condensed summaries of earlier games, from memory
         # location (casefolded) -> notes from earlier games that apply only there
         self.location_notes: dict[str, list[str]] = {}
@@ -186,6 +197,9 @@ class WorldModel:
 
     def remember_hypothesis(self, text: str) -> None:
         self.hypotheses.append(text)
+
+    def remember_lead(self, text: str, action: str, room: str | None, attempts: int) -> None:
+        self.frontier.append(Lead(text, action, room, attempts))
 
     def remember_past_run(self, summary: str) -> None:
         self.past_runs.append(summary)
@@ -309,8 +323,15 @@ class WorldModel:
     # --- views for the prompt ----------------------------------------------------------
 
     def leads(self) -> list[str]:
-        """Things the game has shown us but we haven't followed up. Text-derived only."""
+        """Things the game has shown us but we haven't followed up. Text-derived only.
+
+        The frontier (leads carried over from earlier games) comes first: it is the edge of what
+        is known, and the place to explore when this game stalls."""
         out: list[str] = []
+        for lead in self.frontier:
+            where = f" in {lead.room}" if lead.room else ""
+            tried = f" (tried in {lead.attempts} earlier games)" if lead.attempts else ""
+            out.append(f"unfinished: {lead.text}{where} -> try: {lead.action or '?'}{tried}")
         here = self.here
         if here is not None:
             out += [
@@ -359,6 +380,12 @@ def _load(world: WorldModel, memory: MemoryRevision) -> bool:
     text = _text(content.get("text"))
     mid = memory.memory_id
 
+    if kind == "lead" and text:
+        room = _text(content.get("room")) or next((loc for loc in memory.locations), "")
+        raw_attempts = content.get("attempts")
+        attempts = int(raw_attempts) if isinstance(raw_attempts, int | float) else 0
+        world.remember_lead(text, _text(content.get("action")), room or None, attempts)
+        return True
     if kind in {"objective", "goal"} and text:
         world.remember_objective(text)
         return True
