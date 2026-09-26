@@ -219,7 +219,8 @@ class Reflector:
             raise ReflectionError(f"unknown run: {run_id}")
         if run.mode != "harness" or run.version_id is None:
             raise ReflectionError("reflection requires a versioned harness run")
-        if run.model != self._model.model:
+        # A scripted (no-model) run may be reflected on by any model; it is labelled as such.
+        if run.model != self._model.model and not run.model.startswith("scripted"):
             raise ReflectionError(
                 f"reflector model {self._model.model!r} differs from run model {run.model!r}"
             )

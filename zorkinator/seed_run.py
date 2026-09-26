@@ -31,9 +31,9 @@ from .driver import (
 )
 from .harness import play_harness
 from .memory import ChatArchive
-from .reflector import AnthropicReflectionModel
+from .reflector import AnthropicReflectionModel, ReflectionError
 from .runner import ChatReply, Usage
-from .versions import VersionLimits, VersionManager
+from .versions import CommitError, VersionLimits, VersionManager
 
 SCRIPTED_MODEL = "scripted-walkthrough"
 
@@ -99,9 +99,17 @@ def seed(chain: str, moves: int, reflect_model: str, reflect_usd: float) -> str:
             f"moves={record.moves} end={record.end_reason}",
             flush=True,
         )
-        child = driver.advance(record.run_id)
-        print(f"reflected: {cursor.version_id} -> {child}")
-        return child
+        # Structured reflection output is flaky on small models: retry a fresh call up to 3x.
+        last: Exception | None = None
+        for attempt in range(3):
+            try:
+                child = driver.advance(record.run_id)
+                print(f"reflected (attempt {attempt + 1}): {cursor.version_id} -> {child}")
+                return child
+            except (ReflectionError, CommitError) as exc:
+                last = exc
+                print(f"reflection attempt {attempt + 1} failed: {str(exc)[:120]}", flush=True)
+        raise RuntimeError(f"reflection failed 3 times: {last}")
     finally:
         store.close()
 
