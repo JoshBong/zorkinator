@@ -7,7 +7,8 @@
 runs            {run_id, version_id, mode: "paper"|"harness", prompt, model, seed, move_cap,
                  score, moves, died: bool, death_move,
                  end_reason: "death"|"won"|"game_over"|"gave_up"|"cap"|"usd_cap"|"stuck40",
-                 tokens_in, tokens_out, tokens_cache_write, tokens_cache_read, cost_usd, started_at, ended_at}
+                 tokens_in, tokens_out, tokens_cache_write, tokens_cache_read, cost_usd, started_at, ended_at,
+                 chain, game_index}   (chain = one sequential series; game_index = position in it)
                  (pydantic: models.RunRecord; Mongo _id = run_id)
 
 moves           {run_id, n, room, command, proposals: [str], rejections: [{cmd, rule_id, reason}],
