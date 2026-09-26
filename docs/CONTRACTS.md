@@ -1,6 +1,6 @@
 # Contracts
 
-> Draft — agree at kickoff. A / B / C = owner.
+> Draft — agree at kickoff. Owners: A = Josh (game) + Hiamil (Atlas, view), B = Seb, C = Elliott.
 
 ## Mongo collections (Atlas sandbox, db `zork`)
 

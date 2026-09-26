@@ -19,9 +19,10 @@ collection, same seed, plus the rule diff that explains one avoided death. Every
 
 | Owner | Files (proposed, under `zorkinator/`) | Contract functions |
 |---|---|---|
-| **A** game, infra, demo | `adapter.py` `parser.py` `runner.py` `db.py` `view/` | `adapter.reset/step`, `parser.parse`, `runner.play` |
-| **B** inner loop | `builder.py` `player.py` `scribe.py` `monitor.py` | `builder.build_prompt`, `player.propose`, `scribe.update` |
-| **C** outer loop | `verifier.py` `reflector.py` `versions.py` | `verifier.check`, `reflector.propose`, `versions.commit` |
+| **Josh** — game connector | `adapter.py` `parser.py` `runner.py` | `adapter.reset/step`, `parser.parse`, `runner.play` (paper mode first) |
+| **Hiamil** — Atlas + display | `db.py` `view/` | Atlas cluster, indexes, `db.py` helper, change stream, side-by-side replay view |
+| **Seb** — inner loop | `builder.py` `player.py` `scribe.py` `monitor.py` | `builder.build_prompt`, `player.propose`, `scribe.update` |
+| **Elliott** — outer loop | `verifier.py` `reflector.py` `versions.py` | `verifier.check`, `reflector.propose`, `versions.commit` |
 
 Changing a signature or document shape in `docs/CONTRACTS.md` = tell the other two first, then update the file in the same commit.
 First step for everyone: a stub of your functions that returns plausible fake data, so the loop runs end to end before anything is real.
@@ -55,9 +56,9 @@ First step for everyone: a stub of your functions that returns plausible fake da
 | Time | Milestone |
 |---|---|
 | 10:50 | Stubs for all contract functions; loop runs end to end on fake data |
-| 11:30 | **A:** paper-mode baseline game running on real Jericho; smoke test gives seconds/move |
-| 12:30 | **B:** harness game 1 (cold) running with Atlas state |
-| 1:30 | **C:** Reflector closes the loop; game 2 starts with learned rules |
+| 11:30 | **Josh:** paper-mode baseline game running on real Jericho; smoke test gives seconds/move |
+| 12:30 | **Seb:** harness game 1 (cold) running with Atlas state |
+| 1:30 | **Elliott:** Reflector closes the loop; game 2 starts with learned rules |
 | 1:30–4:00 | Learning games run; move cap set so ~6 games fit |
 | 4:00 | Freeze. Pick final version. |
 | 4:00–4:45 | Side-by-side replay + 1-min demo video. Submit by 4:45. |
@@ -67,7 +68,7 @@ Cut order if behind: tool pool → skills/vector search → Planner → live vie
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **zorkinator** (73 symbols, 74 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **zorkinator** (78 symbols, 76 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
