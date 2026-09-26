@@ -167,7 +167,7 @@ Persist the generated proposal before commit. Retries reuse the saved proposal r
 - `memories (experiment_id, memory_id)`: revision history lookup.
 - `memory_events (experiment_id, proposal_id, phase)`: unique for this single-terminal-attempt audit model; repeated transport retries reuse the event. A deliberate new attempt gets a new proposal ID.
 - `harness_versions (experiment_id, proposal_id)`: unique partial index for non-null proposal IDs; root versions are excluded.
-- Add subject/kind retrieval indexes only after Hiamil chooses the actual query shape. Membership in the requested version manifest is mandatory regardless of indexing.
+- Add subject/kind retrieval indexes only after Himali chooses the actual query shape. Membership in the requested version manifest is mandatory regardless of indexing.
 
 A historical revision matching a text query must never appear unless it is active in the requested version. For initial bounded manifests, fetch referenced IDs and filter/rank those records. This favors correctness and simplicity over premature search infrastructure.
 
@@ -185,7 +185,7 @@ Reject wrong source-run/parent associations, unknown memory IDs, stale expected 
 
 1. Coordinate and amend `CONTRACTS.md`: proposal type, memory read interface, three collection shapes/extensions, lesson compatibility, and open-ended persistence policy.
 2. Add strict typed envelope/operation models, retaining flexible bounded JSON content. Stub Reflector output and exercise a fake proposal end to end.
-3. Implement immutable persistence, exact-version reads, retirement, experiment isolation, and idempotent publication through Hiamil's DB interface.
+3. Implement immutable persistence, exact-version reads, retirement, experiment isolation, and idempotent publication through Himali's DB interface.
 4. Implement bounded public-evidence assembly and the real structured Reflector call. Configure input/output, operation-count, content-size, and cost limits in fixed code; exact initial values remain tuning parameters.
 5. Integrate rule promotion separately and hand the published version ID to the next-game orchestrator. Coordinate version-scoped memory consumption with Seb.
 6. Verify with synthetic transcripts: add → retrieve in child; revise → parent unchanged; retire → absent only in child; retry → same version; unrelated cold experiment → no memories; invalid evidence/stale revision → no publication; failure between staging/publication → parent still usable.

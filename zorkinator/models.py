@@ -83,7 +83,7 @@ class RunRecord(ContractModel):
     start_tool_calls: list[StrictStr] = []
 
 
-# --- Atlas document contracts owned by Hiamil (docs/CONTRACTS.md is the final authority) ---
+# --- Atlas document contracts owned by Himali (docs/CONTRACTS.md is the final authority) ---
 
 
 class WorldFactDoc(ContractModel):

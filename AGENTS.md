@@ -20,7 +20,7 @@ collection, same seed, plus the rule diff that explains one avoided death. Every
 | Owner | Files (proposed, under `zorkinator/`) | Contract functions |
 |---|---|---|
 | **Josh** — game connector + verifier | `adapter.py` `parser.py` `runner.py` `verifier.py` | `adapter.reset/step`, `parser.parse`, `runner.play` (paper mode first), then `verifier.check` + promotion check |
-| **Hiamil** — Atlas + display | `db.py` `view/` | Atlas cluster, indexes, `db.py` helper, change stream, side-by-side replay view |
+| **Himali** — Atlas + display | `db.py` `view/` | Atlas cluster, indexes, `db.py` helper, change stream, side-by-side replay view |
 | **Seb** — inner loop | `builder.py` `player.py` `scribe.py` `monitor.py` | `builder.build_prompt`, `player.propose`, `scribe.update` |
 | **Elliott** — outer loop | `reflector.py` `versions.py` | rule format, `reflector.propose`, `versions.commit` (calls Josh's promotion check) |
 
