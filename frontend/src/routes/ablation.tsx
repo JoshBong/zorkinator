@@ -23,7 +23,7 @@ import type { EvalCondition, HarnessConfig } from "@/api/types";
 export const Route = createFileRoute("/ablation")({
   head: () => ({
     meta: [
-      { title: "Ablation Lab — GRUE LAB" },
+      { title: "GRUE LAB" },
       {
         name: "description",
         content:

@@ -156,7 +156,7 @@ function RootComponent() {
             </nav>
           </div>
         </header>
-        <main className="mx-auto max-w-[1600px] px-4 py-5">
+        <main className="mx-auto max-w-[1600px] px-4 py-3">
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
         </main>

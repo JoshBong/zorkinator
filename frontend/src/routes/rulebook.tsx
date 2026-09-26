@@ -10,7 +10,7 @@ import type { Rule, RuleType } from "@/api/types";
 export const Route = createFileRoute("/rulebook")({
   head: () => ({
     meta: [
-      { title: "The Rulebook — GRUE LAB" },
+      { title: "GRUE LAB" },
       {
         name: "description",
         content:

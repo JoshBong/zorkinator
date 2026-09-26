@@ -17,7 +17,7 @@ import type { Move } from "@/api/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Baseline vs Harness — GRUE LAB" },
+      { title: "GRUE LAB" },
       {
         name: "description",
         content:
@@ -116,7 +116,7 @@ function HeadToHead() {
   const lead = hScore - bScore;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Game selector */}
       <div className="presenter-hide flex flex-wrap items-center gap-2">
         <span className="panel-title">Game · {MOVES_PER_GAME} moves each</span>
@@ -138,7 +138,7 @@ function HeadToHead() {
       </div>
 
       {/* Scoreboard */}
-      <div className="panel grid items-center gap-4 p-4 md:grid-cols-[1fr_auto_1fr]">
+      <div className="panel grid items-center gap-4 p-3 md:grid-cols-[1fr_auto_1fr]">
         <ScoreBlock
           label="Baseline"
           score={bScore}
@@ -170,15 +170,15 @@ function HeadToHead() {
         <>
           {/* The two games plus what the harness is doing about it — one view, no scrolling
               to find out why it's winning. */}
-          <div className="grid gap-4 xl:grid-cols-[1fr_1fr_360px]">
+          <div className="grid gap-3 xl:grid-cols-[1fr_1fr_360px]">
             <div className="rounded-xl border border-baseline/40 p-1">
-              <Terminal moves={base} index={bIdx} life={game} className="h-[420px]" />
+              <Terminal moves={base} index={bIdx} life={game} className="h-[250px]" />
             </div>
             <div className="rounded-xl border border-harness/40 p-1">
-              <Terminal moves={harn} index={hIdx} life={game} className="h-[420px]" />
+              <Terminal moves={harn} index={hIdx} life={game} className="h-[250px]" />
             </div>
-            <div className="flex flex-col gap-4 xl:h-[420px]">
-              <MindPanel move={hMove} className="h-[250px] xl:h-auto xl:min-h-0 xl:flex-[3]" />
+            <div className="flex flex-col gap-3 xl:h-[250px]">
+              <MindPanel move={hMove} className="h-[200px] xl:h-auto xl:min-h-0 xl:flex-[3]" />
               <div className="panel flex h-[150px] flex-col p-3 xl:h-auto xl:min-h-0 xl:flex-[2]">
                 <p className="panel-title flex items-center gap-2">
                   <Brain className="h-4 w-4 text-lesson" /> Harness rules & memory · {known.length}
@@ -232,14 +232,14 @@ function HeadToHead() {
                 map={mapQ.data}
                 visited={visited}
                 currentRoom={hMove?.room}
-                className="h-[420px]"
+                className="h-[250px]"
               />
-              <p className="presenter-hide mt-1.5 px-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+              <p className="presenter-hide mt-1 px-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
                 Persisted in Atlas · world_facts, upserted on every move
               </p>
             </div>
           ) : (
-            <div className="panel h-[420px]">
+            <div className="panel h-[250px]">
               {mapQ.isError ? (
                 <ErrorState error={mapQ.error} onRetry={() => mapQ.refetch()} />
               ) : (

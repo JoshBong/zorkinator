@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 export const Route = createFileRoute("/graveyard")({
   head: () => ({
     meta: [
-      { title: "The Graveyard — GRUE LAB" },
+      { title: "GRUE LAB" },
       {
         name: "description",
         content:

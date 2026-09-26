@@ -21,7 +21,7 @@ import { ErrorState, LoadingState } from "@/components/states";
 export const Route = createFileRoute("/eval")({
   head: () => ({
     meta: [
-      { title: "Eval Lab — GRUE LAB" },
+      { title: "GRUE LAB" },
       {
         name: "description",
         content:
