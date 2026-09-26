@@ -71,3 +71,4 @@ class RunRecord(ContractModel):
     ended_at: datetime
     chain: StrictStr | None = None
     game_index: NonNegativeInt | None = None
+    start_tool_calls: list[StrictStr] = []

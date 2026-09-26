@@ -79,7 +79,8 @@ class AnthropicChat:
         if model not in PRICES:
             raise ValueError(f"No price for {model!r}; add it to PRICES so the $ cap works.")
         self.model = model
-        self._client = client or anthropic.Anthropic()
+        # Long unattended chains: ride out 429/529s instead of losing a game.
+        self._client = client or anthropic.Anthropic(max_retries=8)
 
     def complete(
         self, messages: list[MessageParam], archive: ChatArchive | None = None
@@ -297,6 +298,7 @@ def play(
         ended_at=datetime.now(UTC),
         chain=chain,
         game_index=game_index,
+        start_tool_calls=ack.tool_calls,
     )
     sink.run(record)
     if archive is not None:
@@ -346,18 +348,22 @@ def _play_chain(
                 f"[{chain}] stopping: ${spent:.2f} reached its ${chain_cap:.2f} share", flush=True
             )
             break
-        record = play(
-            "paper",
-            seed,
-            move_cap,
-            chat=chat,
-            sink=JsonlSink(out),
-            prompt="advanced" if prompt == "advanced" else "basic",
-            usd_cap=usd_cap,
-            archive=archive,
-            chain=chain,
-            game_index=game_index,
-        )
+        try:
+            record = play(
+                "paper",
+                seed,
+                move_cap,
+                chat=chat,
+                sink=JsonlSink(out),
+                prompt="advanced" if prompt == "advanced" else "basic",
+                usd_cap=usd_cap,
+                archive=archive,
+                chain=chain,
+                game_index=game_index,
+            )
+        except Exception as exc:  # one failed game must not end the chain
+            print(f"[{chain} game {game_index + 1}/{games}] FAILED: {exc!r}", flush=True)
+            continue
         spent += record.cost_usd
         print(
             f"[{chain} game {game_index + 1}/{games}] score={record.score} moves={record.moves} "
