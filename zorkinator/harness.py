@@ -113,9 +113,7 @@ def play_game(
         if repository is None:
             raise ValueError("an exact version manifest requires its repository")
         version_id = spec.version.version_id
-        version_context = builder.build_version_context(
-            run_id, spec.version, repository=repository
-        )
+        version_context = builder.build_version_context(run_id, spec.version, repository=repository)
     else:
         version_context = ""
     world = spec.world or WorldModel.empty(run_id)
