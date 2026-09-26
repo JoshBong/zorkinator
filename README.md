@@ -64,6 +64,10 @@ Pre-commit runs Ruff (including formatting) and strict mypy with the Pydantic pl
 the checks again on every push and pull request. Configure the repository's branch protection to require
 the `lint-type-test` check if merges must be blocked when these checks fail.
 
+Jericho does not ship type information, so its supported API surface is defined in
+`typings/jericho/__init__.pyi`. Update that stub in the same change whenever new Jericho APIs are used;
+strict mypy deliberately does not ignore missing imports globally.
+
 ## Docs
 
 Coding agents: start at [`AGENTS.md`](AGENTS.md).

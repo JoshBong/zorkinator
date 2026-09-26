@@ -14,9 +14,15 @@ python_version = "3.11"
 strict = true
 plugins = ["pydantic.mypy"]
 files = ["zorkinator", "tests"]
-ignore_missing_imports = true
+mypy_path = ["typings"]
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+stubPath = "typings"
+include = ["zorkinator", "tests"]

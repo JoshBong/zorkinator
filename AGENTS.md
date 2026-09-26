@@ -48,6 +48,9 @@ First step for everyone: a stub of your functions that returns plausible fake da
 - Keep the per-move prompt small: no chat history; state comes from Atlas each move. Put fixed text first so prompt caching works.
 - Per-run dollar cap and a stop after 40 moves without a score change (in `runner.play`).
 - Smoke-test everything on 20-move games before any long run.
+- Jericho is untyped upstream. `typings/jericho/__init__.pyi` is the enforced local API surface: any change
+  that uses another Jericho symbol, argument, or return value must update that stub in the same commit.
+  Do not silence missing imports globally; add a minimal verified stub or a documented module-specific exception.
 - Secrets live in `.env` (gitignored). Never commit keys or print them.
 - Repo is public and judged on work done today: no code copied from other projects (ZorkGPT, jev-zork, orbit).
 - No Streamlit (banned by the hackathon). The view is evidence; the loop is the product.
