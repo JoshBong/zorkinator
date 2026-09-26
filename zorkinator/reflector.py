@@ -334,6 +334,8 @@ class Reflector:
                     "score": move.score,
                     "score_delta": move.score_delta,
                     "died": move.died,
+                    "expected": move.expected,
+                    "surprise": move.surprise,
                 }
                 for move in moves
             ],
@@ -375,7 +377,10 @@ the transcript--never a range, string, or summary. A valid add looks exactly lik
 {"op":"add","key":"trap","kind":"failure","subjects":["trap"],
 "content":{"text":"Entering the trap was fatal"},"status":"supported",
 "evidence":[{"run_id":"the exact visible run id","n":7}],"rationale":"Move 7 ended badly."}.
-Rule diffs are separate objects; new rules must cite public evidence and are born soft. Empty arrays
+Moves carry the Player's own prediction ("expected") and whether the outcome surprised it
+("surprise"): a surprise marks where its picture of the world was wrong, so prefer memories and
+rules that explain deaths and surprises. Rule diffs are separate objects; new rules must cite
+public evidence and are born soft. Empty arrays
 are valid. Use add {op,key,text,when,verdict,evidence}, revise
 {op,rule_id,key,text,when,verdict,evidence}, or retire {op,rule_id}. Never invent an evidence
 reference that is absent from the supplied transcript. For add/revise, when MUST be a JSON object
@@ -425,11 +430,25 @@ def _validate_memory_targets(proposal: ReflectionProposal, parent: HarnessVersio
 
 
 def _select_moves(moves: Sequence[MoveRecord], limit: int) -> list[MoveRecord]:
-    """Keep outcome-relevant moves, then fill the budget from the end of the run."""
+    """Keep outcome-relevant moves, then fill the budget from the end of the run.
+
+    Priority: deaths, score changes, surprises (the Player's prediction failed), and the first
+    entry into each room, so mid-game discoveries survive the cut in a long game.
+    """
 
     if len(moves) <= limit:
         return list(moves)
-    priority = {move.n for move in moves if move.died or move.score_delta != 0}
+    first_entries: set[int] = set()
+    seen_rooms: set[str] = set()
+    for move in sorted(moves, key=lambda m: m.n):
+        if move.room and move.room not in seen_rooms:
+            seen_rooms.add(move.room)
+            first_entries.add(move.n)
+    priority = {
+        move.n
+        for move in moves
+        if move.died or move.score_delta != 0 or move.surprise or move.n in first_entries
+    }
     selected = [move for move in moves if move.n in priority]
     if len(selected) > limit:
         selected = selected[-limit:]
