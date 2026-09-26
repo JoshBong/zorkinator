@@ -58,6 +58,8 @@ class MoveRecord(ContractModel):
     # its own verdict on the next move of whether the real outcome surprised it.
     expected: StrictStr | None = None
     surprise: StrictBool | None = None
+    # Soft rules that matched the command; the Player was warned and chose to proceed.
+    warnings: list[StrictStr] = []
 
 
 class RunRecord(ContractModel):

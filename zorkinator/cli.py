@@ -9,7 +9,12 @@ from dotenv import load_dotenv
 
 from . import db, verifier
 from .adapter import GameAdapter
-from .driver import BetweenGameDriver, MongoRunRepository, ReflectorProposalCreator
+from .driver import (
+    BetweenGameDriver,
+    MongoRunRepository,
+    ReflectionBudget,
+    ReflectorProposalCreator,
+)
 from .openai_chat import OpenAIChat
 from .reflector import AnthropicReflectionModel, OpenAIReflectionModel
 from .runner import (
@@ -66,6 +71,11 @@ def baseline(seed: int, moves: int, prompt: str, model: str, usd_cap: float, out
     return 0
 
 
+def _record_boundary(outcome: dict[str, object]) -> None:
+    """Persist one learning-boundary outcome (committed / budget_exhausted / learning_failed)."""
+    db.get_db().chain_boundaries.insert_one(dict(outcome))
+
+
 def harness(
     chain: str,
     games: int,
@@ -74,6 +84,7 @@ def harness(
     prompt: str,
     model: str | None,
     usd_cap: float,
+    reflect_usd: float = 15.0,
 ) -> int:
     """Run or resume one Atlas-backed sequential harness chain."""
     load_dotenv()
@@ -92,9 +103,14 @@ def harness(
         )
         proposals = ReflectorProposalCreator(store, reflection_model)
         # Soft -> hard only by replay: cited runs plus every logged harness game.
-        promoter = verifier.Promoter(db.get_moves, history=lambda: db.get_runs("harness"))
+        # ...replayed over this chain's own games only, so chains stay isolated experiments.
+        promoter = verifier.Promoter(
+            db.get_moves, history=lambda: run_repository.get_chain_runs(chain)
+        )
         versions = VersionManager(store, store, store, promoter)
-        driver = BetweenGameDriver(chain, store, run_repository, proposals, versions)
+        # One reflection per game; the default budget (10 calls / $5) would silently stop learning.
+        budget = ReflectionBudget(max_calls=games, max_usd=reflect_usd)
+        driver = BetweenGameDriver(chain, store, run_repository, proposals, versions, budget=budget)
         cursor = play_harness_chain(
             games,
             driver=driver,
@@ -106,6 +122,7 @@ def harness(
             prompt="advanced" if prompt == "advanced" else "basic",
             usd_cap=usd_cap,
             facts=db.upsert_world_fact,
+            on_outcome=_record_boundary,
         )
         print(
             f"Harness chain {chain!r}: completed {cursor.game_index}/{games} games; "
@@ -150,6 +167,9 @@ def main() -> int:
         help=f"OpenAI model (default: OPENAI_TEST_MODEL or {OPENAI_DEV_MODEL})",
     )
     harness_parser.add_argument("--usd-cap", type=float, default=5.0)
+    harness_parser.add_argument(
+        "--reflect-usd", type=float, default=15.0, help="reflection budget for the whole chain"
+    )
     args = parser.parse_args()
 
     if args.command == "manual":
@@ -181,6 +201,7 @@ def main() -> int:
             args.prompt,
             args.model,
             args.usd_cap,
+            args.reflect_usd,
         )
     parser.error(f"unknown command: {args.command}")
 

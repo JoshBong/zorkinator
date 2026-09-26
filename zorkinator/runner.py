@@ -358,6 +358,7 @@ def play_harness_chain(
     usd_cap: float = 15.0,
     story_file: str | Path = DEFAULT_STORY_FILE,
     facts: Callable[[WorldFactDoc], None] | None = None,
+    on_outcome: Callable[[dict[str, object]], None] | None = None,
 ) -> ChainCursor:
     """Run sequential harness games through ``BetweenGameDriver.run``.
 
@@ -387,7 +388,11 @@ def play_harness_chain(
             prompt=prompt,
         )
 
-    cursor = driver.run(games, play_game)
+    cursor = (
+        driver.run(games, play_game)
+        if on_outcome is None
+        else driver.run(games, play_game, on_outcome)
+    )
     return ChainCursor(version_id=cursor.version_id, game_index=cursor.game_index)
 
 

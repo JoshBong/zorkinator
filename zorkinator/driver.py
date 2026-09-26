@@ -12,8 +12,15 @@ from pydantic import JsonValue
 
 from . import db
 from .models import HarnessVersionRecord, MemoryEvent, ReflectionProposal, RunRecord
-from .reflector import ReflectionModel, ReflectionRepository, Reflector, ReflectorLimits
+from .reflector import (
+    ReflectionError,
+    ReflectionModel,
+    ReflectionRepository,
+    Reflector,
+    ReflectorLimits,
+)
 from .runner import PRICES
+from .versions import CommitError
 
 
 class DriverError(RuntimeError):
@@ -89,6 +96,9 @@ class ReflectionBudget:
     def __post_init__(self) -> None:
         if self.max_calls < 0 or self.max_usd < 0:
             raise ValueError("reflection budget limits must be non-negative")
+
+
+BoundaryOutcome = Callable[[dict[str, object]], None]
 
 
 @dataclass(frozen=True)
@@ -213,8 +223,15 @@ class BetweenGameDriver:
             raise DriverError("version commit did not publish the expected child")
         return child_id
 
-    def run(self, games: int, play_game: PlayGame) -> ChainCursor:
-        """Resume the chain and pass every committed child to the next game."""
+    def run(
+        self, games: int, play_game: PlayGame, on_outcome: BoundaryOutcome | None = None
+    ) -> ChainCursor:
+        """Resume the chain and pass every committed child to the next game.
+
+        Expected learning failures (a malformed reflection, a rejected proposal) never stop the
+        chain: the outcome is reported through ``on_outcome`` and the next game keeps the parent
+        version. Transient persistence errors still propagate so a rerun can retry them.
+        """
         if games < 0:
             raise ValueError("games must be non-negative")
         cursor = self.recover()
@@ -234,7 +251,35 @@ class BetweenGameDriver:
                 or played.version_id != version_id
             ):
                 raise DriverError("play_game returned a run outside the requested chain cursor")
-            version_id = self.advance(played.run_id)
+            parent_id = version_id
+            outcome: dict[str, object] = {
+                "chain": self.chain,
+                "experiment_id": self.experiment_id,
+                "game_index": game_index,
+                "run_id": played.run_id,
+                "parent_id": parent_id,
+                "score": played.score,
+                "end_reason": played.end_reason,
+                "created_at": datetime.now(UTC),
+            }
+            try:
+                version_id = self.advance(played.run_id)
+            except (ReflectionError, CommitError) as exc:
+                version_id = parent_id
+                outcome.update(status="learning_failed", reason=str(exc)[:500])
+            else:
+                if version_id == parent_id:
+                    outcome.update(status="budget_exhausted")
+                else:
+                    outcome.update(status="committed", child_id=version_id)
+            print(
+                f"[{self.chain} game {game_index + 1}] score={played.score} "
+                f"end={played.end_reason} learning={outcome['status']}"
+                + (f" ({outcome['reason']})" if "reason" in outcome else ""),
+                flush=True,
+            )
+            if on_outcome is not None:
+                on_outcome(outcome)
             game_index += 1
         return ChainCursor(version_id=version_id, game_index=game_index)
 

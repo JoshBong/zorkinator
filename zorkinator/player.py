@@ -43,8 +43,8 @@ def _tag(reply: str, tag: str) -> str | None:
 
 
 def propose(chat: Chat, prompt: PromptParts, feedback: str | None = None) -> Proposal:
-    """``feedback`` is a verifier rejection reason to retry with."""
-    tail = prompt.tail if feedback is None else f"{prompt.tail}\n\nRejected: {feedback}"
+    """``feedback`` is a verifier message (a rejection or a warning) to retry with."""
+    tail = prompt.tail if feedback is None else f"{prompt.tail}\n\n{feedback}"
     prefix_block: TextBlockParam = {
         "type": "text",
         "text": prompt.prefix,

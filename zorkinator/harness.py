@@ -167,9 +167,10 @@ def play_game(
             t0 = time.monotonic()
             proposal = player.propose(chat, move_prompt)
             usage.add(proposal.usage)
-            # Hard rules block and the Player retries with the reason (max 3 tries);
-            # soft rules already reach the prompt through the version context.
+            # Hard rules block and the Player retries with the reason (max 3 tries).
+            # A soft rule warns once; the Player may keep the command.
             rejections: list[dict[str, str]] = []
+            warnings: list[str] = []
             here = verifier.State(
                 room=world.state.room,
                 inventory=frozenset(item.casefold() for item in world.inventory),
@@ -178,6 +179,14 @@ def play_game(
             while not proposal.gave_up and len(rejections) < MAX_REJECTIONS:
                 verdict = verifier.check(proposal.command, here, rules)
                 if verdict.ok:
+                    if verdict.warnings and not warnings:
+                        warnings = [w.split(":")[0] for w in verdict.warnings]
+                        note = "; ".join(verdict.warnings)
+                        proposal = player.propose(
+                            chat, move_prompt, feedback=f"Warning (you may proceed): {note}"
+                        )
+                        usage.add(proposal.usage)
+                        continue
                     break
                 rejections.append(
                     {
@@ -186,7 +195,7 @@ def play_game(
                         "reason": verdict.reason or "",
                     }
                 )
-                proposal = player.propose(chat, move_prompt, feedback=verdict.reason)
+                proposal = player.propose(chat, move_prompt, feedback=f"Rejected: {verdict.reason}")
                 usage.add(proposal.usage)
             latency_ms = int((time.monotonic() - t0) * 1000)
             moves = n
@@ -208,6 +217,7 @@ def play_game(
                         latency_ms,
                         rejections=rejections,
                         surprise=surprise,
+                        warnings=warnings,
                     )
                 )
                 if trace is not None:
@@ -233,6 +243,7 @@ def play_game(
                         rejections=rejections,
                         expected=expected,
                         surprise=surprise,
+                        warnings=warnings,
                     )
                 )
                 continue
@@ -253,6 +264,7 @@ def play_game(
                         rejections=rejections,
                         expected=expected,
                         surprise=surprise,
+                        warnings=warnings,
                     )
                 )
                 if trace is not None:
@@ -293,6 +305,7 @@ def play_game(
                     rejections=rejections,
                     expected=expected,
                     surprise=surprise,
+                    warnings=warnings,
                 )
             )
             if trace is not None:
@@ -408,6 +421,7 @@ def _move(
     rejections: list[dict[str, str]] | None = None,
     expected: str | None = None,
     surprise: bool | None = None,
+    warnings: list[str] | None = None,
 ) -> MoveRecord:
     return MoveRecord(
         run_id=world.run_id,
@@ -424,6 +438,7 @@ def _move(
         ts=datetime.now(UTC),
         expected=expected,
         surprise=surprise,
+        warnings=warnings or [],
     )
 
 
