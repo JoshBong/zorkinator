@@ -22,6 +22,7 @@ from typing import Any, Literal, Protocol, TypeVar
 from dotenv import load_dotenv
 from pydantic import JsonValue
 from pymongo import ASCENDING, DESCENDING, MongoClient
+from pymongo.client_session import ClientSession
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError
 
@@ -228,7 +229,19 @@ class OuterLoopStore(Protocol):
 
     def publish_version(self, version: HarnessVersionRecord) -> None: ...
 
+    def publish_bundle(
+        self,
+        version: HarnessVersionRecord,
+        revisions: Sequence[MemoryRevision],
+        rules: Sequence[RuleDoc],
+        events: Sequence[MemoryEvent],
+    ) -> None: ...
+
     def get_version(self, version_id: str) -> HarnessVersionRecord | None: ...
+
+    def get_memory_event(self, event_id: str) -> MemoryEvent | None: ...
+
+    def get_rule(self, rule_id: str) -> RuleDoc | None: ...
 
     def read(self, version_id: str, memory_id: str) -> MemoryRevision | None: ...
 
@@ -325,6 +338,7 @@ class MongoOuterLoopStore:
             model=model,
             usage={} if usage is None else usage,
             created_at=created_at,
+            proposal=proposal,
         )
         self.put_memory_event(event)
         return event
@@ -339,9 +353,42 @@ class MongoOuterLoopStore:
         """Publish the complete manifest, the authoritative visibility marker."""
         self._insert_immutable("harness_versions", _document(version, "version_id"))
 
+    def publish_bundle(
+        self,
+        version: HarnessVersionRecord,
+        revisions: Sequence[MemoryRevision],
+        rules: Sequence[RuleDoc],
+        events: Sequence[MemoryEvent],
+    ) -> None:
+        """Atomically publish every record that makes one child version usable."""
+        if self._client is None:
+            raise RuntimeError("atomic publication requires a MongoClient")
+        with self._client.start_session() as session, session.start_transaction():
+            for revision in revisions:
+                self._insert_immutable(
+                    "memories", _document(revision, "revision_id"), session=session
+                )
+            for rule in rules:
+                self._insert_immutable("rules", _document(rule, "id"), session=session)
+            self._insert_immutable(
+                "harness_versions", _document(version, "version_id"), session=session
+            )
+            for event in events:
+                self._insert_immutable(
+                    "memory_events", _document(event, "event_id"), session=session
+                )
+
     def get_version(self, version_id: str) -> HarnessVersionRecord | None:
         raw = self._database.harness_versions.find_one({"_id": version_id})
         return None if raw is None else _model(HarnessVersionRecord, raw, "version_id")
+
+    def get_memory_event(self, event_id: str) -> MemoryEvent | None:
+        raw = self._database.memory_events.find_one({"_id": event_id})
+        return None if raw is None else _model(MemoryEvent, raw, "event_id")
+
+    def get_rule(self, rule_id: str) -> RuleDoc | None:
+        raw = self._database.rules.find_one({"_id": rule_id})
+        return None if raw is None else _model(RuleDoc, raw, "id")
 
     def read(self, version_id: str, memory_id: str) -> MemoryRevision | None:
         version = self._require_version(version_id)
@@ -424,12 +471,18 @@ class MongoOuterLoopStore:
             raise LookupError(f"unknown harness version: {version_id}")
         return version
 
-    def _insert_immutable(self, collection_name: str, document: dict[str, Any]) -> None:
+    def _insert_immutable(
+        self,
+        collection_name: str,
+        document: dict[str, Any],
+        *,
+        session: ClientSession | None = None,
+    ) -> None:
         collection = self._database[collection_name]
         try:
-            collection.insert_one(document)
+            collection.insert_one(document, session=session)
         except DuplicateKeyError:
-            existing = collection.find_one({"_id": document["_id"]})
+            existing = collection.find_one({"_id": document["_id"]}, session=session)
             if existing != document:
                 raise ValueError(
                     f"immutable document {document['_id']!r} already exists with different content"

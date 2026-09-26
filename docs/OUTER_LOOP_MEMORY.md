@@ -150,6 +150,7 @@ source_run_id
 parent_id
 child_version_id          when applicable
 operations                exact proposed operations on the proposed event
+proposal                  complete ReflectionProposal, including rule_diffs and summary
 memory_revision_ids       when applicable
 reason                    validation/error summary when applicable
 model                     source run's model

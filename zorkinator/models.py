@@ -265,3 +265,4 @@ class MemoryEvent(ContractModel):
     model: NonEmptyStr
     usage: dict[StrictStr, JsonValue]
     created_at: datetime
+    proposal: ReflectionProposal | None = None

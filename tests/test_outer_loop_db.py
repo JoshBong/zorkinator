@@ -236,6 +236,36 @@ class MongoOuterLoopStoreTests(unittest.TestCase):
                 created_at=NOW,
             )
 
+    def test_record_proposal_persists_rule_diffs_and_summary(self) -> None:
+        proposal = ReflectionProposal(
+            proposal_id="proposal_rule",
+            run_id="run_1",
+            parent_id="v1",
+            memory_ops=[],
+            rule_diffs=[
+                {
+                    "op": "add",
+                    "key": "fatal",
+                    "text": "Avoid the fatal action.",
+                    "when": {"action": "fatal"},
+                    "verdict": "block",
+                    "evidence": [{"run_id": "run_1", "n": 3}],
+                }
+            ],
+            summary="Preserve the proposed rule.",
+        )
+
+        self.store.record_proposal(
+            proposal,
+            experiment_id="exp_1",
+            model="test-model",
+            created_at=NOW,
+        )
+
+        document = self.database.__getitem__.return_value.insert_one.call_args.args[0]
+        self.assertEqual(document["proposal"]["rule_diffs"], proposal.rule_diffs)
+        self.assertEqual(document["proposal"]["summary"], proposal.summary)
+
 
 if __name__ == "__main__":
     unittest.main()

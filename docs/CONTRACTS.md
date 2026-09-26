@@ -27,7 +27,8 @@ memories        {_id: revision_id, schema_version: 1, experiment_id, memory_id,
 memory_events   {_id, experiment_id, proposal_id,
                  phase: "proposed"|"validated"|"rejected"|"committed"|"failed",
                  source_run_id, parent_id, child_version_id, operations,
-                 memory_revision_ids, reason, model, usage, created_at}
+                 memory_revision_ids, reason, model, usage, created_at,
+                 proposal: ReflectionProposal}
                  immutable proposal/audit events, not current memory state
 
 rules           {_id: "r12", text, when: {...}, verdict: "warn"|"block",
