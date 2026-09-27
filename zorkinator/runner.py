@@ -430,7 +430,9 @@ def _play_chain(
     chain_i, games, seed, move_cap, prompt, model, usd_cap, chain_cap, out, chats, label = job
     chain = f"{label}-chain{chain_i}"
     archive = ChatArchive(Path(chats) / f"chain-{chain_i}") if chats else None
-    chat = AnthropicChat(model)
+    from .harness import make_chat
+
+    chat = make_chat("model", model, seed)
     spent = 0.0
     for game_index in range(games):
         if spent >= chain_cap:

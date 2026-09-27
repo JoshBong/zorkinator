@@ -15,6 +15,7 @@ from .driver import (
     ReflectionBudget,
     ReflectorProposalCreator,
 )
+from .harness import make_chat
 from .openai_chat import OpenAIChat
 from .reflector import AnthropicReflectionModel, OpenAIReflectionModel
 from .runner import (
@@ -62,7 +63,7 @@ def baseline(seed: int, moves: int, prompt: str, model: str, usd_cap: float, out
         "paper",
         seed,
         moves,
-        chat=AnthropicChat(model),
+        chat=make_chat("model", model, seed),
         sink=JsonlSink(out),
         prompt="advanced" if prompt == "advanced" else "basic",
         usd_cap=usd_cap,
