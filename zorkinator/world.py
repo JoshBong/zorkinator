@@ -114,6 +114,7 @@ class Step:
     room: str | None
     command: str
     outcome: str
+    text: str = ""
 
 
 @dataclass
@@ -140,6 +141,7 @@ class WorldModel:
         self.past_runs: list[str] = []  # condensed summaries of earlier games, from memory
         # location (casefolded) -> notes from earlier games that apply only there
         self.location_notes: dict[str, list[str]] = {}
+        self.routed: list[str] = []  # notes a router picked for the current situation
         self.memory_map = ""  # earlier games' map, rendered once at load (cached prompt prefix)
         # memory_id -> {"confirmed" | "contradicted": [{n, claim, detail}]}: what this game's
         # play showed about each loaded memory. Evidence for the outer loop, never a verdict.

@@ -1,0 +1,54 @@
+[
+ {
+  "where": "Up a Tree",
+  "text": "Taking the egg with `take egg` gained 5 points (score 0->5)."
+ },
+ {
+  "where": "Behind House",
+  "text": "Opening the window with `open window`, then entering with `enter window`, gained 10 points on entry to the Kitchen (score 5->15)."
+ },
+ {
+  "where": "Living Room",
+  "text": "Descending through the opened trap door with `down`, while carrying the sword, gained 25 points when reaching the Cellar (score 15->40)."
+ },
+ {
+  "where": "Gallery",
+  "text": "Taking the painting with `take painting` gained 4 points (score 40->44)."
+ },
+ {
+  "where": "Studio",
+  "text": "The death was caused by carrying the painting when trying `climb chimney`; after dropping it, the thief appeared, and attacking him twice with the sword ended in death. Death reduced the score from 44 to 34."
+ },
+ {
+  "where": "Clearing",
+  "text": "Moving the leaves revealed a grating, but `open grating` reported that it was locked; no way to unlock or enter it was found."
+ },
+ {
+  "where": "Up a Tree",
+  "text": "`open egg` did not work: the game said you had neither the tools nor the expertise, so the egg was never opened."
+ },
+ {
+  "where": "Studio",
+  "text": "The chimney looked promising, but `climb chimney` failed while carrying the painting; after dropping the painting, repeated attempts still failed because other items were carried, and the chimney was never climbed."
+ },
+ {
+  "where": "Living Room",
+  "text": "The west wooden door looked like an exit, but it was described as nailed shut and was never opened."
+ },
+ {
+  "where": "Cellar",
+  "text": "The steep metal ramp looked like a route upward, but `climb ramp` failed because it was impossible; it was never climbed."
+ },
+ {
+  "where": "Kitchen",
+  "text": "Pouring water on the garlic with `pour water on garlic` only spilled and evaporated the water; no useful garlic result was achieved."
+ },
+ {
+  "where": "Kitchen",
+  "text": "The lantern was not in the Kitchen; it was successfully taken and lit in the Living Room before entering the dark cellar. It needed to be carried through dark passages, but was later dropped in the Studio."
+ },
+ {
+  "where": "anywhere",
+  "text": "The final death was caused by dropping the lit lantern in the Studio, then entering the dark passage west from the Gallery and moving in darkness until a grue devoured you."
+ }
+]

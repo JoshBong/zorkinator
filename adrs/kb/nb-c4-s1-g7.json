@@ -1,0 +1,146 @@
+[
+ {
+  "where": "Up a Tree",
+  "text": "Taking the egg with `take egg` gained 5 points."
+ },
+ {
+  "where": "Behind House",
+  "text": "Opening the window and entering it with `open window`, then `enter window`, gained 10 points on entry to the Kitchen."
+ },
+ {
+  "where": "Living Room",
+  "text": "Moving the rug, opening the trap door, and going down with `move rug`, `open trap door`, and `down` gained 25 points on entry to the Cellar."
+ },
+ {
+  "where": "Gallery",
+  "text": "Taking the painting with `take painting` in Gallery gained 4 points; in this run it succeeded while carrying the egg, sack, and bottle."
+ },
+ {
+  "where": "Kitchen",
+  "text": "Light the lantern before going upstairs or entering the dark cellar: `light lamp` and `light lantern` failed in the Kitchen because the lantern was there, but `light lantern` in the Living Room followed by `down` safely reached the Cellar; going down while dark produced a pitch-black grue warning."
+ },
+ {
+  "where": "anywhere",
+  "text": "Object weight can prevent some actions, but in this run `take painting` in Gallery succeeded while carrying the egg, sack, and bottle. In Studio, `climb chimney` failed even after reducing the load to only a leaflet, and was not retried after dropping the leaflet."
+ },
+ {
+  "where": "Studio",
+  "text": "The first thief setback came after valuables were left in the Studio: after dropping the egg and bottle, the thief appeared, and `attack thief with sword` only hit his wrist; he escaped with the large bag and robbed you."
+ },
+ {
+  "where": "Studio",
+  "text": "The death was caused by dropping the sword earlier, carrying the axe instead, and failing to defeat the thief: after `attack thief with axe` twice, the second attack missed and the thief stabbed you, reducing the score from 44 to 34."
+ },
+ {
+  "where": "Clearing",
+  "text": "Moving the leaves revealed a grating, but `open grating` showed that it was locked; it was never opened."
+ },
+ {
+  "where": "Living Room",
+  "text": "The wooden door with gothic lettering looked promising, but `open door` reported that it would not budge and it was never opened."
+ },
+ {
+  "where": "Living Room",
+  "text": "The trophy case looked potentially useful, but `examine trophy case` showed it was empty."
+ },
+ {
+  "where": "Kitchen",
+  "text": "The dark chimney leading down and east looked promising, but it was never entered."
+ },
+ {
+  "where": "Studio",
+  "text": "Trying `take paper` failed because the load was too heavy; carrying the egg, bottle, lantern, sword, painting, and sack caused this setback, and `drop sack` made the paper takeable."
+ },
+ {
+  "where": "The Troll Room",
+  "text": "Killing the troll with three `attack troll with sword` commands gained 5 points, reflected when going east into the East-West Passage."
+ },
+ {
+  "where": "Loud Room",
+  "text": "Taking the platinum bar with `take platinum bar` gained 10 points after dropping the sack and painting to reduce the load."
+ },
+ {
+  "where": "Loud Room",
+  "text": "The platinum-bar and painting setbacks were caused by carrying too much: `take platinum bar` failed while carrying the sack and painting, dropping the sack was insufficient, and dropping the painting made the bar takeable; later dropping the bottle made the painting takeable."
+ },
+ {
+  "where": "Loud Room",
+  "text": "The death was caused by entering the thief encounter while carrying valuables including the egg and bottle, then making only one `attack thief with sword`; the sword missed and the thief killed you, reducing the score from 45 to 35."
+ },
+ {
+  "where": "The Troll Room",
+  "text": "The forbidding hole leading west looked promising but was never entered."
+ },
+ {
+  "where": "Studio",
+  "text": "The grue death was caused by dropping the lantern with `drop lantern`, then entering Gallery's dark west passage with `west` and continuing north without a light; the grue killed you."
+ },
+ {
+  "where": "Studio",
+  "text": "In Studio, `climb chimney` failed while carrying the leaflet, lantern, painting, bottle, sword, and egg; after dropping the bottle, painting, sword, and finally egg, it succeeded and returned to the Kitchen while the lantern and leaflet were still carried."
+ },
+ {
+  "where": "Gallery",
+  "text": "After `drop painting` in Studio, `take painting` in Gallery failed because the painting was no longer there; returning to Studio to retrieve it was never done."
+ },
+ {
+  "where": "Kitchen",
+  "text": "Going `up` before obtaining and lighting the lantern caused a pitch-black grue warning; the lantern was in the Living Room, so this setback came from skipping `west`, `light lantern`, and then returning upstairs."
+ },
+ {
+  "where": "Maintenance Room",
+  "text": "`take wrench` and repeated `take tube` failures were caused by carrying too much; dropping the sack allowed the wrench, and dropping leaflet, guidebook, matchbook, and bottle eventually allowed the tube."
+ },
+ {
+  "where": "Maintenance Room",
+  "text": "In Maintenance Room, pushing the blue button caused a leak and raised the water to ankle height; pushing the yellow button raised it further to shin height while time was spent trying to manage the inventory."
+ },
+ {
+  "where": "Loud Room",
+  "text": "The platinum bar was never successfully taken in this run: repeated `take platinum bar` and `take bar` commands only produced `bar bar ...` and no score increase."
+ },
+ {
+  "where": "Chasm",
+  "text": "The death was caused by entering the thief encounter while still carrying valuables including the egg and bottle, then making only one `attack thief with sword`; the sword missed and the thief killed you."
+ },
+ {
+  "where": "Dam",
+  "text": "In Dam, the closed sluice gates were never opened; the scramble down was entered to Dam Base, where raft inflation was never completed."
+ },
+ {
+  "where": "Chasm",
+  "text": "The crack looked promising, but `enter crack` failed because you could not fit through it; it was never entered."
+ },
+ {
+  "where": "The Troll Room",
+  "text": "The death was caused by dropping the sword in Studio and entering the Troll Room without it; `attack troll with sword` failed because it was no longer carried, and `attack troll with knife` missed, letting the troll kill you and reduce the score from 44 to 34."
+ },
+ {
+  "where": "The Troll Room",
+  "text": "After `attack troll with sword` killed the troll, the sword disappeared; later attempts to take or use it reported that you did not have it."
+ },
+ {
+  "where": "Maze",
+  "text": "The first thief robbery was caused by carrying valuables including the sword, axe, bottle, sack, lantern, and leaflet, then failing to defeat him with two `attack thief with sword` commands; he escaped with the bag and robbed you."
+ },
+ {
+  "where": "Maze",
+  "text": "At the later thief encounter the sword had already been lost to the earlier robbery, so `attack thief with sword` failed and two `attack thief with axe` commands were ineffective; dropping the sack left the thief finding nothing valuable."
+ },
+ {
+  "where": "Maintenance Room",
+  "text": "After the blue-button leak, pushing the yellow button raised the water from ankle height to shin height; the thief then appeared, but the sword was already gone and attacking with the screwdriver was suicidal, so he left."
+ },
+ {
+  "where": "Dam",
+  "text": "The bolt looked promising: `turn bolt` asked what to use, but `wrench` failed because no wrench was carried; after obtaining the wrench in Maintenance Room, returning to turn the bolt was never done."
+ },
+ {
+  "where": "Dam Base",
+  "text": "The plastic pile looked like a raft, but inflation was never completed: `inflate pile with tube` was rejected, no pump was available, and the pile was repeatedly dropped and retaken without finding a successful command."
+ },
+ {
+  "where": "Deep Canyon",
+  "text": "The death was caused by entering the thief encounter while carrying valuables including the plastic pile, sack, bottle, lantern, leaflet, and sword, then making only one `attack thief with sword`; the thief dodged and killed you, reducing the score from 40 to 30."
+ }
+]

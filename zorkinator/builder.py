@@ -7,6 +7,7 @@ game so it can be cached; the tail is rebuilt every move.
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Protocol
@@ -24,6 +25,11 @@ a second line "Goal: <one sentence>" saying what you are trying to do next; it i
 back to you until you change it. Add a line "Expect: <one sentence>" predicting what the game \
 will say after this command. When you are shown what you expected last move, also add \
 "Surprise: yes" or "Surprise: no": did the game's output match your prediction?
+Notes marked "from earlier games" may be wrong; check them."""
+
+MINIMAL_PROTOCOL = """\
+[Harness] The game is already running; do not reply "ready". Each turn you get your notes, \
+your recent moves, and the game's latest output. Reply with only the next command.
 Notes marked "from earlier games" may be wrong; check them."""
 
 
@@ -46,8 +52,9 @@ def build_prefix(world: WorldModel, version_context: str = "", prompt: PromptNam
     earlier = "\n".join(notes) if notes else "none yet"
     memory_map = f"\n\n{world.memory_map}" if world.memory_map else ""
     exact_version = f"\n\n{version_context}" if version_context else ""
+    protocol = MINIMAL_PROTOCOL if "protocol" in ABLATE else HARNESS_PROTOCOL
     return (
-        f"{INITIAL_PROMPTS[prompt]}\n\n{HARNESS_PROTOCOL}\n\nNotes from earlier games:\n{earlier}"
+        f"{INITIAL_PROMPTS[prompt]}\n\n{protocol}\n\nNotes from earlier games:\n{earlier}"
         f"{memory_map}{exact_version}"
     )
 
@@ -64,7 +71,7 @@ def build_tail(
     """``cautions``: learned rules whose conditions hold here (checked before the Player
     chooses). ``warned``: cautions the previous command matched; it still ran."""
     state = world.state
-    here = world.here
+    here = None if state.in_dark else world.here
     lines = [f"Move {n}. Score {state.score}."]
 
     if state.in_dark:
@@ -78,7 +85,7 @@ def build_tail(
     else:
         lines.append("Location: unknown.")
 
-    if here is not None and here.exits:
+    if here is not None and here.exits and "exits" not in ABLATE:
         exits = []
         for e in sorted(here.exits.values(), key=lambda e: e.direction):
             if e.status == "known":
@@ -88,8 +95,16 @@ def build_tail(
                 exits.append(f"{e.direction} blocked ({e.note})")
             else:
                 exits.append(f"{e.direction} (mentioned, never taken)")
-        lines.append("Exits: " + "; ".join(exits))
-    if here is not None and here.items_seen:
+        lines.append("Exits seen: " + "; ".join(exits))
+    if here is not None and not state.in_dark and "untried" not in ABLATE:
+        used = {e.direction for e in here.exits.values()} | {c.casefold() for c in here.tried}
+        untried = [d for d in COMPASS if d not in used]
+        if untried:
+            lines.append(
+                "Room text often leaves exits out. Directions never tried here: "
+                + ", ".join(untried)
+            )
+    if "state" not in ABLATE and here is not None and here.items_seen:
         lines.append("Seen here: " + ", ".join(sorted(here.items_seen)))
     if here is not None:
         remembered = sorted(
@@ -105,23 +120,39 @@ def build_tail(
             lines.append(
                 "Earlier games tried here: " + "; ".join(f"{c} -> {o}" for c, o in earlier_tries)
             )
-    notes = world.notes_here()
+    if world.routed:
+        lines.append(
+            "Notebook notes that matter now (from earlier games, may be wrong):\n"
+            + "\n".join(f"- {r}" for r in world.routed)
+        )
+    notes = [] if state.in_dark else world.notes_here()
     if notes:
         lines.append(
             "Notes for this room (from earlier games, may be wrong):\n"
             + "\n".join(f"- {note}" for note in notes)
         )
-    if here is not None and here.tried:
+    if "state" not in ABLATE and here is not None and here.tried:
         tried = list(here.tried.items())[-6:]
         lines.append("Already tried here: " + "; ".join(f"{c} -> {o}" for c, o in tried))
 
-    lines.append("Carrying: " + (", ".join(world.inventory) or "nothing known"))
-    lines.append(f"Goal: {state.goal or 'none set'}")
+    if "state" not in ABLATE:
+        lines.append("Carrying: " + (", ".join(world.inventory) or "nothing known"))
+    if "protocol" not in ABLATE:
+        lines.append(f"Goal: {state.goal or 'none set'}")
 
-    leads = world.leads()
+    leads = [] if "leads" in ABLATE else world.leads()
+    if state.in_dark:
+        leads = []
     if leads:
         lines.append("Open leads:\n" + "\n".join(f"- {lead}" for lead in leads[:8]))
-    if state.recent:
+    if state.recent and "rawhist" in ABLATE:
+        lines.append(
+            "Recent moves (full game output):\n"
+            + "\n".join(
+                f"> {s.command}\n{s.text or s.outcome}" for s in list(state.recent)[-RAW_MOVES:]
+            )
+        )
+    elif state.recent:
         lines.append(
             "Recent moves:\n"
             + "\n".join(f"- {s.n}. {s.command} -> {s.outcome}" for s in state.recent)
@@ -143,7 +174,7 @@ def build_tail(
         )
     if warned:
         lines.append("Your last command matched a caution: " + "; ".join(warned))
-    if expected:
+    if expected and "protocol" not in ABLATE:
         lines.append(f"Last move you expected: {expected}")
     lines.append(f"Game output:\n{last_output.strip() or '(no output)'}")
     return "\n".join(lines)
@@ -168,6 +199,20 @@ def build_prompt(
 
 
 ROOM_TEXT_CHARS = 700
+RAW_MOVES = int(os.getenv("ZK_RAW_MOVES", "20"))
+ABLATE = frozenset(filter(None, os.getenv("ZK_ABLATE", "").split(",")))
+COMPASS = (
+    "north",
+    "south",
+    "east",
+    "west",
+    "northeast",
+    "northwest",
+    "southeast",
+    "southwest",
+    "up",
+    "down",
+)
 
 
 def _short(text: str, limit: int = 160) -> str:

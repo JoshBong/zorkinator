@@ -16,7 +16,7 @@ OUTCOME_CHARS = 80
 _DIRECTION_WORDS = re.compile(
     r"\b(north|south|east|west|northeast|northwest|southeast|southwest|up|down)\b"
 )
-_TAKEN = re.compile(r"^(?:(?P<item>[^:\n]+): )?Taken\.$", re.MULTILINE)
+_TAKEN = re.compile(r"^(?:(?P<item>[^:\n]+): )?(?:Taken\.|\(Taken\))$", re.MULTILINE)
 _DROPPED = re.compile(r"^(?:(?P<item>[^:\n]+): )?Dropped\.$", re.MULTILINE)
 _ARTICLE = re.compile(r"^(?:a|an|the|some)\s+", re.IGNORECASE)
 # Zork's stock sentences for objects in a room (a stand-in for the first-visit LLM extraction).
@@ -199,7 +199,9 @@ def update(
             obs.new_interaction = True
         if where is not None:
             where.tried[key] = outcome
-        state.recent.append(Step(n=n, room=prev, command=command, outcome=outcome))
+        state.recent.append(
+            Step(n=n, room=prev, command=command, outcome=outcome, text=text.strip())
+        )
     return obs
 
 

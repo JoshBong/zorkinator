@@ -1,0 +1,106 @@
+[
+ {
+  "where": "Up a Tree",
+  "text": "Taking the egg with `take egg` increased the score from 0 to 5."
+ },
+ {
+  "where": "Kitchen",
+  "text": "From Behind House, `open window` was required before `enter window`; entering the Kitchen with `enter window` gained 10 points (score 0 to 10 in this run, or 5 to 15 when the egg had already been scored)."
+ },
+ {
+  "where": "Cellar",
+  "text": "Descending through the opened trap door with `down` increased the score by 25 points (10 to 35 here; 15 to 40 in an earlier run). Take the lantern and turn it on first, because turning it on without carrying it left the cellar pitch black."
+ },
+ {
+  "where": "Gallery",
+  "text": "Taking the painting with `take painting` increased the score by 4 points (35 to 39 here; 40 to 44 in an earlier run)."
+ },
+ {
+  "where": "Troll Room",
+  "text": "The Troll Room's troll blocks progress when you have no weapon: `kill troll with sword` failed because you did not have a sword, and `take sword` said none was visible. In this run, entering the room did not itself change the score or end the game."
+ },
+ {
+  "where": "Cellar",
+  "text": "The trap door crashed shut and was barred from above when you descended, leaving no demonstrated way back up; this followed from entering the cellar without first securing a way to reopen it."
+ },
+ {
+  "where": "Clearing",
+  "text": "In the Clearing, the first `move leaves` revealed a grating, but `open grating` said it was locked. Taking the leaves did not help (`move leaves` failed), and after dropping them, moving the pile revealed nothing; no key or other unlocking method was found."
+ },
+ {
+  "where": "Living Room",
+  "text": "Opening the trophy case in the Living Room reveals a battery-powered lantern; `take lantern` and `turn on lantern` successfully put a lit lantern in inventory. The wooden door to the west still appeared nailed shut."
+ },
+ {
+  "where": "Kitchen",
+  "text": "In the Kitchen, opening the brown sack revealed lunch and garlic; both were taken and then dropped without being used. The bottle was taken and opened, but its water was never used."
+ },
+ {
+  "where": "Kitchen",
+  "text": "The dark staircase led into pitch darkness and warned that a grue might eat you; do not proceed there without a demonstrated light source."
+ },
+ {
+  "where": "Kitchen",
+  "text": "The dark chimney led down and to the east, but it was never entered or investigated."
+ },
+ {
+  "where": "Troll Room",
+  "text": "The room has passages east and south and a hole west, but none was explored because the troll blocked progress."
+ },
+ {
+  "where": "Gallery",
+  "text": "The death and 10-point score loss resulted from dropping the lantern in the Studio and then entering Gallery's dark west passage without a light; a grue devoured you."
+ },
+ {
+  "where": "Studio",
+  "text": "In the Studio, `climb chimney` repeatedly failed while carrying items; dropping the painting, lantern, lunch, paper, and sandwich and retrying still did not make it climbable."
+ },
+ {
+  "where": "Cellar",
+  "text": "The death was caused by descending without taking the lantern: `turn on lantern` in the Living Room did not put it in inventory, and the cellar remained pitch black despite the sword's faint glow; going east then led to the grue."
+ },
+ {
+  "where": "Living Room",
+  "text": "In the Living Room, `take lantern` followed by `turn on lantern` successfully put a lit lantern in inventory; do this before descending through the trap door."
+ },
+ {
+  "where": "Studio",
+  "text": "The thief wounded you after you carried the painting into the Studio and dropped it while he was present; no weapon or action against the thief was used beforehand."
+ },
+ {
+  "where": "Cellar",
+  "text": "A person guarding a large bag was present in the Cellar, but the bag was never taken or the person confronted; attempts to obtain a sword found no sword."
+ },
+ {
+  "where": "Studio",
+  "text": "A hot pepper sandwich appeared in the Studio and was taken, then dropped without being eaten or otherwise used."
+ },
+ {
+  "where": "Studio",
+  "text": "The game ended by giving up in the Studio at score 44 after taking and reading the paper; no further exit or action was attempted, and the Gallery's west exit had not been explored."
+ },
+ {
+  "where": "Gallery",
+  "text": "The Gallery description says the vandals left through either the north or west exits; in this run only the north exit to the Studio was tried, so the west exit remained unexplored."
+ },
+ {
+  "where": "End of Rainbow",
+  "text": "The rainbow and river looked promising, but `examine rainbow` said there was nothing special; `swim`, `swim east`, and `enter rainbow` produced no crossing or other progress."
+ },
+ {
+  "where": "Kitchen",
+  "text": "The run's setback came from skipping the Living Room trophy case and its lantern, then using `up` from the Kitchen; this entered a pitch-black staircase where a grue was likely to eat you, and you gave up without attempting the west passage."
+ },
+ {
+  "where": "Kitchen",
+  "text": "The west passage from the Kitchen, leading toward the Living Room, was never explored in this run; investigating it and the trophy case remained promising."
+ },
+ {
+  "where": "Troll Room",
+  "text": "Progress was blocked because you entered without a weapon: `kill troll with sword` said you did not have one, and `take sword` said no sword was visible. No weapon had been obtained earlier, and the troll's east, south, and west routes were not explored."
+ },
+ {
+  "where": "Studio",
+  "text": "The Studio's open south door was left unexplored because you gave up immediately after reading the paper."
+ }
+]

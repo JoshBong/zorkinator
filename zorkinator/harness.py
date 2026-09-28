@@ -15,7 +15,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal, TextIO
+from typing import Any, Literal, TextIO
 
 from . import builder, player, scribe, verifier
 from .adapter import DEFAULT_STORY_FILE, GameAdapter
@@ -42,6 +42,7 @@ FactWriter = Callable[[WorldFactDoc], None]
 DEFAULT_TEST_MODEL = OPENAI_DEV_MODEL  # smoke tests; the benchmark model is BASELINE_MODEL
 
 
+GIVEUP_PUSHBACKS = int(os.getenv("ZK_GIVEUP_PUSHBACKS", "0"))
 MAX_REJECTIONS = 2  # verifier rejections per move before the move is skipped
 
 
@@ -60,6 +61,8 @@ class GameSpec:
     game_index: int | None = None
     version: HarnessVersionRecord | None = None  # exact manifest; needs play_game(repository=)
     prompt: PromptName = "basic"
+    context: str = ""  # advisory text for the prefix when no exact version is pinned
+    router: Any = None  # optional callable(world, n, last_output) -> None, sets world.routed
 
 
 @dataclass
@@ -115,7 +118,7 @@ def play_game(
     world = spec.world or WorldModel.empty(run_id)
     world.run_id = run_id
     rules: list[RuleDoc] = []
-    version_context = ""
+    version_context = spec.context
     if spec.version is not None:
         if version_id is not None and version_id != spec.version.version_id:
             raise ValueError("version_id does not match the exact version manifest")
@@ -132,6 +135,7 @@ def play_game(
     expected: str | None = None  # the Player's prediction for the previous move
     warned: list[str] = []  # cautions the previous command matched
     monitor = Monitor(stuck_after=spec.stuck_after)
+    pushbacks = 0
     usage = Usage()
     moves = 0
     died = False
@@ -165,6 +169,8 @@ def play_game(
                 inventory=frozenset(item.casefold() for item in world.inventory),
                 room_is_dark=world.state.in_dark,
             )
+            if spec.router is not None:
+                spec.router(world, n, output)
             move_prompt = builder.build_prompt(
                 world,
                 n,
@@ -179,6 +185,18 @@ def play_game(
             t0 = time.monotonic()
             proposal = player.propose(chat, move_prompt)
             usage.add(proposal.usage)
+            # Persistence: a give-up with moves left is pushed back (bounded per game).
+            if proposal.gave_up and pushbacks < GIVEUP_PUSHBACKS:
+                pushbacks += 1
+                proposal = player.propose(
+                    chat,
+                    move_prompt,
+                    feedback=(
+                        f"Don't give up yet: {spec.move_cap - n} moves remain. Pick a place you "
+                        "have not fully explored or an object you have not used, and try it."
+                    ),
+                )
+                usage.add(proposal.usage)
             # Hard rules block and the Player retries with the reason (max 3 tries). Soft rules
             # never re-prompt: the Player saw them as cautions above; a match is logged on the
             # move (evidence for promotion and reflection) and shown in the next prompt.

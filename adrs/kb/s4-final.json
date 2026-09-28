@@ -1,0 +1,1223 @@
+{
+ "source_chain": "luna-0927-s4",
+ "version_id": "version_7ed7c309ba1787938a33dee1",
+ "memories": [
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_4993237ca5bab121701627e2",
+   "supersedes_revision_id": null,
+   "kind": "item",
+   "subjects": [
+    "leaflet",
+    "mailbox"
+   ],
+   "locations": [
+    "West of House"
+   ],
+   "content": {
+    "item": "leaflet",
+    "text": "Opening the mailbox reveals a leaflet."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+     "n": 1
+    }
+   ],
+   "rationale": "The mailbox opened and revealed a leaflet.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+   "proposal_id": "proposal_ed813fb8eb556d61cbbfdb29",
+   "operation_key": "add:mailbox_leaflet",
+   "born_version_id": "version_be99dd7bc74eef00104ec6e2",
+   "created_at": "2026-09-27 20:00:23.597000",
+   "revision_id": "memory_revision_baafe1808b866a58fd37877c"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_b555dbe5aae9418f61d368d5",
+   "supersedes_revision_id": null,
+   "kind": "item",
+   "subjects": [
+    "jewel-encrusted egg",
+    "clockwork canary"
+   ],
+   "locations": [
+    "Up a Tree",
+    "Forest Path"
+   ],
+   "content": {
+    "item": "jewel-encrusted egg and clockwork canary",
+    "text": "A fragile jewel-encrusted egg in the nest contains a broken golden clockwork canary when opened; dropping the egg breaks it, and the canary can be taken."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+     "n": 7
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+     "n": 52
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+     "n": 67
+    }
+   ],
+   "rationale": "The nest, egg, breakage, contents, and canary were directly observed.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+   "proposal_id": "proposal_ed813fb8eb556d61cbbfdb29",
+   "operation_key": "add:tree_egg_canary",
+   "born_version_id": "version_be99dd7bc74eef00104ec6e2",
+   "created_at": "2026-09-27 20:00:23.597000",
+   "revision_id": "memory_revision_1aefce4f7d56bd893f188f80"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_8223a3d2cc5057fa29326e98",
+   "supersedes_revision_id": null,
+   "kind": "strategy",
+   "subjects": [
+    "tree",
+    "descent"
+   ],
+   "locations": [
+    "Up a Tree"
+   ],
+   "content": {
+    "text": "The command \"down\" successfully returns from Up a Tree to Forest Path, while repeated \"climb down\" attempts were blocked."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+     "n": 89
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+     "n": 117
+    }
+   ],
+   "rationale": "Directly observed successful descent using down.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+   "proposal_id": "proposal_ed813fb8eb556d61cbbfdb29",
+   "operation_key": "add:tree_descent",
+   "born_version_id": "version_be99dd7bc74eef00104ec6e2",
+   "created_at": "2026-09-27 20:00:23.597000",
+   "revision_id": "memory_revision_fce19bec8b89102aa816d1e0"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_a74fb13e5fdf7680c399aec9",
+   "supersedes_revision_id": "memory_revision_f741514549c2589130b12db6",
+   "kind": "lead",
+   "subjects": [
+    "grating",
+    "leaves",
+    "key"
+   ],
+   "locations": [
+    "Clearing"
+   ],
+   "content": {
+    "text": "The concealed grating was revealed at move 6, but later attempts to reveal it while carrying or dropping the leaves produced only dust; when exposed, it was locked. The needed key remains unresolved.",
+    "action": "search for a key, then return and unlock grating",
+    "room": "Clearing",
+    "attempts": 2
+   },
+   "status": "hypothesis",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 6
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 209
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 210
+    }
+   ],
+   "rationale": "Repeated manipulation failed to reproduce the initial reveal; the grating was explicitly locked and no key was available.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "revise:0",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_521f9ec4807c3363ba7c4f64"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_69028367014f4e766e2e9607",
+   "supersedes_revision_id": null,
+   "kind": "lead",
+   "subjects": [
+    "white house",
+    "entry"
+   ],
+   "locations": [
+    "North of House"
+   ],
+   "content": {
+    "text": "The north side of the house has no door and boarded windows; another entry route remains unresolved.",
+    "action": "go east",
+    "room": "North of House",
+    "attempts": 1
+   },
+   "status": "hypothesis",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+     "n": 95
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+     "n": 111
+    }
+   ],
+   "rationale": "The visible north-side entry options were blocked, so another route should be explored.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T195718596553",
+   "proposal_id": "proposal_ed813fb8eb556d61cbbfdb29",
+   "operation_key": "add:house_entry",
+   "born_version_id": "version_be99dd7bc74eef00104ec6e2",
+   "created_at": "2026-09-27 20:00:23.597000",
+   "revision_id": "memory_revision_60176786d7c97accb58acb67"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_1fcb10dfcddae75c8676427d",
+   "supersedes_revision_id": "memory_revision_aa68a73ec4b39cea9ff819e2",
+   "kind": "room",
+   "subjects": [
+    "West of House"
+   ],
+   "locations": [
+    "West of House"
+   ],
+   "content": {
+    "room": "West of House",
+    "exits": {
+     "west": "Forest"
+    },
+    "blocked": {
+     "east": "The door is boarded and you can't remove the boards."
+    },
+    "items": [
+     "leaflet"
+    ],
+    "tried": {
+     "take leaflet": "Taken.",
+     "open mailbox": "Opening the small mailbox reveals a leaflet.",
+     "read leaflet": "(Taken)"
+    },
+    "dark": false,
+    "text": "West of House"
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 1
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 3
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "revise:4",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_82e102787a63f5d36faded4f"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_d23196259b1e20f54f0add42",
+   "supersedes_revision_id": "memory_revision_e096024ca18248771ecafaaf",
+   "kind": "room",
+   "subjects": [
+    "Forest"
+   ],
+   "locations": [
+    "Forest"
+   ],
+   "content": {
+    "room": "Forest",
+    "exits": {
+     "east": "Forest Path"
+    },
+    "blocked": {
+     "west": "You would need a machete to go further west."
+    },
+    "items": [],
+    "tried": {},
+    "dark": false,
+    "text": "This is a forest, with trees in all directions. To the east, there appears to be sunlight."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 3
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 53
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "revise:5",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_8e474979e6bcd45eae8a1056"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_ae4c178b0956c87216ebb7fb",
+   "supersedes_revision_id": "memory_revision_c5a89d70a60c2a0473ad90fe",
+   "kind": "room",
+   "subjects": [
+    "Forest Path"
+   ],
+   "locations": [
+    "Forest Path"
+   ],
+   "content": {
+    "room": "Forest Path",
+    "exits": {
+     "north": "Clearing",
+     "south": "North of House"
+    },
+    "blocked": {},
+    "items": [],
+    "tried": {
+     "examine branches": "There's nothing special about the tree.",
+     "follow bird": "It can't be followed.",
+     "climb tree": "Up a Tree"
+    },
+    "dark": false,
+    "text": "This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the edge of the path."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 4
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 232
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "revise:6",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_5141eee971e1d149a2d0cf3f"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_6e783d174ac523b3d7314b0f",
+   "supersedes_revision_id": "memory_revision_175a216f591b94eef54b95b6",
+   "kind": "room",
+   "subjects": [
+    "Up a Tree"
+   ],
+   "locations": [
+    "Up a Tree"
+   ],
+   "content": {
+    "room": "Up a Tree",
+    "exits": {
+     "down": "Forest Path"
+    },
+    "blocked": {
+     "up": "(up the tree)"
+    },
+    "items": [
+     "canary",
+     "large egg",
+     "small bird's nest",
+     "somewhat"
+    ],
+    "tried": {
+     "take egg": "Taken. [+5 points]",
+     "drop canary": "Dropped.",
+     "look in egg": "The broken jewel-encrusted egg is empty.",
+     "climb down tree": "You can't do that!",
+     "search nest": "You find nothing unusual.",
+     "examine egg": "The jewel-encrusted egg is closed.",
+     "open egg": "You have neither the tools nor the expertise.",
+     "examine nest": "In the bird's nest is a large egg encrusted with precious jewels, apparently sca"
+    },
+    "dark": false,
+    "text": "You are about 10 feet above the ground nestled among some large branches. The nearest branch above you is above your reach. Beside you on the branch is a small bird's nest. In the bird's nest is a lar"
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 137
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 231
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "revise:9",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_53bfe9df972dee6324139451"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_fc1c93881b3ece58b8874c4a",
+   "supersedes_revision_id": "memory_revision_9a6efd8a2f998f85ae94d7ac",
+   "kind": "room",
+   "subjects": [
+    "Clearing"
+   ],
+   "locations": [
+    "Clearing"
+   ],
+   "content": {
+    "room": "Clearing",
+    "exits": {
+     "east": "Forest",
+     "south": "Forest Path"
+    },
+    "blocked": {
+     "north": "The forest becomes impenetrable to the north."
+    },
+    "items": [
+     "leaves",
+     "leaves then down",
+     "leaves then enter grating",
+     "leaves then look under leaves",
+     "leaves then north",
+     "leaves then south then north then drop leaves then look under leaves",
+     "pile of leaves"
+    ],
+    "tried": {
+     "drop leaves": "Dropped.",
+     "search leaves": "You find nothing unusual.",
+     "move pile of leaves": "Done.",
+     "search clearing": "I don't know the word \"clearing\".",
+     "examine leaves": "There's nothing special about the pile of leaves.",
+     "search for a key": "You can't see any key here!",
+     "enter grating": "You should supply a direction!",
+     "look under leaves": "There is nothing but dust there."
+    },
+    "dark": false,
+    "text": "You are in a clearing, with a forest surrounding you on all sides. A path leads south. On the ground is a pile of leaves."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 8
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 23
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "revise:6",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_4a57722b0ae2fafe389171b8"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_62eb13121afd7bbc1e52f1c9",
+   "supersedes_revision_id": "memory_revision_fe5c628c3f6f3772d27d9fd5",
+   "kind": "room",
+   "subjects": [
+    "North of House"
+   ],
+   "locations": [
+    "North of House"
+   ],
+   "content": {
+    "room": "North of House",
+    "exits": {
+     "east": "Behind House",
+     "north": "Forest Path"
+    },
+    "blocked": {
+     "south": "The windows are all boarded.",
+     "up": "You can't go that way."
+    },
+    "items": [],
+    "tried": {
+     "examine windows": "There's nothing special about the boarded window.",
+     "open windows": "The windows are boarded and can't be opened.",
+     "examine path": "There's nothing special about the way."
+    },
+    "dark": false,
+    "text": "You are facing the north side of a white house. There is no door here, and all the windows are boarded up. To the north a narrow path winds through the trees."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 50
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 162
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "revise:8",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_fd5b2146522289d9a8ce890d"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_8b7204ae072a8f95e46552cd",
+   "supersedes_revision_id": null,
+   "kind": "strategy",
+   "subjects": [
+    "window",
+    "white house",
+    "entry"
+   ],
+   "locations": [
+    "Behind House"
+   ],
+   "content": {
+    "text": "The slightly ajar window can be opened and entered; opening it at move 163 enabled entry at move 164."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 163
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 164
+    }
+   ],
+   "rationale": "This route successfully entered the house and awarded points.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "add:window-entry",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_8b1e00b09aec40ed0fbb4659"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_4b755ccd10a4084252a1eb58",
+   "supersedes_revision_id": null,
+   "kind": "lead",
+   "subjects": [
+    "jewel-encrusted egg",
+    "tools",
+    "expertise"
+   ],
+   "locations": [
+    "Up a Tree"
+   ],
+   "content": {
+    "text": "The jewel-encrusted egg is closed and cannot be opened with current unaided attempts; the game says tools or expertise are needed.",
+    "action": "find a suitable tool or expertise, then open egg",
+    "room": "Up a Tree",
+    "attempts": 1
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 229
+    }
+   ],
+   "rationale": "Opening the egg directly failed with a specific requirement.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "add:egg-tool",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_0009dc3bb3d9398d25dfe049"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_a023b4542928b027a0a17d36",
+   "supersedes_revision_id": "memory_revision_8740f1d4098e84cdbe1e86e3",
+   "kind": "lead",
+   "subjects": [
+    "chimney",
+    "kitchen"
+   ],
+   "locations": [
+    "Kitchen"
+   ],
+   "content": {
+    "action": "investigate another way to access chimney",
+    "attempts": 2,
+    "room": "Kitchen",
+    "text": "The kitchen chimney leads downward in the description, but attempting down reports that only Santa Claus climbs down chimneys; its usable route remains unresolved."
+   },
+   "status": "hypothesis",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 27
+    }
+   ],
+   "rationale": "The chimney was again observed in the Kitchen, while no attempt resolved its route; increase attempts.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "revise:0",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_56e24df3133b06f5eab84bf6"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_8d8721518ebf9b144c5980b7",
+   "supersedes_revision_id": null,
+   "kind": "room",
+   "subjects": [
+    "Behind House"
+   ],
+   "locations": [
+    "Behind House"
+   ],
+   "content": {
+    "room": "Behind House",
+    "exits": {
+     "east": "Clearing"
+    },
+    "blocked": {},
+    "items": [
+     "small window"
+    ],
+    "tried": {
+     "open window": "With great effort, you open the window far enough to allow entry.",
+     "enter window": "Kitchen [+10 points]"
+    },
+    "dark": false,
+    "text": "You are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 162
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 164
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 173
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "add:code:room:Behind House",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_12f92d670eba4922447c7eca"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_cd10762e6e850742ee7ff419",
+   "supersedes_revision_id": "memory_revision_05b17003cfe8bf7aedd0a78c",
+   "kind": "room",
+   "subjects": [
+    "Kitchen"
+   ],
+   "locations": [
+    "Kitchen"
+   ],
+   "content": {
+    "room": "Kitchen",
+    "exits": {
+     "east": "Behind House",
+     "west": "Living Room"
+    },
+    "blocked": {
+     "down": "Only Santa Claus climbs down chimneys."
+    },
+    "items": [
+     "brown sack",
+     "elongated brown sack",
+     "garlic",
+     "lunch"
+    ],
+    "tried": {
+     "examine sack": "The brown sack contains:",
+     "examine elongated brown sack": "The brown sack contains:",
+     "take lunch": "Taken."
+    },
+    "dark": false,
+    "text": "You are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chi"
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 27
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 32
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "revise:7",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_83885b176a4bcd1843211344"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_b64933c7520954f15a167801",
+   "supersedes_revision_id": "memory_revision_e425f4cf86bc9e6cec07305f",
+   "kind": "room",
+   "subjects": [
+    "Living Room"
+   ],
+   "locations": [
+    "Living Room"
+   ],
+   "content": {
+    "room": "Living Room",
+    "exits": {
+     "east": "Kitchen"
+    },
+    "blocked": {
+     "west": "The door is nailed shut."
+    },
+    "items": [
+     "lantern"
+    ],
+    "tried": {
+     "open trap door": "The door reluctantly opens to reveal a rickety staircase descending into darknes",
+     "down": "You have moved into a dark place. [+25 points]",
+     "turn on lantern": "The brass lantern is now on."
+    },
+    "dark": false,
+    "text": "You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the cen"
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 32
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 38
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 39
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "revise:8",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_63fa05b8ae4966a4193056a3"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_31e6800769116001d6ac0580",
+   "supersedes_revision_id": null,
+   "kind": "room",
+   "subjects": [
+    "Canyon View"
+   ],
+   "locations": [
+    "Canyon View"
+   ],
+   "content": {
+    "room": "Canyon View",
+    "exits": {
+     "down": "Rocky Ledge",
+     "east": null,
+     "northwest": "Clearing",
+     "west": "Forest"
+    },
+    "blocked": {
+     "north": "You can't go that way.",
+     "south": "Storm-tossed trees block your way."
+    },
+    "items": [],
+    "tried": {},
+    "dark": false,
+    "text": "You are at the top of the Great Canyon on its west wall. From here there is a marvelous view of the canyon and parts of the Frigid River upstream. Across the canyon, the walls of the White Cliffs join"
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 174
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 181
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "add:code:room:Canyon View",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_a0759bf56ed1a71bd768851e"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_13b700d9f22436bf2aaea953",
+   "supersedes_revision_id": null,
+   "kind": "room",
+   "subjects": [
+    "Rocky Ledge"
+   ],
+   "locations": [
+    "Rocky Ledge"
+   ],
+   "content": {
+    "room": "Rocky Ledge",
+    "exits": {
+     "up": "Canyon View"
+    },
+    "blocked": {},
+    "items": [],
+    "tried": {},
+    "dark": false,
+    "text": "You are on a ledge about halfway up the wall of the river canyon. You can see from here that the main flow from Aragain Falls twists along a passage which it is impossible for you to enter. Below you "
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 176
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+     "n": 177
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T205508264816",
+   "proposal_id": "proposal_3c7c25feed450a4fd80121a0",
+   "operation_key": "add:code:room:Rocky Ledge",
+   "born_version_id": "version_468c71f493761dfa728a9e81",
+   "created_at": "2026-09-27 20:59:44.413000",
+   "revision_id": "memory_revision_b3501a5f8ac90556cba8ea5f"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_87bda1eff3eb4199b24eb9b2",
+   "supersedes_revision_id": null,
+   "kind": "failure",
+   "subjects": [
+    "troll",
+    "axe"
+   ],
+   "locations": [
+    "The Troll Room"
+   ],
+   "content": {
+    "text": "Entering the Troll Room without first resolving the troll's threat led to repeated attacks and death."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 53
+    }
+   ],
+   "rationale": "The troll killed the player on the second entry attempt.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:troll-danger",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_4427d3de63291c3ee833f651"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_d15e3dde22173eb62527b0c6",
+   "supersedes_revision_id": null,
+   "kind": "item",
+   "subjects": [
+    "lantern",
+    "darkness"
+   ],
+   "locations": [
+    "Living Room",
+    "Cellar"
+   ],
+   "content": {
+    "item": "battery-powered brass lantern",
+    "text": "The lantern can be taken in the Living Room and turned on after entering the dark cellar."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 39
+    }
+   ],
+   "rationale": "Turning on the lantern produced a lit underground area description.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:lantern-darkness",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_e3a0a39913e07123336ecfe1"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_8a33c13c8e7a9b6099727b8e",
+   "supersedes_revision_id": null,
+   "kind": "lead",
+   "subjects": [
+    "troll",
+    "sword",
+    "axe"
+   ],
+   "locations": [
+    "The Troll Room"
+   ],
+   "content": {
+    "action": "find a way to deal with the troll, then pass through the room",
+    "attempts": 1,
+    "room": "The Troll Room",
+    "text": "The troll blocks the passages and killed the player on entry; a safe way to pass remains unresolved.",
+    "status": "hypothesis"
+   },
+   "status": "hypothesis",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 53
+    }
+   ],
+   "rationale": "The room's main progression is blocked by a lethal troll encounter.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:troll-frontier",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_21103a28bd28b2260d6f25af"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_04a182927b639d7cde61c6af",
+   "supersedes_revision_id": null,
+   "kind": "lead",
+   "subjects": [
+    "painting",
+    "gallery"
+   ],
+   "locations": [
+    "Gallery"
+   ],
+   "content": {
+    "action": "take the painting",
+    "attempts": 1,
+    "room": "Gallery",
+    "text": "A painting of unparalleled beauty remains in the Gallery and has not yet been taken.",
+    "status": "hypothesis"
+   },
+   "status": "hypothesis",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 45
+    }
+   ],
+   "rationale": "The Gallery explicitly presents the painting as an available opportunity.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:gallery-painting",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_8a4d0c0e2e46bd4b3ad9f219"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_fa76979172b89409281ed2cd",
+   "supersedes_revision_id": null,
+   "kind": "room",
+   "subjects": [
+    "Cellar"
+   ],
+   "locations": [
+    "Cellar"
+   ],
+   "content": {
+    "room": "Cellar",
+    "exits": {
+     "north": "Forest",
+     "south": "East of Chasm"
+    },
+    "blocked": {
+     "west": "You try to ascend the ramp, but it is impossible, and you slide back down."
+    },
+    "items": [],
+    "tried": {
+     "north": "The Troll Room [died]"
+    },
+    "dark": false,
+    "text": "You are in a dark and damp cellar with a narrow passageway leading north, and a crawlway to the south. On the west is the bottom of a steep metal ramp which is unclimbable."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 39
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 53
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:code:room:Cellar",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_8cc27217b7f020d35d5ada12"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_5e70136a28442017b9049c68",
+   "supersedes_revision_id": null,
+   "kind": "room",
+   "subjects": [
+    "The Troll Room"
+   ],
+   "locations": [
+    "The Troll Room"
+   ],
+   "content": {
+    "room": "The Troll Room",
+    "exits": {
+     "south": "Cellar",
+     "west": null
+    },
+    "blocked": {
+     "east": "The troll fends you off with a menacing gesture."
+    },
+    "items": [],
+    "tried": {},
+    "dark": false,
+    "text": "This is a small room with passages to the east and south and a forbidding hole leading west. Bloodstains and deep scratches (perhaps made by an axe) mar the walls. A nasty-looking troll, brandishing a"
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 40
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 42
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:code:room:The Troll Room",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_7fbb079622fcb6de8876ad35"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_b0c1dbb0959531eb31037118",
+   "supersedes_revision_id": null,
+   "kind": "room",
+   "subjects": [
+    "East of Chasm"
+   ],
+   "locations": [
+    "East of Chasm"
+   ],
+   "content": {
+    "room": "East of Chasm",
+    "exits": {
+     "east": "Gallery",
+     "north": "Cellar"
+    },
+    "blocked": {},
+    "items": [],
+    "tried": {},
+    "dark": false,
+    "text": "You are on the east edge of a chasm, the bottom of which cannot be seen. A narrow passage goes north, and the path you are on continues to the east."
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 44
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 52
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:code:room:East of Chasm",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_56950863b178e8261b2b29d6"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_a79ff8baaa95a145ad754e01",
+   "supersedes_revision_id": null,
+   "kind": "room",
+   "subjects": [
+    "Gallery"
+   ],
+   "locations": [
+    "Gallery"
+   ],
+   "content": {
+    "room": "Gallery",
+    "exits": {
+     "north": "Studio",
+     "west": "East of Chasm"
+    },
+    "blocked": {},
+    "items": [],
+    "tried": {},
+    "dark": false,
+    "text": "This is an art gallery. Most of the paintings have been stolen by vandals with exceptional taste. The vandals left through either the north or west exits. Fortunately, there is still one chance for yo"
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 45
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 51
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:code:room:Gallery",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_b4c9d23f624be5902f2f4968"
+  },
+  {
+   "schema_version": 1,
+   "experiment_id": "experiment_fcf295335800bfc8f07b",
+   "memory_id": "memory_48ae0786e33830d9e5324dd0",
+   "supersedes_revision_id": null,
+   "kind": "room",
+   "subjects": [
+    "Studio"
+   ],
+   "locations": [
+    "Studio"
+   ],
+   "content": {
+    "room": "Studio",
+    "exits": {
+     "south": "Gallery",
+     "up": null
+    },
+    "blocked": {
+     "down": "You can't go that way."
+    },
+    "items": [
+     "paper"
+    ],
+    "tried": {
+     "take paper": "Taken.",
+     "read paper": "Congratulations!"
+    },
+    "dark": false,
+    "text": "This appears to have been an artist's studio. The walls and floors are splattered with paints of 69 different colors. Strangely enough, nothing of value is hanging here. At the south end of the room i"
+   },
+   "status": "supported",
+   "evidence": [
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 46
+    },
+    {
+     "run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+     "n": 50
+    }
+   ],
+   "rationale": "Observed in play; map carried over by fixed code from the public transcript.",
+   "source_run_id": "harness-gpt-5.6-luna-s4-20260927T210002354217",
+   "proposal_id": "proposal_01698740bf7f93e0ec2ac619",
+   "operation_key": "add:code:room:Studio",
+   "born_version_id": "version_7ed7c309ba1787938a33dee1",
+   "created_at": "2026-09-27 21:01:23.685000",
+   "revision_id": "memory_revision_df3ccbc654c8051261f22fc5"
+  }
+ ]
+}

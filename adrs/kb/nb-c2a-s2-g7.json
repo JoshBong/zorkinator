@@ -1,0 +1,86 @@
+[
+ {
+  "where": "Up a Tree",
+  "text": "From Forest Path, use `climb tree`, then `take egg`; taking the egg raises the score from 0 to 5."
+ },
+ {
+  "where": "Behind House",
+  "text": "Use `open window`, then `enter window` to reach the Kitchen; entering raises the score from 5 to 15."
+ },
+ {
+  "where": "Kitchen",
+  "text": "`take sack` and `take bottle` work. The kitchen also contains a lunch and garlic, but this game did not take them."
+ },
+ {
+  "where": "Living Room",
+  "text": "From the Kitchen go west, then `take lantern`; `move rug` reveals the trap door."
+ },
+ {
+  "where": "Living Room",
+  "text": "After `open trap door`, use `down`; entering the Cellar raises the score from 15 to 40. Turn on the lantern after descending."
+ },
+ {
+  "where": "Cellar",
+  "text": "The south crawlway leads to East of Chasm, the north passage leads to The Troll Room, and the west metal ramp is unclimbable."
+ },
+ {
+  "where": "The Troll Room",
+  "text": "Without the sword, taking a sword here fails and the troll attacks; leaving south and returning can result in another attack. Obtain the sword before entering or passing the troll."
+ },
+ {
+  "where": "Studio",
+  "text": "To reach the Kitchen through the chimney, `drop all`, then `take lantern`, then `climb chimney`; climbing while carrying everything fails, while climbing with the lantern succeeds."
+ },
+ {
+  "where": "Living Room",
+  "text": "After reaching the Kitchen through the chimney, go west and `take sword`; the sword is above the trophy case."
+ },
+ {
+  "where": "The Troll Room",
+  "text": "With the sword, use `kill troll with sword`; after killing the troll, `east` enters East-West Passage and raises the score from 40 to 45."
+ },
+ {
+  "where": "Clearing",
+  "text": "`move leaves` reveals a grating, but `open grating` says it is locked; no progress was shown."
+ },
+ {
+  "where": "Up a Tree",
+  "text": "`open egg` says you have neither the tools nor the expertise; repeated attempts produced no progress."
+ },
+ {
+  "where": "Forest",
+  "text": "There is no climbable tree; east reaches impassable mountains, north is impenetrable, and west requires a machete."
+ },
+ {
+  "where": "Loud Room",
+  "text": "Use `echo platinum bar`, then `take platinum bar`; taking the bar raises the score from 45 to 55. The first two attempts to take it merely produced `bar bar ...`."
+ },
+ {
+  "where": "Dam",
+  "text": "The bolt would not turn with the sword or platinum bar, and `turn bolt with wrench` failed before a wrench was obtained; no progress was shown here."
+ },
+ {
+  "where": "Dam Lobby",
+  "text": "Go north to Maintenance Room and `take wrench`, then `take screwdriver`; taking the tube was possible only after dropping the platinum bar because the load was too heavy."
+ },
+ {
+  "where": "Maintenance Room",
+  "text": "Pressing `blue button` starts a leak, and pressing yellow, brown, and red raises the water from ankles to knees; this was not completed into a useful result."
+ },
+ {
+  "where": "Maintenance Room",
+  "text": "The death's root cause was flooding the Maintenance Room with the buttons, then returning while the water rose and trying to take the platinum bar while overloaded. Do not remain in the flooded room or drop the wrench as the water reaches your neck; the water eventually drowns you."
+ },
+ {
+  "where": "Maintenance Room",
+  "text": "After taking the wrench and screwdriver, the tube and platinum bar cannot both be carried with the other equipment; dropping the platinum bar allowed the tube to be taken, but no score gain was shown."
+ },
+ {
+  "where": "Dam Lobby",
+  "text": "`take matchbook` and `read guidebook` worked, but neither produced a score change."
+ },
+ {
+  "where": "Chasm",
+  "text": "`enter crack` repeatedly reports that you cannot fit through it; `down` reports that it is not possible."
+ }
+]
