@@ -52,7 +52,7 @@ game engine, no model calls.
 | x6 | notebook scoped to the current room | 48 | **36.2**: showing every fact beat scoped retrieval |
 | x7–x9 | curiosity lists, failure-driven replanning | stopped | bugs found mid-run; rewritten as `adrs/core.py` |
 | **x10** | clean rewrite of x9 (replanning at walls) | 48 | **55.1**, best run **78** |
-| x11 | + experiment sessions on items of unknown purpose | 48 | **37.8**, 0 score gains from 47 experiments |
+| x11 | + experiment sessions on items of unknown purpose | 48 | **37.8**, 0 score gains from 47 experiments; confounded (see below) |
 
 The first finding came before any learning: the structured views were wrong often enough that the model trusted
 them over the game's text, and removing them doubled the cold score.
@@ -92,6 +92,10 @@ the game text and the score came back.
   because only items picked up before could be carried.
 - **One positive:** wall plans cleared walls in play for the first time (seed 2: troll, with the sword; seed 0: the
   maze).
+- **Confound (found after the run):** x11 was launched without the prompt-view ablation that every run since x4
+  used (then an environment variable, `ZK_ABLATE`). Its player saw the map/leads/state views that had halved the cold
+  score. x11's 37.8 is therefore not comparable with x10's 55.1 and says nothing reliable about the experiment idea.
+  From x12 on, the ablation is part of the config.
 
 Lesson: a progress signal that can only fire after points arrive cannot steer toward the points. A verifier for
 understanding has to credit visible change in the world (a new reply, a changed room, a new exit), with points and
