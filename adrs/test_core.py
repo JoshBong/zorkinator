@@ -526,3 +526,86 @@ class X11Stopped(unittest.TestCase):
         e2 = {"go_to": "Living Room", "carry": [], "try": ["move rug", "look"]}
         self.assertEqual(self._session(e2, kn, a, ex).get("repeat"), 1)
         self.assertTrue(any(x.get("status") == "repeat" for x in ex.log))
+
+
+class X12(unittest.TestCase):
+    """Calm handoff (x10 seed 2 was handed a flooding room 1-2 moves from drowning in games 6-10)
+    and the manual passages."""
+
+    def test_the_x10_flood_route_is_walked_back_to_a_calm_point(self) -> None:
+        import json
+        from pathlib import Path
+
+        fx = json.loads((Path(__file__).parent / "fixtures/doomed_route_s2.json").read_text())
+        r, seed = fx["route"], fx["seed"]
+        self.assertEqual(core.trace(r, seed)[-1]["room"], "Maintenance Room")
+        self.assertLess(len(core.trace([*r, *["wait"] * 5], seed)), len(r) + 5)  # idle drowns
+        calm = core.calm_prefix(r, seed, 5)
+        self.assertLess(len(calm), len(r))
+        self.assertGreaterEqual(len(calm), len(r) - 12)
+        self.assertEqual(len(core.trace([*calm, *["wait"] * 5], seed)), len(calm) + 5)
+
+    def test_a_calm_route_is_unchanged_and_a_guard_is_approached_not_entered(self) -> None:
+        self.assertEqual(core.calm_prefix(TO_CELLAR, SEED, 5), TO_CELLAR)
+        self.assertEqual(core.calm_prefix([*TO_CELLAR, "north"], SEED, 5), TO_CELLAR)
+        self.assertEqual(core.calm_prefix([*TO_CELLAR, "north"], SEED, 0), [*TO_CELLAR, "north"])
+
+    def test_manual_reaches_the_prompts_only_when_on(self) -> None:
+        self.assertIn("putting treasure into the trophy case", core.MANUAL)
+        on, off = core.CONFIGS["x12"], core.CONFIGS["x9"]
+        self.assertTrue(on.manual and on.doom_waits == 5)
+        self.assertFalse(off.manual or off.doom_waits)
+        self.assertIn("{manual}", core.REFLECT)
+        self.assertIn("{manual}", core.POSTMORTEM)
+
+    def test_x12_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from dataclasses import replace
+        from pathlib import Path
+
+        cfg = replace(
+            core.CONFIGS["x12"],
+            player="explorer",
+            games=5,
+            move_cap=40,
+            scoring_every=3,
+            wall_deaths=1,
+            wall_stalls=1,
+        )
+        seen: list[str] = []
+
+        def fake(prompt: str, *a: object, **k: object) -> tuple[dict, float]:
+            seen.append(prompt)
+            return {"facts_add": [], "plans": []}, 0.0
+
+        real = core.ask
+        tag = "test-offline-x12"
+        try:
+            core.ask = fake
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), cfg.games)
+        self.assertTrue(any("trophy case" in p for p in seen))  # reflector saw the manual
+        self.assertIn("handoff_death", rows[-1])
+
+    def test_the_ablated_views_stay_off(self) -> None:
+        """x11 ran without ZK_ABLATE, so leads/state/goal views came back (Open leads: 353 lines
+        in one x11 trace vs 0 in x10). Ablation is now config and applied by chain()."""
+        import shutil
+        from dataclasses import replace
+        from pathlib import Path
+
+        cfg = replace(core.CONFIGS["x12"], player="explorer", games=1, move_cap=15)
+        tag = "test-offline-ablate"
+        real = core.ask
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            core.chain((cfg, tag, SEED))
+            text = (Path("runs/adrs") / tag / f"s{SEED}" / "g0.trace.md").read_text()
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        for view in ("Open leads:", "Carrying:"):  # "Goal:" also appears in player replies
+            self.assertNotIn(view, text)

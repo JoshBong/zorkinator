@@ -52,10 +52,15 @@ class Config:
     max_plans: int = 4
     death_window: int = 15
     player: str = "model"  # "explorer" = the repo's offline player (tests)
+    # prompt views that hurt the player (cold 17.5 -> 36.8 when removed); every ADRS run since x4
+    # used this. It was an env var (ZK_ABLATE) until x11 ran without it -- now it is config.
+    ablate: tuple[str, ...] = ("leads", "exits", "rawhist", "untried", "protocol", "state")
     experiments: bool = False  # x11: when progress stalls, a save/try/restore experiment session
     exp_after: int = 2  # non-scoring games without a new best before a session
     exp_trials: int = 5
     nudge: bool = False  # x11: tell the player points are good and dying is bad
+    manual: bool = False  # x12: the game manual's goal and scoring passages (what a buyer read)
+    doom_waits: int = 0  # x12: hand over only where this many idle turns survive
 
 
 CONFIGS = {
@@ -64,8 +69,18 @@ CONFIGS = {
     # x9 with the plateau fetch-plans replaced by experiments on things whose purpose is unknown,
     # at most 2 plans per wall, and the two nudges a player gets from the game itself
     "x11": Config("x11", plateau=False, max_plans=2, experiments=True, nudge=True),
+    # x9 (the x10 run) + the manual's goal/scoring passages + hand over only at calm points
+    "x12": Config("x12", manual=True, doom_waits=5),
 }
 NUDGE = "Points going up is good; dying is bad."
+# Verbatim from the Zork I manual (Infocom, Mastertronic ed.): what every buyer read before playing.
+MANUAL = (
+    "From the game's manual: \"The object of Zork I is to find the treasures of the Great "
+    'Underground Empire and put them in your trophy case." "To measure your progress, Zork keeps '
+    "track of your score. You'll get points for solving puzzles, acquiring treasures, performing "
+    "certain actions, and visiting certain locations. You will also get points for putting "
+    "treasure into the trophy case. There may be a penalty for getting 'killed.'\""
+)
 
 MOVES = {
     "n",
@@ -229,6 +244,21 @@ def best_spot(archive: dict) -> dict:
     return max(archive.values(), key=lambda c: (c["score"], len(c["inv"]), -len(c["traj"])))
 
 
+def calm_prefix(route: list[str], seed: int, waits: int, back: int = 12) -> list[str]:
+    """Never hand control over where standing still kills the player (a room filling with water,
+    a guard mid-attack): walk the route back to the last point from which `waits` idle turns
+    survive. The archive keeps the last state before a death, so without this x10 seed 2 was handed
+    a flooding room 1-2 moves from drowning in games 6-10."""
+    if waits <= 0 or not route:
+        return route
+    for k in range(len(route), max(0, len(route) - back) - 1, -1):
+        r = route[:k]
+        alive = len(trace(r, seed))
+        if len(trace([*r, *["wait"] * waits], seed)) >= alive + waits:
+            return r
+    return route
+
+
 def minimize_to(traj: list[str], seed: int, spot: dict) -> list[str]:
     """Shortest sub-sequence (chunk deletion) that still ends in the spot's room with at least its
     score and everything it held."""
@@ -371,7 +401,7 @@ def transcript(moves: list[dict], limit: int = 240) -> str:
 
 REFLECT = """You maintain what a text-adventure player has learned from their OWN games; they
 replay from the start every game. Use ONLY what the transcript's game output shows. No outside
-knowledge about this or any game.
+knowledge about this or any game.{manual}
 
 FACTS (numbered):
 {facts}
@@ -430,6 +460,7 @@ def _reflect(
 ) -> tuple[dict, dict, float]:
     out, cost = ask(
         REFLECT.format(
+            manual=f"\nThe player has also read the game's manual. {MANUAL}" if cfg.manual else "",
             facts=json.dumps(
                 [
                     {"id": i, "where": f["where"], "text": f["text"]}
@@ -643,6 +674,7 @@ def path(graph: dict, start: str, goal: str) -> list[str] | None:
 POSTMORTEM = """You are helping a player of a text adventure who keeps failing at the same place.
 Think like a sensible person who just failed: repeating the same thing will not work. What do they
 need that they don't have? What have they never tried? Use only what the player has seen (below).
+{manual}
 
 WHERE THEY KEEP FAILING: {wall}
 {wall_text}
@@ -744,6 +776,9 @@ class Walls:
         )
         out, cost = ask(
             POSTMORTEM.format(
+                manual=f"The player has also read the game's manual. {MANUAL}"
+                if cfg.manual
+                else "",
                 wall=label,
                 wall_text=kn.room_text.get(wall, ""),
                 attempts="\n".join(lines[-25:]) or "(none recorded)",
@@ -834,6 +869,29 @@ def compile_plan(
         route = _compile_from(list(route_for(spot, seed)), plan, kn, seed)
         if route is not None:
             return route
+    # things that only become takeable after events (a dead guard's weapon): start from a route
+    # that already holds them all, then walk the known map to go_to
+    holders = sorted(
+        (
+            c
+            for c in archive.values()
+            if items and "(dark)" not in c["room"] and all(holds(c["inv"], i) for i in items)
+        ),
+        key=lambda c: (c["score"], -len(c["traj"])),
+        reverse=True,
+    )
+    for spot in holders[:tries]:
+        way = path(kn.graph, spot["room"], plan["go_to"])
+        if way is None:
+            continue
+        cand = [*route_for(spot, seed), *way]
+        end = trace(cand, seed)
+        if (
+            len(end) == len(cand)
+            and norm_room(end[-1]["room"]) == norm_room(plan["go_to"])
+            and all(holds(end[-1]["inv"], i) for i in items)
+        ):
+            return cand
     return None
 
 
@@ -1174,10 +1232,12 @@ def chain(job) -> list[dict]:
     from dotenv import load_dotenv
 
     load_dotenv(".env")
+    from zorkinator import builder
     from zorkinator.harness import GameSpec, Trace, make_chat, play_game
     from zorkinator.runner import JsonlSink
     from zorkinator.world import WorldModel
 
+    builder.ABLATE = frozenset(cfg.ablate)
     out = Path("runs/adrs") / tag / f"s{seed}"
     out.mkdir(parents=True, exist_ok=True)
     (out / "config.json").write_text(json.dumps(asdict(cfg), indent=1))
@@ -1269,8 +1329,13 @@ def chain(job) -> list[dict]:
                     pick, why = pick_spot(archive, state["hyps"], rng, danger, cfg)
                 pick["chosen"] += 1
                 route = route_for(pick, seed)
+        if route and cfg.doom_waits:
+            calm = calm_prefix(route, seed, cfg.doom_waits)
+            if len(calm) < len(route):
+                why["calmed"] = len(route) - len(calm)
+                route = calm
         ref = reference(route, seed) if route else []
-        parts = [NUDGE] if cfg.nudge else []
+        parts = ([NUDGE] if cfg.nudge else []) + ([MANUAL] if cfg.manual else [])
         if state["goals"]:
             parts.append(
                 "Working theory of how this game is won (from your own games; may be "
@@ -1397,6 +1462,10 @@ def chain(job) -> list[dict]:
         state, rstats, rcost = reflect(state, shown, r, moves, sr.i, cfg)
         kn.learn(played, seed, [h["name"] for h in state["hyps"]], states)
         peak = max((m.get("score", 0) for m in moves), default=0)
+        # died within 3 of the model's own moves after the harness handed over (x10 s2: 5 games)
+        handoff_death = bool(route) and any(
+            "you have died" in (m.get("text") or "").casefold() for m in moves[sr.i : sr.i + 3]
+        )
         deposits = sum(
             " in case" in m["command"].casefold() and (m.get("score_delta") or 0) > 0 for m in moves
         )
@@ -1416,6 +1485,7 @@ def chain(job) -> list[dict]:
             "facts": len(state["facts"]),
             "reflect": rstats,
             "deposits_scored": deposits,
+            "handoff_death": handoff_death,
             "cleared": sorted(walls.cleared),
             "plans": {
                 k: [(p["need"][:50], [x["item"] for x in p["get"]], p["result"]) for p in v]
