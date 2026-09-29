@@ -226,3 +226,95 @@ class ReviewFindings(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Wiring(unittest.TestCase):
+    """The 2026-09-28 x10 crash: a module-level function dropped Walls.postmortem into its body."""
+
+    def test_classes_have_their_methods(self) -> None:
+        for cls, names in (
+            (core.Walls, ("find", "passed", "postmortem")),
+            (core.Knowledge, ("learn", "names")),
+            (core.Speedrun, ("hook", "complete", "cost")),
+        ):
+            for n in names:
+                self.assertTrue(callable(getattr(cls, n, None)), f"{cls.__name__}.{n}")
+
+    def test_postmortem_with_a_fake_model_gives_a_compilable_plan(self) -> None:
+        to_troll = [*TO_CELLAR, "north"]
+        played = play(to_troll)
+        a: dict = {}
+        core.update_archive(a, to_troll, SEED)
+        kn = core.Knowledge()
+        kn.learn(played, SEED, ["sword", "troll"])
+        reply = {
+            "plans": [
+                {
+                    "need": "a weapon",
+                    "get": [{"item": "sword", "at": "Living Room"}],
+                    "go_to": "The Troll Room",
+                    "then": "attack the troll with the sword",
+                }
+            ]
+        }
+        real = core.ask
+        try:
+            core.ask = lambda *x, **k: (reply, 0.0)
+            walls = core.Walls(core.CONFIGS["x9"])
+            plans, _ = walls.postmortem(
+                "troll room", kn, {"facts": [], "hyps": [], "goals": []}, a, core.CONFIGS["x9"]
+            )
+        finally:
+            core.ask = real
+        self.assertEqual([p["get"][0]["item"] for p in plans], ["sword"])
+        self.assertIsNotNone(core.compile_plan(plans[0], a, kn, SEED))
+
+
+class OfflineChain(unittest.TestCase):
+    """The whole chain loop, offline: the repo's explorer player + a fake model for reflection
+    and post-mortems, thresholds low enough that walls and plan games happen."""
+
+    def test_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from dataclasses import replace
+        from pathlib import Path
+
+        cfg = replace(
+            core.CONFIGS["x9"],
+            player="explorer",
+            games=6,
+            move_cap=40,
+            wall_deaths=1,
+            wall_stalls=1,
+            plateau_games=1,
+            scoring_every=3,
+        )
+
+        def fake(prompt: str, *a: object, **k: object) -> tuple[dict, float]:
+            if "keeps failing" in prompt:
+                return {
+                    "plans": [{"need": "x", "get": [], "go_to": "West of House", "then": "look"}]
+                }, 0.0
+            return {
+                "facts_add": [],
+                "new_things": [
+                    {
+                        "name": "mailbox",
+                        "kind": "object",
+                        "where": "West of House",
+                        "hypothesis": "h",
+                        "test": "open it",
+                    }
+                ],
+            }, 0.0
+
+        real = core.ask
+        tag = "test-offline-chain"
+        try:
+            core.ask = fake
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), cfg.games)
+        self.assertIn("scoring", {r["kind"] for r in rows})

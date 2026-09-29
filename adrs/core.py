@@ -50,6 +50,7 @@ class Config:
     plateau_games: int = 4
     max_plans: int = 4
     death_window: int = 15
+    player: str = "model"  # "explorer" = the repo's offline player (tests)
 
 
 CONFIGS = {
@@ -263,7 +264,8 @@ class Speedrun:
         self.i, self.active, self.handoff = 0, bool(route), ""
 
     def cost(self, usage):
-        return self.chat.cost(usage)
+        # the offline explorer has no price table; real chats price themselves
+        return self.chat.cost(usage) if hasattr(self.chat, "cost") else 0.0
 
     def hook(self, world, n: int, output: str) -> None:
         from zorkinator.scribe import parse_stub
@@ -700,18 +702,6 @@ class Walls:
         self.exits_seen[wall] |= exits
         return gained or new_exit
 
-
-def died_holding(wall: str, played: list[tuple[str, dict]], states: list, items: list[str]) -> bool:
-    """This game ended in a death in the wall room while holding every item of the plan."""
-    if (
-        not played
-        or not states
-        or "you have died" not in (played[-1][1].get("text") or "").casefold()
-    ):
-        return False
-    last = states[-1]
-    return norm_room(last["room"]) == wall and all(holds(last["inv"], i) for i in items)
-
     def postmortem(
         self, wall: str, kn: Knowledge, state: dict, archive: dict, cfg: Config
     ) -> tuple[list[dict], float]:
@@ -787,6 +777,18 @@ def died_holding(wall: str, played: list[tuple[str, dict]], states: list, items:
             except Exception:
                 continue
         return plans, cost
+
+
+def died_holding(wall: str, played: list[tuple[str, dict]], states: list, items: list[str]) -> bool:
+    """This game ended in a death in the wall room while holding every item of the plan."""
+    if (
+        not played
+        or not states
+        or "you have died" not in (played[-1][1].get("text") or "").casefold()
+    ):
+        return False
+    last = states[-1]
+    return norm_room(last["room"]) == wall and all(holds(last["inv"], i) for i in items)
 
 
 def compile_plan(plan: dict, archive: dict, kn: Knowledge, seed: int) -> list[str] | None:
@@ -1004,7 +1006,7 @@ def chain(job) -> list[dict]:
         result, sr = None, None
         for _ in range(3):
             try:
-                sr = Speedrun(make_chat("model", MODEL, seed), route, ref, frontier)
+                sr = Speedrun(make_chat(cfg.player, MODEL, seed), route, ref, frontier)
                 result = play_game(
                     GameSpec(
                         seed,
