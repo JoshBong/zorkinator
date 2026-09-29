@@ -62,6 +62,7 @@ class Config:
     manual: bool = False  # x12: the game manual's goal and scoring passages (what a buyer read)
     doom_waits: int = 0  # x12: hand over only where this many idle turns survive
     repeat_block: int = 0  # x13a: block a command after this many identical replies (0 = off)
+    signals: bool = False  # x13b: learn warning messages from own deaths, pin them when they recur
 
 
 CONFIGS = {
@@ -75,6 +76,9 @@ CONFIGS = {
     # x12 + block the 3rd exact repeat (same room, command, items held, same reply twice before):
     # 49% of x12's non-movement actions were such repeats (Reflexion's trigger, AE-DQN's idea)
     "x13a": Config("x13a", manual=True, doom_waits=5, repeat_block=2),
+    # x12 + danger signals: x12's player knew "lamps run out" and "dark kills" but died ~200 moves
+    # after "your lamp appears a bit dimmer" -- the warning scrolls away; pin it when it recurs
+    "x13b": Config("x13b", manual=True, doom_waits=5, signals=True),
 }
 NUDGE = "Points going up is good; dying is bad."
 # Verbatim from the Zork I manual (Infocom, Mastertronic ed.): what every buyer read before playing.
@@ -317,6 +321,8 @@ class Speedrun:
         self.model = chat.model
         self.i, self.active, self.handoff = 0, bool(route), ""
         self.repeat_block = repeat_block
+        self.signals: list[dict] = []
+        self.pinned: list[str] = []
         self.replies: dict[tuple, list[str]] = defaultdict(list)
         self.pending: tuple | None = None
         self.blocked = 0
@@ -378,7 +384,16 @@ class Speedrun:
             self.active = False
             self.handoff = f"The harness replayed your known route ({self.i} moves)."
         if not self.active:
-            world.routed = [x for x in (self.handoff, self.frontier) if x]
+            low = " ".join((output or "").casefold().split())
+            for sig in self.signals:
+                if sig["signal"].casefold() in low and not any(
+                    sig["signal"] in p for p in self.pinned
+                ):
+                    self.pinned.append(
+                        f'Warning (move {n}): the game said "{sig["signal"]}". In your earlier '
+                        f"games this came before: {sig['then']}."
+                    )
+            world.routed = [x for x in (self.handoff, self.frontier, *self.pinned[-3:]) if x]
 
     def complete(self, messages, archive=None):
         from zorkinator.runner import ChatReply, Usage
@@ -430,6 +445,51 @@ def verified(evidence: list, moves: list[dict], min_distinct: int = 1) -> bool:
         if not q or q not in by_n.get(n, ""):
             return False
     return len({int(e["move"]) for e in ev}) >= min_distinct
+
+
+SIGNALS = """A text-adventure player's game ended badly: {end}. Read the transcript. Which messages
+did the game print EARLIER that warned of what happened? Use only the transcript. A warning is the
+game's own words (3-12 words), printed at least a few moves before the bad end.
+
+TRANSCRIPT:
+{transcript}
+
+Reply with JSON only:
+{{"signals": [{{"signal": "exact words from that move's output", "move": 12,
+               "then": "what happened after it, in a few words"}}]}}
+"""
+
+
+def learn_signals(state: dict, moves: list[dict], cfg: Config) -> tuple[int, float]:
+    """After a game that ended in a death: ask which earlier game messages warned of it. A signal is
+    kept only if its exact words appear in the cited move's output, before the death."""
+    died = [m["n"] for m in moves if m.get("died")]
+    if not died:
+        return 0, 0.0
+    out, cost = ask(
+        SIGNALS.format(end=f"the player died at move {died[0]}", transcript=transcript(moves)),
+        cfg,
+        tokens=1500,
+    )
+    by_n = {m["n"]: _norm(m.get("text") or "") for m in moves}
+    have = {x["signal"].casefold() for x in state.setdefault("signals", [])}
+    added = 0
+    for sg in (out or {}).get("signals", [])[:3] if isinstance(out, dict) else []:
+        try:
+            sig, n = " ".join(str(sg["signal"]).split()), int(sg["move"])
+        except Exception:
+            continue
+        if (
+            3 <= len(sig.split()) <= 12
+            and n < died[0]
+            and _norm(sig) in by_n.get(n, "")
+            and sig.casefold() not in have
+        ):
+            state["signals"].append({"signal": sig, "then": str(sg.get("then", ""))[:120]})
+            have.add(sig.casefold())
+            added += 1
+    state["signals"] = state["signals"][-20:]
+    return added, cost
 
 
 def transcript(moves: list[dict], limit: int = 240) -> str:
@@ -1437,6 +1497,7 @@ def chain(job) -> list[dict]:
                 sr = Speedrun(
                     make_chat(cfg.player, MODEL, seed), route, ref, frontier, cfg.repeat_block
                 )
+                sr.signals = list(state.get("signals", [])) if cfg.signals else []
                 result = play_game(
                     GameSpec(
                         seed,
@@ -1505,7 +1566,16 @@ def chain(job) -> list[dict]:
                 )
                 plan["retried"] = plan.get("retried", False) or plan["result"] == "inconclusive"
             active = None
+        signals = state.get("signals", [])
         state, rstats, rcost = reflect(state, shown, r, moves, sr.i, cfg)
+        state["signals"] = signals  # reflect rebuilds the notebook; signals live beside it
+        if cfg.signals:
+            try:
+                n_sig, sig_cost = learn_signals(state, moves, cfg)
+            except Exception:
+                n_sig, sig_cost = 0, 0.0
+            rstats = {**rstats, "signals_added": n_sig}
+            rcost += sig_cost
         kn.learn(played, seed, [h["name"] for h in state["hyps"]], states)
         peak = max((m.get("score", 0) for m in moves), default=0)
         # died within 3 of the model's own moves after the harness handed over (x10 s2: 5 games)

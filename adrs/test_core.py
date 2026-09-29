@@ -8,6 +8,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import unittest
+from typing import ClassVar
 
 from adrs import core
 
@@ -714,3 +715,80 @@ class X13a(unittest.TestCase):
         self.assertGreaterEqual(
             rows[0]["blocked"], 5
         )  # xyzzy (fixed reply) 3..8 never reach the game
+
+
+class X13b(unittest.TestCase):
+    """Danger signals: learned from own deaths (quote-checked), pinned when they recur in play."""
+
+    MOVES: ClassVar[list[dict]] = [
+        {"n": 1, "command": "turn on lamp", "text": "The brass lantern is now on.", "room": "A"},
+        {
+            "n": 2,
+            "command": "wait",
+            "text": "Time passes. Your lamp appears a bit dimmer.",
+            "room": "A",
+        },
+        {"n": 3, "command": "north", "text": "It is pitch black.", "room": "A"},
+        {
+            "n": 4,
+            "command": "north",
+            "text": "Oh, no! You have been eaten by a grue.",
+            "room": "B",
+            "died": True,
+        },
+    ]
+
+    def _learn(self, reply: object) -> tuple[dict, int]:
+        state: dict = {"facts": [], "hyps": [], "goals": []}
+        real = core.ask
+        try:
+            core.ask = lambda *x, **k: (reply, 0.0)
+            n, _ = core.learn_signals(state, self.MOVES, core.CONFIGS["x13b"])
+        finally:
+            core.ask = real
+        return state, n
+
+    def test_only_quoted_earlier_warnings_are_kept(self) -> None:
+        state, n = self._learn(
+            {
+                "signals": [
+                    {"signal": "Your lamp appears a bit dimmer", "move": 2, "then": "grue, dark"},
+                    {"signal": "the lamp will explode soon", "move": 2, "then": "made up"},
+                    {"signal": "You have been eaten by a grue", "move": 4, "then": "not earlier"},
+                ]
+            }
+        )
+        self.assertEqual(n, 1)
+        self.assertEqual(state["signals"][0]["signal"], "Your lamp appears a bit dimmer")
+        self.assertEqual(self._learn(None)[1], 0)
+        self.assertEqual(self._learn({"signals": "x"})[1], 0)
+
+    def test_a_recurring_signal_is_pinned_once_after_handoff(self) -> None:
+        from types import SimpleNamespace
+
+        class Chat:
+            model = "fake"
+
+        sr = core.Speedrun(Chat(), [], [], "explore")
+        sr.signals = [{"signal": "lamp appears a bit dimmer", "then": "eaten in the dark"}]
+        w = SimpleNamespace(state=SimpleNamespace(room="A", score=0), routed=[])
+        sr.hook(w, 7, "Time passes. Your lamp appears a bit dimmer.")
+        sr.hook(w, 8, "Your lamp appears a bit dimmer.")
+        self.assertEqual(len(sr.pinned), 1)
+        self.assertTrue(any("eaten in the dark" in x for x in w.routed))
+
+    def test_x13b_chain_keeps_signals_across_games(self) -> None:
+        import shutil
+        from dataclasses import replace
+        from pathlib import Path
+
+        cfg = replace(core.CONFIGS["x13b"], player="explorer", games=2, move_cap=40)
+        real = core.ask
+        tag = "test-offline-x13b"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": [], "signals": []}, 0.0)
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), 2)
