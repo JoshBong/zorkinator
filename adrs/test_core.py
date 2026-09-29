@@ -453,7 +453,7 @@ class X11Review(unittest.TestCase):
         a, kn = self._setup()
         ex = core.Experiments()
         e = {"go_to": "Living Room", "carry": ["sword"], "try": ["wave sword"]}
-        kn.seen_at["sword"] = "Nowhere Room"
+        kn.takes["sword"] = "Nowhere Room"
         self.assertEqual(self._run({"experiments": [e]}, a, kn, ex).get("unreachable"), 1)
         self.assertEqual(ex.done, set())
 
@@ -475,3 +475,54 @@ class X11Smoke(unittest.TestCase):
         finally:
             core.ask = real
         self.assertEqual(stats.get("gains"), 1)
+
+
+class X11Stopped(unittest.TestCase):
+    """x11 run stopped 2026-09-28: 10/15 seed-2 experiments unreachable. Causes: fixtures in the
+    carry list (`take case`), and compile_plan trying only the top-scoring spot in go_to."""
+
+    DEPOSITED = (*NO_LAMP, "open case", "put egg in case")  # Living Room @20, egg in the case
+
+    def test_compile_plan_uses_a_spot_that_already_holds_the_item(self) -> None:
+        a: dict = {}
+        core.update_archive(a, list(NO_LAMP), SEED)
+        core.update_archive(a, list(self.DEPOSITED), SEED)
+        kn = core.Knowledge()
+        kn.learn(play(list(self.DEPOSITED)), SEED, ["egg"])
+        plan = {"get": [{"item": "egg", "at": "Up a Tree"}], "go_to": "Living Room"}
+        route = core.compile_plan(plan, a, kn, SEED)
+        self.assertIsNotNone(route)
+        self.assertTrue(core.holds(core.trace(route, SEED)[-1]["inv"], "egg"))
+
+    def _session(self, e: dict, kn: core.Knowledge, a: dict, ex: core.Experiments) -> dict:
+        real = core.ask
+        try:
+            core.ask = lambda *x, **k: ({"experiments": [e]}, 0.0)
+            state: dict = {"facts": [], "hyps": [], "goals": []}
+            return ex.session(kn, state, a, SEED, core.CONFIGS["x11"])[0]
+        finally:
+            core.ask = real
+
+    def test_fixtures_are_not_carried(self) -> None:
+        a: dict = {}
+        core.update_archive(a, TO_CELLAR, SEED)
+        kn = core.Knowledge()
+        kn.learn(play(TO_CELLAR), SEED, ["egg", "case"])
+        kn.seen_at["case"] = "Living Room"
+        e = {"go_to": "Living Room", "carry": ["case", "egg"], "try": ["put egg in case"]}
+        stats = self._session(
+            {**e, "try": ["open case", "put egg in case"]}, kn, a, core.Experiments()
+        )
+        self.assertEqual(stats.get("gains"), 1)
+
+    def test_looking_does_not_make_a_sequence_new(self) -> None:
+        a: dict = {}
+        core.update_archive(a, TO_CELLAR, SEED)
+        kn = core.Knowledge()
+        kn.learn(play(TO_CELLAR), SEED, ["egg"])
+        ex = core.Experiments()
+        e = {"go_to": "Living Room", "carry": [], "try": ["move rug", "open trap door"]}
+        self.assertEqual(self._session(e, kn, a, ex).get("repeat"), 1)  # both done on the way
+        e2 = {"go_to": "Living Room", "carry": [], "try": ["move rug", "look"]}
+        self.assertEqual(self._session(e2, kn, a, ex).get("repeat"), 1)
+        self.assertTrue(any(x.get("status") == "repeat" for x in ex.log))

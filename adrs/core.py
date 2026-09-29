@@ -812,16 +812,32 @@ def died_holding(wall: str, played: list[tuple[str, dict]], states: list, items:
     return norm_room(last["room"]) == wall and all(holds(last["inv"], i) for i in items)
 
 
-def compile_plan(plan: dict, archive: dict, kn: Knowledge, seed: int) -> list[str] | None:
+def compile_plan(
+    plan: dict, archive: dict, kn: Knowledge, seed: int, tries: int = 4
+) -> list[str] | None:
     """Splice each pickup into a route that already reaches go_to (it does the state steps on the
     way), at the first point it is in the item's room, else a walked-map detour there and back.
-    Verified by replay: the take must succeed and the route must arrive holding every item."""
-    spots = [c for c in archive.values() if norm_room(c["room"]) == norm_room(plan["go_to"])]
-    if not spots:
-        return None
-    route = list(
-        route_for(max(spots, key=lambda c: (c["score"], len(c["inv"]), -len(c["traj"]))), seed)
+    Verified by replay: the take must succeed and the route must arrive holding every item.
+    Tries up to `tries` spots in go_to: those already holding the items first, then by score."""
+    items = [g["item"] for g in plan["get"]]
+    spots = sorted(
+        (c for c in archive.values() if norm_room(c["room"]) == norm_room(plan["go_to"])),
+        key=lambda c: (
+            sum(holds(c["inv"], i) for i in items),
+            c["score"],
+            len(c["inv"]),
+            -len(c["traj"]),
+        ),
+        reverse=True,
     )
+    for spot in spots[:tries]:
+        route = _compile_from(list(route_for(spot, seed)), plan, kn, seed)
+        if route is not None:
+            return route
+    return None
+
+
+def _compile_from(route: list[str], plan: dict, kn: Knowledge, seed: int) -> list[str] | None:
     for g in plan["get"]:
         st = trace(route, seed)
         rooms = [norm_room(x["room"]) for x in st]
@@ -999,11 +1015,19 @@ class Experiments:
                     + (" (died)" if t[3] else "")
                     for t in x["got"]
                 )
-                for x in self.log[-15:]
+                for x in [x for x in self.log if "got" in x][-15:]
             )
             or "(none)",
             n=cfg.exp_trials,
         )
+
+    @staticmethod
+    def _reject(go: str | None, tries: list[str], reach: set[str]) -> str | None:
+        if not go or norm_room(go) not in reach:
+            return "invalid"
+        if not tries:
+            return "invalid"
+        return None
 
     def session(
         self, kn: Knowledge, state: dict, archive: dict, seed: int, cfg: Config
@@ -1023,29 +1047,29 @@ class Experiments:
                 go = names.get(norm_room(str(e.get("go_to", ""))))
                 tries = [" ".join(str(t).split())[:80] for t in e["try"]]
                 tries = [t for t in tries if t][:3]
-                carry = [head(str(x)) for x in (e.get("carry") or [])]
+                # only things they have carried before can be brought (fixtures can't be);
                 # trying something with a thing means bringing it
-                carry += [h for h in led if h not in carry and any(has_word(t, h) for t in tries)]
-                carry = carry[:2]
+                carry = [head(str(x)) for x in (e.get("carry") or [])]
+                carry += [h for h in kn.takes if any(has_word(t, h) for t in tries)]
+                carry = list(dict.fromkeys(h for h in carry if h in kn.takes))[:2]
             except Exception:
                 stats["invalid"] += 1
                 continue
-            if (
-                not go
-                or norm_room(go) not in reach
-                or not tries
-                or any(h not in led for h in carry)
-            ):
-                stats["invalid"] += 1
+            why = self._reject(go, tries, reach)
+            if why:
+                stats[why] += 1
+                self.log.append({"go": go, "try": tries, "carry": carry, "status": why})
                 continue
             room = norm_room(go)
             key = (room, tuple(t.casefold() for t in tries), tuple(sorted(carry)))
             atts = kn.attempts.get(room, [])
+            # new = some real action (not looking or walking) not yet tried there holding this
+            acts = [t.casefold() for t in tries if t.casefold() not in MOVES]
             if key in self.done or all(
-                any(a["cmd"] == t.casefold() and set(carry) <= set(a["held"]) for a in atts)
-                for t in tries
+                any(a["cmd"] == t and set(carry) <= set(a["held"]) for a in atts) for t in acts
             ):
                 stats["repeat"] += 1
+                self.log.append({"go": go, "try": tries, "carry": carry, "status": "repeat"})
                 continue
             route = compile_plan(
                 {"get": [{"item": h, "at": led[h]["at"]} for h in carry], "go_to": go},
@@ -1055,6 +1079,7 @@ class Experiments:
             )
             if route is None:
                 stats["unreachable"] += 1
+                self.log.append({"go": go, "try": tries, "carry": carry, "status": "unreachable"})
                 continue
             inv, res = attempt(route, tries, seed)
             self.done.add(key)
