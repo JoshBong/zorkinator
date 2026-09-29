@@ -1,0 +1,1622 @@
+{
+ "facts": [
+  {
+   "where": "Living Room",
+   "text": "Entering the Living Room from the kitchen does not itself award points; the earlier score increase occurred when entering the kitchen through the window."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Entering a newly reached or hidden area can award score progress."
+  },
+  {
+   "where": "Gallery",
+   "text": "Taking the remaining painting awards 4 points."
+  },
+  {
+   "where": "Gallery",
+   "text": "The gallery's north exit leads to the Studio."
+  },
+  {
+   "where": "Studio",
+   "text": "The paper identifies the game as ZORK I: The Great Underground Empire."
+  },
+  {
+   "where": "Troll Room",
+   "text": "Leaving south from the Troll Room returns to the Cellar, and killing the troll permits leaving east into the East-West Passage."
+  },
+  {
+   "where": "East of Chasm",
+   "text": "The east passage from East of Chasm leads to the Gallery; farther underground, the East-West Passage leads through the Round Room and onward."
+  },
+  {
+   "where": "Troll Room",
+   "text": "Attacking the troll with the knife was ineffective because the player was still recovering from a blow."
+  },
+  {
+   "where": "Troll Room",
+   "text": "Waiting during combat allows the troll to knock away the knife and then strike the player when the knife is retrieved."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Entering or taking valuable objects can increase the score."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Rooms can be reached by moving through explicitly described exits."
+  },
+  {
+   "where": "Troll Room",
+   "text": "The plastic boat requires being on the ground for inflation, but no successful inflation was demonstrated in this replay; the boat was not tested here."
+  },
+  {
+   "where": "Troll Room",
+   "text": "Repeated knife attacks can briefly disorient the troll, but the troll eventually parries and kills the player."
+  },
+  {
+   "where": "Cellar",
+   "text": "A person with a large bag is present at the bottom of the steep metal ramp and refuses to speak; the bag will only be taken over the person's dead body."
+  },
+  {
+   "where": "Troll Room",
+   "text": "The troll blocks eastward passage even after being fed and while the player is armed with the knife."
+  },
+  {
+   "where": "Troll Room",
+   "text": "The west hole is described as forbidding, but this transcript does not test entering it because the troll blocks passage."
+  },
+  {
+   "where": "Troll Room",
+   "text": "The elvish sword can knock the troll unconscious, after which a second sword attack kills it and makes the troll disappear."
+  },
+  {
+   "where": "Troll Room",
+   "text": "Killing the troll allows eastward passage into the East-West Passage and awards 5 points."
+  },
+  {
+   "where": "anywhere",
+   "text": "The player has a carrying-capacity limit; dropping carried objects can make room for heavier objects."
+  },
+  {
+   "where": "Deep Canyon",
+   "text": "The thief carrying the large bag is hostile and can kill the player during combat; the sword's first attack missed and the second was ineffective while recovering."
+  },
+  {
+   "where": "East-West Passage",
+   "text": "The north end has a narrow stairway leading down to the Chasm."
+  },
+  {
+   "where": "Deep Canyon",
+   "text": "The Loud Room is reached by descending from Deep Canyon and contains a platinum bar, but attempts to take or examine it only produce repeated 'bar bar ...' responses."
+  },
+  {
+   "where": "Dome Room",
+   "text": "The Dome Room has a precipitous drop, but descending is unsafe without another means of access."
+  },
+  {
+   "where": "Dam Base",
+   "text": "The folded plastic object is a boat with a valve, but the transcript repeatedly failed to inflate it, including after placing it on the ground."
+  },
+  {
+   "where": "Dam",
+   "text": "The dam bolt was examined and a wrench was successfully taken, but turning the bolt with the wrench failed in this replay."
+  },
+  {
+   "where": "Maintenance Room",
+   "text": "Pushing the blue button opens a leak and causes the water level to rise over subsequent actions."
+  },
+  {
+   "where": "Reservoir South",
+   "text": "Moving north from the south shore of the lake results in drowning danger."
+  },
+  {
+   "where": "Chasm",
+   "text": "The thief with the large bag appears in or near the Chasm and Deep Canyon; the sword glows brightly near him, suggesting combat is possible but not yet safely solved."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Score can increase for entering newly accessible areas or defeating barriers, not only for taking objects."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Carrying too much prevents taking objects, so inventory management is required."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: A weapon can temporarily incapacitate a hostile opponent, but attacking while recovering can fail and leave the player vulnerable."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Water hazards can make movement impossible or lethal."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Objects may require a particular location or state before a command works."
+  },
+  {
+   "where": "Troll Room",
+   "text": "The knife can disarm the troll, after which killing the unarmed troll with the knife succeeds and removes the body."
+  },
+  {
+   "where": "East-West Passage",
+   "text": "After killing the troll, entering the East-West Passage awards 5 points; it has a stairway leading down at its north end and connects east to the Round Room."
+  },
+  {
+   "where": "Deep Canyon",
+   "text": "The Deep Canyon connects northwest to Reservoir South, east to the Dam, southwest to North-South Passage, and down to the Loud Room; its other tested directions are blocked."
+  },
+  {
+   "where": "Loud Room",
+   "text": "The platinum bar remains present on the ground in the Loud Room, but taking, examining, dropping, and other tested manipulations all produced only repeated bar responses."
+  },
+  {
+   "where": "Maintenance Room",
+   "text": "Pushing the blue button starts a leak, and subsequent actions cause the water level to rise from ankles to knees, hips, and waist; the room contains a wrench and screwdriver."
+  },
+  {
+   "where": "Dam Base",
+   "text": "The folded plastic object is referred to by the parser as a boat or pile of plastic, but attempts to inflate it with the valve repeatedly fail; when held, it can be dropped, but the transcript never achieves inflation."
+  },
+  {
+   "where": "Reservoir South",
+   "text": "The reservoir's south shore connects east to the Dam, west to Stream View, and southeast to Deep Canyon; moving south is unavailable, while the transcript does not successfully cross the lake."
+  },
+  {
+   "where": "Dam Base",
+   "text": "A ZORK owner's manual is present and reading it repeats the ZORK I identification message."
+  },
+  {
+   "where": "Deep Canyon",
+   "text": "The thief can rob the player when encountered near the steep ramp, leaving the player without previously carried items."
+  },
+  {
+   "where": "The Troll Room",
+   "text": "The knife is an effective weapon against the troll when used first to disarm it; the sword was not in the inventory during this transcript's attempted sword attack."
+  },
+  {
+   "where": "White Cliffs Beach",
+   "text": "The beach has a narrow path north-south, but the tested west, east, diagonal, and extended south commands do not reveal another route."
+  },
+  {
+   "where": "Round Room",
+   "text": "The Round Room has passages in all directions, but several are blocked by cave-ins; north leads to North-South Passage, while northeast is unavailable."
+  },
+  {
+   "where": "Maintenance Room",
+   "text": "The room contains a tube-like object whose purpose was not determined."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Carrying too many objects prevents taking another object, requiring items to be dropped."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Some objects must be manipulated in a particular state or location for an action to work."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Water levels can rise after actions in a leaking room, creating an escalating environmental hazard."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: A hostile NPC may steal carried objects when encountered near the player."
+  },
+  {
+   "where": "Gallery",
+   "text": "Tested (confirmed): The remaining artwork may be a valuable object that awards points when taken. -> Taking the remaining gallery painting awards 4 points."
+  },
+  {
+   "where": "Gallery",
+   "text": "Tested (confirmed): It is a valuable object whose collection advances the score. -> The painting is a valuable collectible worth 4 points."
+  },
+  {
+   "where": "Gallery",
+   "text": "Tested (confirmed): A collectible worth points. -> Taking the painting increases the score."
+  },
+  {
+   "where": "Maintenance Room",
+   "text": "The blue button opens a water leak; the water rises as subsequent actions occur, reaching shin, knees, and hips in this transcript."
+  },
+  {
+   "where": "Dam Lobby",
+   "text": "The private north and east rooms become inaccessible after the leak, being described as full of water."
+  },
+  {
+   "where": "Chasm",
+   "text": "The thief can be disarmed and made to leave by repeated knife attacks, but this does not produce the bag."
+  },
+  {
+   "where": "Maze",
+   "text": "The maze contains a Dead End and a stiletto; navigating it requires tracking specific exits because many directions are unavailable."
+  },
+  {
+   "where": "Maze",
+   "text": "The lantern became dimmer during the prolonged beach and maze activity, eventually burning out; attempting to light it then failed, and entering darkness caused death."
+  },
+  {
+   "where": "Troll Room",
+   "text": "After the troll is killed, its bloody axe remains as a takeable object, and the troll does not reappear in this replay."
+  },
+  {
+   "where": "Loud Room",
+   "text": "The platinum bar is explicitly present on the ground, but examining it produces only 'bar bar ...'; successful collection was not demonstrated."
+  },
+  {
+   "where": "Studio",
+   "text": "Attempting to go north from the Studio is unavailable; the room's usable return route is south to the Gallery."
+  },
+  {
+   "where": "Dam",
+   "text": "The Dam bolt could not be turned with the screwdriver; a wrench attempt was unavailable because the wrench was not in inventory."
+  },
+  {
+   "where": "anywhere",
+   "text": "The transcript confirms that a weapon can kill a hostile opponent, but it does not demonstrate killing the thief or obtaining the bag."
+  },
+  {
+   "where": "anywhere",
+   "text": "The lantern's light degrades with extended activity and is eventually insufficient for safe dark-area travel."
+  },
+  {
+   "where": "anywhere",
+   "text": "Death returned the player to the Forest and reduced the score from 49 to 39 in this replay."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Water hazards escalate after actions and can block access or cause drowning."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Combat requires a usable weapon and can change state across attacks; an opponent may be stunned or disarmed before being killed."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Dark exploration requires adequate lantern light, which diminishes over time."
+  },
+  {
+   "where": "Maintenance Room",
+   "text": "Pushing the blue button creates a leak, and subsequent actions raise the water level; the leak can make the Dam Lobby's private rooms inaccessible."
+  },
+  {
+   "where": "anywhere",
+   "text": "The carrying limit can prevent taking objects, and dropping carried objects frees capacity."
+  },
+  {
+   "where": "White Cliffs Beach",
+   "text": "The beach's tested exits provide only a north-south path; entering or climbing the cliffs does not work."
+  },
+  {
+   "where": "Maze",
+   "text": "The maze contains a route from the Troll Room to a Dead End and back, but its passages require tracking exact directions."
+  },
+  {
+   "where": "Loud Room",
+   "text": "The platinum bar is present, but attempted collection produces only the repeated bar response."
+  },
+  {
+   "where": "Dam Base",
+   "text": "The folded plastic object has a valve, but the parser treats it as a pile of plastic and the tested inflation commands fail."
+  },
+  {
+   "where": "anywhere",
+   "text": "The lantern's light diminishes with continued underground activity and eventually becomes insufficient to prevent grue death."
+  },
+  {
+   "where": "Troll Room",
+   "text": "After the troll is killed, its bloody axe remains and can be taken after dropping other carried objects."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Carrying capacity limits object collection, so objects may need to be dropped before another can be taken."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Water hazards escalate after actions and can eventually block rooms."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Dark-area exploration requires sufficient lantern light; insufficient light can cause death."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Some object commands depend on the parser's recognized object name or required state."
+  },
+  {
+   "where": "Dam Lobby",
+   "text": "Tested (confirmed): The rising leak water blocks access to the Dam Lobby's private north and east rooms; preventing or reversing the leak may open them. -> The leak causes rising water and blocks the Dam Lobby's private rooms."
+  },
+  {
+   "where": "Gallery",
+   "text": "Taking the painting was initially prevented by carrying capacity, but after dropping lunch it succeeded."
+  },
+  {
+   "where": "anywhere",
+   "text": "The thief can attack and kill the player when encountered, while also rifling the player's pack."
+  },
+  {
+   "where": "Cellar",
+   "text": "The lantern was no longer glowing by the time the player reached East of Chasm, indicating its light can diminish during underground travel."
+  },
+  {
+   "where": "Gallery",
+   "text": "The Gallery is reached east from East of Chasm and has north and west exits; one remaining painting is present."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Carrying capacity can prevent taking a valuable object, so inventory must be managed before collection."
+  },
+  {
+   "where": "Studio",
+   "text": "Tested (confirmed): The paper is a collectible message rather than a route-opening object. -> Reading the paper displays the ZORK I identification message; this transcript did not test taking it or using it to open a route."
+  },
+  {
+   "where": "Living Room",
+   "text": "The elvish sword can be taken from above the trophy case before underground exploration."
+  },
+  {
+   "where": "Kitchen",
+   "text": "Going up from the kitchen enters a dark area before the lantern has been turned on."
+  },
+  {
+   "where": "Kitchen",
+   "text": "The lantern cannot be turned on after entering darkness from the kitchen; the command reports that it is too dark to see."
+  },
+  {
+   "where": "anywhere",
+   "text": "Death resets the player to the Forest and reduces the score; this death reduced the score from 15 to 5."
+  },
+  {
+   "where": "Clearing",
+   "text": "After the leaves have been disturbed once, later attempts may report that no leaves are visible, while the revealed grating remains locked."
+  },
+  {
+   "where": "Living Room",
+   "text": "The wooden door with strange gothic lettering is nailed shut and cannot be passed by simply going west."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Entering a dark area without first activating a light source can lead to death by a grue."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: A death resets the player to the Forest and can reduce the accumulated score."
+  },
+  {
+   "where": "Clearing",
+   "text": "Tested (confirmed): A route into a lower or hidden area, requiring a key or another unlocking method. -> The kitchen window must be opened before entering through it."
+  },
+  {
+   "where": "Clearing",
+   "text": "Tested (confirmed): A hidden entrance revealed by disturbing the leaves, likely accessible after finding its key. -> The sword is available to take from the Living Room trophy-case area."
+  },
+  {
+   "where": "Dam Base",
+   "text": "The boat cannot be inflated by lung power, air, gas, the bottle, or the tube in the tested commands; the parser continues to describe it as a pile of plastic."
+  },
+  {
+   "where": "Dam",
+   "text": "The Dam bolt does not respond to pushing or turning with the screwdriver; turning it with the wrench was not possible because the wrench was not held."
+  },
+  {
+   "where": "Dome Room",
+   "text": "The Dome Room's drop cannot be safely descended directly."
+  },
+  {
+   "where": "White Cliffs Beach",
+   "text": "The beach has no tested route through or over the cliffs; the west passage is blocked and climbing fails."
+  },
+  {
+   "where": "Maintenance Room",
+   "text": "The tube-like object is labeled Frobozz Magic Gunk Company All-Purpose Gunk, but its use was not established."
+  },
+  {
+   "where": "Loud Room",
+   "text": "The platinum bar cannot be collected or manipulated using the tested commands; each attempt produces a bar response."
+  },
+  {
+   "where": "anywhere",
+   "text": "If the lantern is off in a dark area, it cannot be turned on because it is too dark to see, and continuing can cause grue death."
+  },
+  {
+   "where": "anywhere",
+   "text": "Repeated actions consume or diminish lantern light during underground travel."
+  },
+  {
+   "where": "anywhere",
+   "text": "A thief can rob the player's inventory when encountered, even without a combat exchange."
+  },
+  {
+   "where": "Round Room",
+   "text": "The southeast passage from the Round Room leads to Engravings Cave, whose east passage leads to the Dome Room."
+  },
+  {
+   "where": "Mirror Room",
+   "text": "The Mirror Room is south of Narrow Passage and contains an enormous mirror; examining it shows an ugly person staring back."
+  },
+  {
+   "where": "Stream View",
+   "text": "The stream cannot be followed west into its source because the opening is too small to enter."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Entering a dark area without an already active light source can prevent activating the lantern and lead to grue death."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Extended underground activity diminishes the lantern's light."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: A hostile thief may remove carried objects when encountered."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Carrying capacity can prevent taking objects until carried items are dropped."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Some actions require the object to be in a specific state or location."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Water hazards can block access or make movement lethal."
+  },
+  {
+   "where": "Dam",
+   "text": "Turning the dam bolt with the wrench opens the sluice gates and causes water to pour through the dam."
+  },
+  {
+   "where": "Reservoir",
+   "text": "After the dam is opened and the water level drops, the reservoir becomes traversable and contains a jewel-filled trunk worth 15 points."
+  },
+  {
+   "where": "Reservoir North",
+   "text": "The lowered reservoir leads north to Atlantis Room, where Poseidon's crystal trident can be taken for 4 points."
+  },
+  {
+   "where": "Atlantis Room",
+   "text": "The Atlantis Room connects upward to a Cave."
+  },
+  {
+   "where": "Cave",
+   "text": "The Cave's downward staircase leads to the Entrance to Hades, whose gate cannot be passed because of an invisible force."
+  },
+  {
+   "where": "Stream View",
+   "text": "The thief can disarm the player during combat and then rob the player's inventory while escaping with the large bag."
+  },
+  {
+   "where": "Dome Room",
+   "text": "Jumping from the Dome Room is fatal."
+  },
+  {
+   "where": "anywhere",
+   "text": "The dam's wrench solution is effective even though earlier screwdriver attempts had failed; the wrench must be held for the successful command."
+  },
+  {
+   "where": "anywhere",
+   "text": "Score can increase substantially from collecting hidden valuables: the reservoir trunk awarded 15 points and the trident awarded 4 points."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Some barriers require a particular tool or object state; using the correct tool can succeed after another tool fails."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Taking valuable objects increases score, with different objects awarding different amounts."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: A hostile thief can remove the player's weapon or inventory during an encounter."
+  },
+  {
+   "where": "Dam",
+   "text": "The dam bolt did not turn with the wrench in this replay, despite repeated attempts."
+  },
+  {
+   "where": "Round Room",
+   "text": "The southeast passage leads to Engravings Cave, which leads east to the Dome Room."
+  },
+  {
+   "where": "Damp Cave",
+   "text": "The Damp Cave lies east of the Loud Room and leads east to White Cliffs Beach; it also has a southern crack."
+  },
+  {
+   "where": "White Cliffs Beach",
+   "text": "The west passage from the beach could not be entered, and climbing the cliffs failed; tested movement only found a north-south beach path."
+  },
+  {
+   "where": "anywhere",
+   "text": "The lantern becomes dimmer with continued actions and eventually cannot provide enough light to prevent grue death."
+  },
+  {
+   "where": "anywhere",
+   "text": "A thief can rob the player merely upon encountering them, removing at least a carried tour guidebook and dropping items it considers valueless."
+  },
+  {
+   "where": "Dam Base",
+   "text": "The folded plastic object is recognized as a pile of plastic rather than as an inflatable boat by the tested commands; examining its valve gives no useful result."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Extended activity consumes lantern light, and inadequate light in a dark area can cause death."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: A hostile thief can remove carried objects without requiring a successful combat exchange."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Some commands depend on the parser's recognized object name or state; referring to an object differently can fail even when a related object is present."
+  },
+  {
+   "where": "White Cliffs Beach",
+   "text": "The beach has a north-south path, but repeated travel eventually reaches endpoints where further movement is refused; no additional tested exit was found."
+  },
+  {
+   "where": "White Cliffs Beach",
+   "text": "The painting dropped on the beach remained present and could later be taken after inventory capacity was freed."
+  },
+  {
+   "where": "White Cliffs Beach",
+   "text": "The bottle contains water; it must be opened before drinking."
+  },
+  {
+   "where": "Dam",
+   "text": "Taking the wrench in the Maintenance Room and using it on the dam bolt did not turn the bolt in this replay."
+  },
+  {
+   "where": "Troll Room",
+   "text": "The troll was already gone after the earlier knife-throw command; later attempts to attack or take a knife failed because no knife was available."
+  },
+  {
+   "where": "Maze",
+   "text": "The maze has a route from the Troll Room through several passages and can be exited back to the Troll Room, but extended wandering consumed the lantern until it burned out."
+  },
+  {
+   "where": "anywhere",
+   "text": "Death from insufficient light resets the player to the Forest and reduces the score."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Carrying capacity can prevent taking an object until another carried object is dropped."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: A light source loses effectiveness with extended activity, and entering darkness after it fails can cause death."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Some actions require an object to be in the appropriate state before they succeed."
+  },
+  {
+   "where": "anywhere",
+   "text": "Rule: Hostile or dangerous areas can cause death or major setbacks if entered without the required preparation."
+  },
+  {
+   "where": "underground",
+   "text": "Tested (confirmed): A central junction connecting the East-West Passage with the North-South Passage, Narrow Passage, Engravings Cave, and Loud Room. -> The East-West Passage leads east to the Round Room, and the Round Room connects north to North-South Passage; several other passages are blocked."
+  },
+  {
+   "where": "underground",
+   "text": "Tested (confirmed): A major junction leading to Deep Canyon and Chasm. -> The Round Room/North-South Passage network connects to Deep Canyon and the Chasm."
+  }
+ ],
+ "hyps": [
+  {
+   "id": 0,
+   "name": "jewel-encrusted egg",
+   "kind": "object",
+   "where": "Up a Tree",
+   "hypothesis": "A valuable object whose purpose may involve opening it or delivering it somewhere.",
+   "test": "Take the egg, then later try opening it with a discovered tool or expertise.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 1,
+   "name": "locked grating",
+   "kind": "barrier",
+   "where": "Clearing",
+   "hypothesis": "A route into a lower or hidden area, requiring a key or another unlocking method.",
+   "test": "In a future game, locate or obtain a key, return to the clearing, and use \"unlock grating with key\" followed by \"open grating\".",
+   "value": 4,
+   "status": "confirmed",
+   "attempts": 2,
+   "conclusion": "The kitchen window must be opened before entering through it."
+  },
+  {
+   "id": 2,
+   "name": "trap door",
+   "kind": "barrier",
+   "where": "Living Room",
+   "hypothesis": "The entrance to an underground area that can be explored safely with the lantern.",
+   "test": "Before descending, take the brass lantern from the trophy case, turn it on using the game's accepted command, then open the trap door and descend.",
+   "value": 5,
+   "status": "confirmed",
+   "attempts": 1,
+   "conclusion": "The Living Room contains an entrance to an underground area, and descending with the lantern reaches the cellar safely."
+  },
+  {
+   "id": 3,
+   "name": "battery-powered brass lantern",
+   "kind": "object",
+   "where": "Living Room",
+   "hypothesis": "A light source intended to illuminate the dark underground passage.",
+   "test": "Take the lantern, then try \"turn on lantern\" or \"light lantern\" before descending through the trap door.",
+   "value": 5,
+   "status": "confirmed",
+   "attempts": 1,
+   "conclusion": "The brass lantern is an effective light source for the underground passage."
+  },
+  {
+   "id": 4,
+   "name": "elvish sword",
+   "kind": "object",
+   "where": "Living Room",
+   "hypothesis": "A collectible or protective object that may be useful against hazards or enemies.",
+   "test": "Take the sword and inspect or use it when encountering a hostile creature.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 5,
+   "name": "grating",
+   "kind": "barrier",
+   "where": "Clearing",
+   "hypothesis": "A hidden entrance revealed by disturbing the leaves, likely accessible after finding its key.",
+   "test": "Find a key elsewhere, then use \"unlock grating with key\" and descend if it opens.",
+   "value": 4,
+   "status": "confirmed",
+   "attempts": 2,
+   "conclusion": "The sword is available to take from the Living Room trophy-case area."
+  },
+  {
+   "id": 6,
+   "name": "nailed wooden door",
+   "kind": "barrier",
+   "where": "Living Room",
+   "hypothesis": "A blocked route that may require removing nails with a tool rather than opening normally.",
+   "test": "Find a suitable tool and try commands such as \"remove nails\" or \"open door\" while holding it.",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 7,
+   "name": "dark chimney",
+   "kind": "room",
+   "where": "Kitchen",
+   "hypothesis": "A possible route, though the game currently disallows climbing down it.",
+   "test": "Try entering or climbing the chimney only after finding an appropriate reason or item.",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 8,
+   "name": "coil of rope",
+   "kind": "object",
+   "where": "Attic",
+   "hypothesis": "It may be intended for crossing or descending into a chasm or other inaccessible area.",
+   "test": "At East of Chasm, try `use rope`, `throw rope`, or `tie rope` in the relevant direction.",
+   "value": 4,
+   "status": "open",
+   "attempts": 1,
+   "conclusion": ""
+  },
+  {
+   "id": 9,
+   "name": "nasty-looking knife",
+   "kind": "object",
+   "where": "Attic",
+   "hypothesis": "It may be usable against a blocking creature or for cutting something.",
+   "test": "In the Troll Room, try `attack troll with knife` or `use knife on troll`.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 10,
+   "name": "troll",
+   "kind": "barrier",
+   "where": "Troll Room",
+   "hypothesis": "The troll blocks passage and may need to be defeated or otherwise dealt with before exploring the west hole or east passage.",
+   "test": "Try `attack troll with sword`, `attack troll with knife`, or `give troll food`.",
+   "value": 5,
+   "status": "abandoned",
+   "attempts": 3,
+   "conclusion": ""
+  },
+  {
+   "id": 11,
+   "name": "chasm",
+   "kind": "barrier",
+   "where": "East of Chasm",
+   "hypothesis": "The unseen bottom may be crossed or explored using the rope.",
+   "test": "At East of Chasm, try `throw rope across chasm` or `use rope`.",
+   "value": 5,
+   "status": "abandoned",
+   "attempts": 3,
+   "conclusion": ""
+  },
+  {
+   "id": 12,
+   "name": "remaining gallery artwork",
+   "kind": "object",
+   "where": "Gallery",
+   "hypothesis": "The remaining artwork may be a valuable object that awards points when taken.",
+   "test": "At Gallery, try `take painting` or `take artwork`.",
+   "value": 4,
+   "status": "confirmed",
+   "attempts": 2,
+   "conclusion": "Taking the remaining gallery painting awards 4 points."
+  },
+  {
+   "id": 13,
+   "name": "paper message",
+   "kind": "message",
+   "where": "Studio",
+   "hypothesis": "The paper is a collectible message rather than a route-opening object.",
+   "test": "In Studio, try `read paper` and then `take paper`.",
+   "value": 1,
+   "status": "confirmed",
+   "attempts": 1,
+   "conclusion": "Reading the paper displays the ZORK I identification message; this transcript did not test taking it or using it to open a route."
+  },
+  {
+   "id": 14,
+   "name": "wooden door with strange gothic lettering",
+   "kind": "barrier",
+   "where": "Living Room",
+   "hypothesis": "It may conceal another room or route, but it is currently nailed shut.",
+   "test": "Try `open wooden door`, `read lettering`, or `use knife on door`.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 15,
+   "name": "steep metal ramp",
+   "kind": "barrier",
+   "where": "Cellar",
+   "hypothesis": "It may connect the cellar to an inaccessible upper area, but it is currently unclimbable.",
+   "test": "Try `climb ramp`, `go up ramp`, or examine and manipulate the ramp.",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 16,
+   "name": "hole leading west",
+   "kind": "barrier",
+   "where": "Troll Room",
+   "hypothesis": "It may lead to another underground area once the troll is dealt with.",
+   "test": "After resolving the troll, try `west` or `enter hole`.",
+   "value": 4,
+   "status": "open",
+   "attempts": 1,
+   "conclusion": ""
+  },
+  {
+   "id": 17,
+   "name": "east passage",
+   "kind": "room",
+   "where": "Troll Room",
+   "hypothesis": "It may provide an alternate route around or beyond the troll.",
+   "test": "Try `east` in the Troll Room, preferably after testing whether the troll can be bypassed.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 18,
+   "name": "south passage",
+   "kind": "room",
+   "where": "Troll Room",
+   "hypothesis": "It may connect to another unexplored underground location.",
+   "test": "Try `south` in the Troll Room if the troll permits movement.",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 19,
+   "name": "narrow passage",
+   "kind": "room",
+   "where": "Cellar",
+   "hypothesis": "It leads north to the Troll Room and may be the main route onward.",
+   "test": "Try `north` from the Cellar with a prepared means of dealing with the troll.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 20,
+   "name": "crawlway",
+   "kind": "barrier",
+   "where": "Cellar",
+   "hypothesis": "It leads south toward the chasm and may require the rope or another method to cross.",
+   "test": "Try `south` from the Cellar, then use commands such as `tie rope`, `use rope`, or `cross chasm`.",
+   "value": 4,
+   "status": "open",
+   "attempts": 1,
+   "conclusion": ""
+  },
+  {
+   "id": 21,
+   "name": "dark staircase",
+   "kind": "barrier",
+   "where": "Kitchen",
+   "hypothesis": "It leads upward to the attic and can be traversed while carrying the lantern.",
+   "test": "Try `up` from the Kitchen.",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 22,
+   "name": "painting",
+   "kind": "object",
+   "where": "Gallery",
+   "hypothesis": "It is a valuable object whose collection advances the score.",
+   "test": "take painting",
+   "value": 3,
+   "status": "confirmed",
+   "attempts": 2,
+   "conclusion": "The painting is a valuable collectible worth 4 points."
+  },
+  {
+   "id": 23,
+   "name": "artist's studio",
+   "kind": "room",
+   "where": "north of Gallery",
+   "hypothesis": "It may contain a message or another route onward.",
+   "test": "north; examine room; search room",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 24,
+   "name": "forbidding hole",
+   "kind": "barrier",
+   "where": "Troll Room",
+   "hypothesis": "It may lead west to another unexplored area if the troll is overcome or bypassed.",
+   "test": "west",
+   "value": 4,
+   "status": "open",
+   "attempts": 1,
+   "conclusion": ""
+  },
+  {
+   "id": 25,
+   "name": "remaining painting",
+   "kind": "object",
+   "where": "Gallery",
+   "hypothesis": "A collectible worth points.",
+   "test": "take painting",
+   "value": 3,
+   "status": "confirmed",
+   "attempts": 2,
+   "conclusion": "Taking the painting increases the score."
+  },
+  {
+   "id": 26,
+   "name": "person with a large bag",
+   "kind": "barrier",
+   "where": "Cellar",
+   "hypothesis": "The person may be guarding a valuable object or may need to be dealt with before the bag can be taken.",
+   "test": "try `take bag`, `talk to person`, or `attack person`",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 27,
+   "name": "large bag",
+   "kind": "object",
+   "where": "Cellar",
+   "hypothesis": "The bag may contain a valuable object or be obtainable after dealing with its bearer.",
+   "test": "try `take bag` after resolving the person blocking it",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 28,
+   "name": "troll's bloody axe",
+   "kind": "object",
+   "where": "Troll Room",
+   "hypothesis": "The axe is the troll's weapon and may be obtainable if the troll is defeated.",
+   "test": "after safely defeating the troll, try `take axe`",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 29,
+   "name": "East-West Passage",
+   "kind": "room",
+   "where": "underground",
+   "hypothesis": "A route opened by killing the troll, leading toward deeper rooms and a stairway down to the Chasm.",
+   "test": "kill troll with sword; east; examine passage; down",
+   "value": 5,
+   "status": "abandoned",
+   "attempts": 3,
+   "conclusion": ""
+  },
+  {
+   "id": 30,
+   "name": "Round Room",
+   "kind": "room",
+   "where": "underground",
+   "hypothesis": "A central junction connecting the East-West Passage with the North-South Passage, Narrow Passage, Engravings Cave, and Loud Room.",
+   "test": "east; east; try north, south, southeast, and east",
+   "value": 4,
+   "status": "confirmed",
+   "attempts": 1,
+   "conclusion": "The East-West Passage leads east to the Round Room, and the Round Room connects north to North-South Passage; several other passages are blocked."
+  },
+  {
+   "id": 31,
+   "name": "North-South Passage",
+   "kind": "room",
+   "where": "underground",
+   "hypothesis": "A major junction leading to Deep Canyon and Chasm.",
+   "test": "from Round Room, north; try northeast and north",
+   "value": 4,
+   "status": "confirmed",
+   "attempts": 1,
+   "conclusion": "The Round Room/North-South Passage network connects to Deep Canyon and the Chasm."
+  },
+  {
+   "id": 32,
+   "name": "Deep Canyon",
+   "kind": "room",
+   "where": "underground",
+   "hypothesis": "A junction leading to the Dam, Reservoir South, Loud Room, and the thief encounter.",
+   "test": "from North-South Passage, northeast; try east, northwest, and down",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 33,
+   "name": "Loud Room",
+   "kind": "room",
+   "where": "underground",
+   "hypothesis": "A room containing a platinum bar and routes toward the Damp Cave and Round Room.",
+   "test": "from Deep Canyon, down; try east, west, and take platinum bar",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 34,
+   "name": "Dome Room",
+   "kind": "room",
+   "where": "underground",
+   "hypothesis": "A high vantage point above another room; the rope may permit safe descent.",
+   "test": "take rope; reach Dome Room; use rope or lower rope; then try down",
+   "value": 5,
+   "status": "abandoned",
+   "attempts": 3,
+   "conclusion": ""
+  },
+  {
+   "id": 35,
+   "name": "plastic boat",
+   "kind": "object",
+   "where": "Dam Base",
+   "hypothesis": "A boat intended for crossing the reservoir or other water, requiring correct placement and inflation.",
+   "test": "drop plastic pile; take valve; place the pile explicitly on the ground; inflate boat with valve",
+   "value": 5,
+   "status": "abandoned",
+   "attempts": 3,
+   "conclusion": ""
+  },
+  {
+   "id": 36,
+   "name": "thief",
+   "kind": "barrier",
+   "where": "Deep Canyon",
+   "hypothesis": "A hostile guardian of the large bag who may need a different combat strategy or weapon timing.",
+   "test": "return with sword ready; attack thief with sword only after recovery; test other weapons or defensive commands",
+   "value": 5,
+   "status": "abandoned",
+   "attempts": 3,
+   "conclusion": ""
+  },
+  {
+   "id": 37,
+   "name": "platinum bar",
+   "kind": "object",
+   "where": "Loud Room",
+   "hypothesis": "A valuable object that should be collectible after solving the room's unusual sound or command behavior.",
+   "test": "try take bar, take platinum bar, and examine platinum bar after reducing inventory",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 38,
+   "name": "blue button leak",
+   "kind": "barrier",
+   "where": "Maintenance Room",
+   "hypothesis": "The leak may be reversible with another button or may alter access to flooded rooms.",
+   "test": "push red button; push brown button; push yellow button; inspect water level after each",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 39,
+   "name": "ZORK owner's manual",
+   "kind": "message",
+   "where": "Dam Base",
+   "hypothesis": "It may provide the same identification or possibly additional useful instructions.",
+   "test": "read manual",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 40,
+   "name": "tube of toothpaste",
+   "kind": "object",
+   "where": "Maintenance Room",
+   "hypothesis": "It may be a usable item or a disguised object relevant to the flooded maintenance room.",
+   "test": "take tube; examine tube; open tube",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 41,
+   "name": "wrench",
+   "kind": "object",
+   "where": "Maintenance Room",
+   "hypothesis": "It may operate the dam bolt or another mechanical fitting.",
+   "test": "take wrench; turn bolt with wrench",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 42,
+   "name": "screwdriver",
+   "kind": "object",
+   "where": "Maintenance Room",
+   "hypothesis": "It may operate a screw, panel, or dam mechanism, though the tested bolt attempt was unsuccessful with a screwdriver.",
+   "test": "take screwdriver; turn bolt with screwdriver",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 43,
+   "name": "Dam Lobby guidebooks",
+   "kind": "object",
+   "where": "Dam Lobby",
+   "hypothesis": "They may contain information about the dam or its controls.",
+   "test": "take guidebooks; read guidebooks",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 44,
+   "name": "matchbook",
+   "kind": "object",
+   "where": "Dam Lobby",
+   "hypothesis": "It may provide a fire or light source for a dark or otherwise inaccessible area.",
+   "test": "take matchbook; open matchbook; light match",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 45,
+   "name": "blocked cave-ins",
+   "kind": "barrier",
+   "where": "Round Room",
+   "hypothesis": "They may conceal routes that can be cleared with an appropriate tool or object.",
+   "test": "examine cave-ins; clear cave-in; use axe on cave-in",
+   "value": 4,
+   "status": "open",
+   "attempts": 1,
+   "conclusion": ""
+  },
+  {
+   "id": 46,
+   "name": "lake crossing",
+   "kind": "barrier",
+   "where": "Reservoir South",
+   "hypothesis": "The plastic boat may permit crossing the lake if correctly inflated and launched.",
+   "test": "inflate boat with valve; launch boat; cross lake",
+   "value": 5,
+   "status": "abandoned",
+   "attempts": 3,
+   "conclusion": ""
+  },
+  {
+   "id": 47,
+   "name": "rising floodwater",
+   "kind": "barrier",
+   "where": "Maintenance Room",
+   "hypothesis": "The leak may eventually block or threaten the room, and another button or mechanism may stop it.",
+   "test": "push red button; push blue button; examine leak; leave and return",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 48,
+   "name": "stiletto",
+   "kind": "object",
+   "where": "Maze",
+   "hypothesis": "A weapon that may be useful against the thief or another hostile opponent.",
+   "test": "take stiletto; attack thief with stiletto",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 49,
+   "name": "Dead End",
+   "kind": "room",
+   "where": "Maze",
+   "hypothesis": "A terminal maze location that helps map the maze and may contain or reveal an item.",
+   "test": "from the Dead End, try north, south, east, and west and record reachable rooms",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 50,
+   "name": "private water-filled rooms",
+   "kind": "barrier",
+   "where": "Dam Lobby",
+   "hypothesis": "The rising leak water blocks access to the Dam Lobby's private north and east rooms; preventing or reversing the leak may open them.",
+   "test": "before pushing the blue button, enter north and east from Dam Lobby; alternatively investigate the buttons and water after the leak",
+   "value": 5,
+   "status": "confirmed",
+   "attempts": 1,
+   "conclusion": "The leak causes rising water and blocks the Dam Lobby's private rooms."
+  },
+  {
+   "id": 51,
+   "name": "Frobozz Magic Gunk",
+   "kind": "object",
+   "where": "Maintenance Room",
+   "hypothesis": "The gunk may be intended to operate or lubricate the Dam bolt, although merely carrying or reading the tube did not expose usable gunk.",
+   "test": "try squeeze tube onto bolt; pour gunk on bolt; apply gunk to bolt",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 52,
+   "name": "green bubble",
+   "kind": "object",
+   "where": "Dam",
+   "hypothesis": "It may be a control or dam-related object, but its purpose is unknown.",
+   "test": "examine green bubble; take green bubble",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 53,
+   "name": "stream",
+   "kind": "barrier",
+   "where": "Stream View",
+   "hypothesis": "The stream may connect to an inaccessible source or provide a route if its small opening is solved.",
+   "test": "examine stream; enter stream; enter spot",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 54,
+   "name": "crack",
+   "kind": "barrier",
+   "where": "Chasm",
+   "hypothesis": "The crack may be a possible route, but it is too narrow for the player as tested.",
+   "test": "enter crack; examine crack; put object in crack",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 55,
+   "name": "water source at reservoir",
+   "kind": "barrier",
+   "where": "Reservoir South",
+   "hypothesis": "The lake may be crossable only with a correctly prepared boat or another specific method.",
+   "test": "inflate boat with valve; launch boat; cross lake",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 56,
+   "name": "one remaining gallery painting",
+   "kind": "object",
+   "where": "Gallery",
+   "hypothesis": "A valuable collectible that may increase the score once carrying capacity is reduced.",
+   "test": "drop sack; drop rope; drop knife; take painting",
+   "value": 2,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 57,
+   "name": "open south door",
+   "kind": "barrier",
+   "where": "Studio",
+   "hypothesis": "The Studio's usable connection back to the Gallery, rather than a route farther north.",
+   "test": "go south",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 58,
+   "name": "thief attack",
+   "kind": "barrier",
+   "where": "Studio",
+   "hypothesis": "A hostile thief may appear near the Studio and must be avoided or defeated before safely leaving.",
+   "test": "enter Studio with sword ready; attack thief; wait; attack thief",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 59,
+   "name": "Great Canyon",
+   "kind": "room",
+   "where": "Canyon View",
+   "hypothesis": "The canyon network may provide an alternate route toward the underground or river areas.",
+   "test": "At Canyon View, try down, east, and explore Rocky Ledge and Canyon Bottom",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 60,
+   "name": "Rocky Ledge",
+   "kind": "room",
+   "where": "Great Canyon",
+   "hypothesis": "The ledge may connect the canyon top to the canyon bottom and additional river routes.",
+   "test": "At Rocky Ledge, try down and inspect the surroundings",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 61,
+   "name": "Canyon Bottom",
+   "kind": "room",
+   "where": "Great Canyon",
+   "hypothesis": "The canyon bottom may lead to the End of Rainbow and other unexplored outdoor areas.",
+   "test": "At Canyon Bottom, try north and inspect the area",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 62,
+   "name": "End of Rainbow",
+   "kind": "room",
+   "where": "Canyon Bottom",
+   "hypothesis": "The rainbow and river beach may contain a valuable object or a route to another region.",
+   "test": "At End of Rainbow, examine rainbow and try take rainbow; test available exits",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 63,
+   "name": "score reduction on death",
+   "kind": "message",
+   "where": "anywhere",
+   "hypothesis": "Deaths impose a score penalty while restarting the player in the Forest.",
+   "test": "Accumulate score, deliberately die, and compare the displayed score after restarting",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 64,
+   "name": "chirping song bird",
+   "kind": "object",
+   "where": "Forest Path",
+   "hypothesis": "The bird may be decorative or may identify a location or possible collectible.",
+   "test": "At Forest Path, examine bird; listen; try take bird",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 65,
+   "name": "Engravings Cave",
+   "kind": "room",
+   "where": "Engravings Cave",
+   "hypothesis": "A route between the Round Room and Dome Room that may provide access to a further underground objective.",
+   "test": "From Round Room, go southeast; in Engravings Cave, go east and test the room's remaining exits or examine the engravings.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 66,
+   "name": "Mirror Room",
+   "kind": "room",
+   "where": "Mirror Room",
+   "hypothesis": "A room containing a mirror that may be an interactive barrier or puzzle object.",
+   "test": "From Round Room go south, then south; test commands such as examine mirror, open mirror, move mirror, and touch mirror.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 67,
+   "name": "enormous mirror",
+   "kind": "object",
+   "where": "Mirror Room",
+   "hypothesis": "The mirror may conceal or enable a route because it fills the south wall.",
+   "test": "examine mirror; open mirror; move mirror; enter mirror",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 68,
+   "name": "water level in Maintenance Room",
+   "kind": "barrier",
+   "where": "Maintenance Room",
+   "hypothesis": "The leak's rising water may eventually block the route and must perhaps be prevented or reversed before accessing the private rooms.",
+   "test": "Before pushing the blue button, examine or operate the controls; after the leak, test commands involving the leak or pipe and leave before the water rises further.",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 69,
+   "name": "crack at Chasm",
+   "kind": "barrier",
+   "where": "Chasm",
+   "hypothesis": "The crack may be a route or access point requiring a particular object or state.",
+   "test": "At Chasm, examine crack; enter crack; go into crack; use rope at crack",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 70,
+   "name": "Poseidon's crystal trident",
+   "kind": "object",
+   "where": "Atlantis Room",
+   "hypothesis": "A valuable collectible, possibly useful in a later barrier or water-related puzzle.",
+   "test": "take trident; examine trident; use trident",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 71,
+   "name": "Entrance to Hades gate",
+   "kind": "barrier",
+   "where": "Entrance to Hades",
+   "hypothesis": "The invisible force may require a specific object or action to permit entry.",
+   "test": "use trident on gate; use sword on gate; examine gate; open gate",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 72,
+   "name": "large jewel-filled trunk",
+   "kind": "object",
+   "where": "Reservoir",
+   "hypothesis": "A valuable collectible; it awarded 15 points when taken.",
+   "test": "take trunk; examine trunk; open trunk",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 73,
+   "name": "hand-held air pump",
+   "kind": "object",
+   "where": "Reservoir North",
+   "hypothesis": "May inflate the folded plastic boat, unlike the previously failed methods.",
+   "test": "take pump; return to the boat; inflate boat with pump",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 74,
+   "name": "Cave north entrance",
+   "kind": "room",
+   "where": "Cave",
+   "hypothesis": "The north entrance may connect to an unexplored upper route or area.",
+   "test": "north from Cave; examine the north entrance",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 75,
+   "name": "tight passage into the cliffs",
+   "kind": "barrier",
+   "where": "White Cliffs Beach",
+   "hypothesis": "It may be an entrance that requires a specific command or object rather than ordinary westward movement.",
+   "test": "Try `enter passage`, `go passage`, `enter cliffs`, and examine or use relevant tools at the passage.",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 76,
+   "name": "crack toward the south",
+   "kind": "barrier",
+   "where": "Damp Cave",
+   "hypothesis": "It may lead to another underground area if entered with a suitable command or object.",
+   "test": "Try `enter crack`, `go crack`, `south`, and examine the crack.",
+   "value": 4,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 77,
+   "name": "wooden railing",
+   "kind": "barrier",
+   "where": "Dome Room",
+   "hypothesis": "It may support or mark a route to the room below, though direct descent is unsafe.",
+   "test": "Try `examine railing`, `climb railing`, and `use rope on railing`.",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 78,
+   "name": "tour guidebook",
+   "kind": "object",
+   "where": "Dam",
+   "hypothesis": "It is readable information and may provide clues about operating the dam.",
+   "test": "Take it if possible, then `read guidebook` and examine the dam controls while holding the wrench.",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 79,
+   "name": "lamp nearly out",
+   "kind": "barrier",
+   "where": "Maze",
+   "hypothesis": "The lantern's remaining light may determine whether maze exploration is safe.",
+   "test": "before entering the maze, turn on lantern; then map the maze with minimal extra commands",
+   "value": 5,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 80,
+   "name": "open bottle",
+   "kind": "message",
+   "where": "White Cliffs Beach",
+   "hypothesis": "Opening the bottle is required before its water can be consumed.",
+   "test": "open bottle; drink water",
+   "value": 1,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  },
+  {
+   "id": 81,
+   "name": "Troll Room knife disappearance",
+   "kind": "message",
+   "where": "Troll Room",
+   "hypothesis": "Throwing the knife at the troll may consume or remove the knife while defeating the troll.",
+   "test": "in a fresh game, throw knife at troll; then inventory; then take knife",
+   "value": 3,
+   "status": "open",
+   "attempts": 0,
+   "conclusion": ""
+  }
+ ],
+ "goals": [
+  {
+   "theory": "The game rewards both collecting valuable objects and discovering new areas; the score increased for the egg, entering the kitchen, reaching the cellar, and taking the gallery painting. Further advancement likely requires using unexplored exits and overcoming the troll or other underground barriers.",
+   "support": 3,
+   "against": 0,
+   "test": "In a replay, carry the lantern, rope, knife, and other supplies; after reaching the Troll Room, test east and west, and try a different method of dealing with the troll before exploring the chasm route."
+  },
+  {
+   "theory": "Progress is awarded for collecting valuable objects and reaching new rooms, but deeper advancement requires resolving active barriers such as the troll and the person guarding the bag; feeding the troll alone is insufficient.",
+   "support": 2,
+   "against": 0,
+   "test": "In a new game, investigate the bag-bearing person and try alternative ways to resolve the troll before attempting the west hole or east passage."
+  },
+  {
+   "theory": "The game rewards both collecting valuables and solving environmental barriers: opening the dam lowered the reservoir, enabling collection of the trunk and trident, while the remaining major progression barrier is likely the protected Hades gate or another unexplored route.",
+   "support": 2,
+   "against": 0,
+   "test": "Replay with the trident, sword, lantern, and other useful objects preserved; at the Entrance to Hades, test use trident on gate, use sword on gate, and other explicit gate-opening commands before entering."
+  },
+  {
+   "theory": "Progress appears to be rewarded by collecting valuable objects and by reaching newly revealed underground rooms; the next progression likely requires solving barriers such as the troll or chasm rather than merely exploring.",
+   "support": 1,
+   "against": 0,
+   "test": "In the next game, carry the lit lantern, rope, sword, and knife into the underground area; deal with the troll, cross or explore the chasm with the rope, and take the remaining gallery artwork while tracking score changes."
+  },
+  {
+   "theory": "The game rewards discovering and entering hidden underground areas, while further progress requires overcoming hostile or physical barriers; merely reaching the Troll Room is not enough because the troll can kill the player.",
+   "support": 1,
+   "against": 0,
+   "test": "On the next replay, try an understood command to cross or bypass the chasm, and test a sword attack or giving food to the troll before attempting the west hole or other passages."
+  }
+ ]
+}

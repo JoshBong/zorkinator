@@ -1,0 +1,20 @@
+{
+ "name": "x9",
+ "games": 16,
+ "move_cap": 500,
+ "usd_cap": 2.0,
+ "scoring_every": 4,
+ "patience": 3,
+ "score_w": 2.0,
+ "effort": "none",
+ "fact_cap": 150,
+ "goal_theory": true,
+ "walls": true,
+ "plateau": true,
+ "wall_deaths": 2,
+ "wall_stalls": 2,
+ "plateau_games": 4,
+ "max_plans": 4,
+ "death_window": 15,
+ "player": "model"
+}
