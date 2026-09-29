@@ -609,3 +609,108 @@ class X12(unittest.TestCase):
             shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
         for view in ("Open leads:", "Carrying:"):  # "Goal:" also appears in player replies
             self.assertNotIn(view, text)
+
+
+class X13a(unittest.TestCase):
+    """Exact-repeat block: 49% of x12's non-movement actions repeated a command already answered
+    identically in the same room with the same things held."""
+
+    class W:
+        def __init__(self, room: str, inv: list[str]) -> None:
+            from types import SimpleNamespace
+
+            self.state = SimpleNamespace(room=room, score=0)
+            self.inventory = inv
+            self.routed: list[str] = []
+
+    class Chat:
+        model = "fake"
+
+    def _sr(self, route: list[str] | None = None) -> core.Speedrun:
+        return core.Speedrun(self.Chat(), route or [], [], "", repeat_block=2)
+
+    def test_third_identical_try_is_blocked(self) -> None:
+        sr, w = self._sr(), self.W("Living Room", ["lantern"])
+        for _ in range(2):
+            self.assertIsNone(sr.intercept("put painting in case", w))
+            sr.hook(w, 1, "You don't have the painting.")
+        msg = sr.intercept("put  Painting in case", w)
+        self.assertIsNotNone(msg)
+        self.assertIn("You don't have the painting", msg or "")
+        self.assertEqual(sr.blocked, 1)
+        sr.hook(w, 2, msg or "")  # the block message itself is not recorded as a reply
+        self.assertEqual(len(sr.replies[("Living Room", "put painting in case", ("lantern",))]), 2)
+
+    def test_changed_state_or_varied_replies_or_free_commands_pass(self) -> None:
+        sr = self._sr()
+        w = self.W("Troll Room", ["sword"])
+        for reply in ("The troll parries.", "You hit the troll."):
+            sr.intercept("attack troll with sword", w)
+            sr.hook(w, 1, reply)
+        self.assertIsNone(sr.intercept("attack troll with sword", w))  # replies differ: random
+        w2 = self.W("Living Room", [])
+        for _ in range(3):
+            self.assertIsNone(sr.intercept("look", w2))
+            sr.hook(w2, 1, "Living Room ...")
+        for _ in range(2):
+            sr.intercept("take sword", w2)
+            sr.hook(w2, 1, "You already have that!")
+        self.assertIsNone(sr.intercept("take sword", self.W("Living Room", ["sword"])))
+
+    def test_a_move_that_works_is_never_counted_as_a_repeat(self) -> None:
+        sr, w = self._sr(), self.W("East of Chasm", ["lantern"])
+        for _ in range(3):
+            self.assertIsNone(sr.intercept("north", w))
+            w.state.room = "Cellar"
+            sr.hook(w, 1, "Cellar You are in a dark and damp cellar.")
+            w.state.room = "East of Chasm"
+        self.assertIsNone(sr.intercept("north", w))
+
+    def test_nothing_is_blocked_during_route_replay_or_when_off(self) -> None:
+        sr, w = self._sr(route=["north", "north"]), self.W("Forest", [])
+        self.assertTrue(sr.active)
+        self.assertIsNone(sr.intercept("north", w))
+        off = core.Speedrun(self.Chat(), [], [], "", repeat_block=0)
+        for _ in range(4):
+            self.assertIsNone(off.intercept("jump", w))
+            off.hook(w, 1, "Very good.")
+
+    def test_x13a_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from dataclasses import replace
+        from pathlib import Path
+
+        cfg = replace(core.CONFIGS["x13a"], player="explorer", games=3, move_cap=60)
+        real = core.ask
+        tag = "test-offline-x13a"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), cfg.games)
+        self.assertIn("blocked", rows[-1])
+
+    def test_the_block_fires_in_a_real_game(self) -> None:
+        """Wiring: GameSpec.intercept -> Speedrun.intercept, replies via the router hook."""
+        import shutil
+        from dataclasses import replace
+        from pathlib import Path
+
+        import zorkinator.harness as harness
+        from zorkinator.seed_run import ScriptedChat
+
+        cfg = replace(core.CONFIGS["x13a"], games=1, move_cap=8)
+        real_ask, real_chat = core.ask, harness.make_chat
+        tag = "test-offline-x13a-live"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            harness.make_chat = lambda *a, **k: ScriptedChat(["xyzzy"] * 8)
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask, harness.make_chat = real_ask, real_chat
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertGreaterEqual(
+            rows[0]["blocked"], 5
+        )  # xyzzy (fixed reply) 3..8 never reach the game

@@ -61,6 +61,7 @@ class Config:
     nudge: bool = False  # x11: tell the player points are good and dying is bad
     manual: bool = False  # x12: the game manual's goal and scoring passages (what a buyer read)
     doom_waits: int = 0  # x12: hand over only where this many idle turns survive
+    repeat_block: int = 0  # x13a: block a command after this many identical replies (0 = off)
 
 
 CONFIGS = {
@@ -71,6 +72,9 @@ CONFIGS = {
     "x11": Config("x11", plateau=False, max_plans=2, experiments=True, nudge=True),
     # x9 (the x10 run) + the manual's goal/scoring passages + hand over only at calm points
     "x12": Config("x12", manual=True, doom_waits=5),
+    # x12 + block the 3rd exact repeat (same room, command, items held, same reply twice before):
+    # 49% of x12's non-movement actions were such repeats (Reflexion's trigger, AE-DQN's idea)
+    "x13a": Config("x13a", manual=True, doom_waits=5, repeat_block=2),
 }
 NUDGE = "Points going up is good; dying is bad."
 # Verbatim from the Zork I manual (Infocom, Mastertronic ed.): what every buyer read before playing.
@@ -302,11 +306,44 @@ def reference(route: list[str], seed: int) -> list[dict]:
 
 
 # --- speedrun wrapper (chat + per-move hook) --------------------------------------------------
+FREE = {"look", "l", "inventory", "i", "wait", "z"}  # never blocked: they read or pass time
+
+
 class Speedrun:
-    def __init__(self, chat, route: list[str], ref: list[dict], frontier: str):
+    def __init__(
+        self, chat, route: list[str], ref: list[dict], frontier: str, repeat_block: int = 0
+    ):
         self.chat, self.route, self.ref, self.frontier = chat, route, ref, frontier
         self.model = chat.model
         self.i, self.active, self.handoff = 0, bool(route), ""
+        self.repeat_block = repeat_block
+        self.replies: dict[tuple, list[str]] = defaultdict(list)
+        self.pending: tuple | None = None
+        self.blocked = 0
+
+    def intercept(self, command: str, world) -> str | None:
+        """After handoff: a command that already got the same no-effect reply (room and score
+        unchanged) `repeat_block` times here, holding the same things, is not sent to the game (no
+        time passes) and the player is told so. Everything else goes through; `hook` records it."""
+        self.pending = None
+        if self.active or not self.repeat_block:
+            return None
+        c = " ".join(command.casefold().split())
+        key = (world.state.room, c, tuple(world.inventory))
+        seen = self.replies.get(key, [])
+        if (
+            c not in FREE
+            and len(seen) >= self.repeat_block
+            and len({x.casefold() for x in seen}) == 1
+        ):
+            self.blocked += 1
+            return (
+                f"[Harness: you already did exactly this here {len(seen)} times holding the same "
+                f'things, and the game answered "{seen[0][:120]}" every time. It will not change. '
+                "Try something different.]"
+            )
+        self.pending = (key, world.state.room, world.state.score)
+        return None
 
     def cost(self, usage):
         # the offline explorer has no price table; real chats price themselves
@@ -315,6 +352,12 @@ class Speedrun:
     def hook(self, world, n: int, output: str) -> None:
         from zorkinator.scribe import parse_stub
 
+        if self.pending is not None:
+            key, room, score = self.pending
+            # only no-effect replies count: a move that changed the room or the score is progress
+            if world.state.room == room and world.state.score == score:
+                self.replies[key].append(" ".join((output or "").split())[:200])
+            self.pending = None
         if self.active and self.i > 0:
             exp = self.ref[self.i - 1] if self.i - 1 < len(self.ref) else None
             p = parse_stub(output)
@@ -1391,7 +1434,9 @@ def chain(job) -> list[dict]:
         result, sr = None, None
         for _ in range(3):
             try:
-                sr = Speedrun(make_chat(cfg.player, MODEL, seed), route, ref, frontier)
+                sr = Speedrun(
+                    make_chat(cfg.player, MODEL, seed), route, ref, frontier, cfg.repeat_block
+                )
                 result = play_game(
                     GameSpec(
                         seed,
@@ -1401,6 +1446,7 @@ def chain(job) -> list[dict]:
                         stuck_after=10_000,
                         context=context,
                         router=sr.hook,
+                        intercept=sr.intercept if cfg.repeat_block else None,
                     ),
                     chat=sr,
                     sink=JsonlSink(out),
@@ -1486,6 +1532,7 @@ def chain(job) -> list[dict]:
             "reflect": rstats,
             "deposits_scored": deposits,
             "handoff_death": handoff_death,
+            "blocked": sr.blocked,
             "cleared": sorted(walls.cleared),
             "plans": {
                 k: [(p["need"][:50], [x["item"] for x in p["get"]], p["result"]) for p in v]
