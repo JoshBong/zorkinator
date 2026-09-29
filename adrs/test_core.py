@@ -318,3 +318,160 @@ class OfflineChain(unittest.TestCase):
             shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
         self.assertEqual(len(rows), cfg.games)
         self.assertIn("scoring", {r["kind"] for r in rows})
+
+
+class X11(unittest.TestCase):
+    """Experiments: restore, try, read the game's text; graft score gains into the best routes."""
+
+    def test_attempt_reports_score_changes_from_a_restore(self) -> None:
+        inv, res = core.attempt(list(NO_LAMP), ["open case", "put egg in case"], SEED)
+        self.assertTrue(core.holds(inv, "egg"))
+        self.assertEqual([t["delta"] for t in res], [0, 5])
+        self.assertFalse(any(t["died"] for t in res))
+
+    def test_graft_puts_a_gain_into_the_best_route(self) -> None:
+        a: dict = {}
+        core.update_archive(a, TO_CELLAR, SEED)
+        self.assertEqual(core.best_spot(a)["score"], 40)
+        n = core.graft(["open case", "put egg in case"], "Living Room", ["egg"], a, SEED)
+        self.assertGreaterEqual(n, 1)
+        self.assertEqual(core.best_spot(a)["score"], 45)
+
+    def test_play_records_the_purpose_of_an_item(self) -> None:
+        kn = core.Knowledge()
+        kn.learn(play([*NO_LAMP, "open case", "put egg in case"]), SEED, ["egg"])
+        self.assertEqual(kn.found.get("egg"), "put egg in case")
+
+    def test_experiment_prompt_template_has_no_game_knowledge(self) -> None:
+        low = core.EXPERIMENT.casefold() + core.NUDGE.casefold()
+        for w in ("zork", "trophy", "treasure", "grue", "troll", "lamp", "sword", "case"):
+            self.assertNotIn(w, low)
+
+    def test_session_with_a_fake_model(self) -> None:
+        played = play(TO_CELLAR)
+        a: dict = {}
+        core.update_archive(a, TO_CELLAR, SEED)
+        kn = core.Knowledge()
+        kn.learn(played, SEED, ["egg", "lamp"])
+        egg = {
+            "thing": "egg",
+            "go_to": "Living Room",
+            "carry": ["egg"],
+            "try": ["open case", "put egg in case"],
+            "expect": "?",
+        }
+        reply = {"experiments": [egg, {**egg, "go_to": "Nowhere"}, egg]}
+        real = core.ask
+        try:
+            core.ask = lambda *x, **k: (reply, 0.0)
+            ex = core.Experiments()
+            state: dict = {"facts": [], "hyps": [], "goals": []}
+            stats, _ = ex.session(kn, state, a, SEED, core.CONFIGS["x11"])
+        finally:
+            core.ask = real
+        self.assertEqual(stats.get("run"), 1)
+        self.assertEqual(stats.get("invalid"), 1)
+        self.assertEqual(stats.get("repeat"), 1)
+        self.assertEqual(stats.get("gains"), 1)
+        self.assertGreaterEqual(stats.get("grafted", 0), 1)
+        self.assertEqual(kn.found.get("egg"), "put egg in case")
+        self.assertTrue(any("[score 15->20]" in f["text"] for f in state["facts"]))
+        self.assertEqual(core.best_spot(a)["score"], 45)
+        self.assertIn("egg", ex.prompt(kn, state, a, core.CONFIGS["x11"]))
+
+    def test_x11_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from dataclasses import replace
+        from pathlib import Path
+
+        cfg = replace(
+            core.CONFIGS["x11"],
+            player="explorer",
+            games=5,
+            move_cap=40,
+            exp_after=0,
+            scoring_every=3,
+        )
+
+        def fake(prompt: str, *a: object, **k: object) -> tuple[dict, float]:
+            if "what things are for" in prompt:
+                return {
+                    "experiments": [
+                        {"go_to": "West of House", "carry": [], "try": ["open mailbox"]}
+                    ]
+                }, 0.0
+            return {"facts_add": []}, 0.0
+
+        real = core.ask
+        tag = "test-offline-x11"
+        try:
+            core.ask = fake
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), cfg.games)
+        self.assertTrue(any(r["exp"].get("proposed") for r in rows))
+
+
+class X11Review(unittest.TestCase):
+    """Regressions for the x11 code review (2026-09-28)."""
+
+    def _setup(self) -> tuple[dict, core.Knowledge]:
+        a: dict = {}
+        core.update_archive(a, TO_CELLAR, SEED)
+        kn = core.Knowledge()
+        kn.learn(play(TO_CELLAR), SEED, ["egg", "lamp"])
+        return a, kn
+
+    def _run(self, reply: object, a: dict, kn: core.Knowledge, ex: core.Experiments) -> dict:
+        real = core.ask
+        try:
+            core.ask = lambda *x, **k: (reply, 0.0)
+            state: dict = {"facts": [], "hyps": [], "goals": []}
+            return ex.session(kn, state, a, SEED, core.CONFIGS["x11"])[0]
+        finally:
+            core.ask = real
+
+    def test_malformed_replies_do_not_crash(self) -> None:
+        a, kn = self._setup()
+        for reply in (None, [], {"experiments": None}, {"experiments": {"a": 1}}):
+            self.assertEqual(self._run(reply, a, kn, core.Experiments()), {})
+        bad = {"experiments": [{"go_to": "Living Room", "carry": [], "try": "open egg"}]}
+        self.assertEqual(self._run(bad, a, kn, core.Experiments()).get("invalid"), 1)
+
+    def test_a_known_setup_command_does_not_block_a_new_sequence(self) -> None:
+        a, kn = self._setup()
+        ex = core.Experiments()
+        # "move rug" was typed in the Living Room on the way down; the sequence is still new
+        e = {"go_to": "Living Room", "carry": ["egg"], "try": ["move rug", "open case"]}
+        self.assertEqual(self._run({"experiments": [e]}, a, kn, ex).get("run"), 1)
+        # but the exact same sequence again is a repeat
+        self.assertEqual(self._run({"experiments": [e]}, a, kn, ex).get("repeat"), 1)
+
+    def test_unreachable_is_not_remembered_as_done(self) -> None:
+        a, kn = self._setup()
+        ex = core.Experiments()
+        e = {"go_to": "Living Room", "carry": ["sword"], "try": ["wave sword"]}
+        kn.seen_at["sword"] = "Nowhere Room"
+        self.assertEqual(self._run({"experiments": [e]}, a, kn, ex).get("unreachable"), 1)
+        self.assertEqual(ex.done, set())
+
+
+class X11Smoke(unittest.TestCase):
+    """Smoke run 2026-09-28: the model proposed `put egg in case` but left carry empty."""
+
+    def test_things_named_in_the_commands_are_carried(self) -> None:
+        a: dict = {}
+        core.update_archive(a, TO_CELLAR, SEED)
+        kn = core.Knowledge()
+        kn.learn(play(TO_CELLAR), SEED, ["egg", "lamp"])
+        e = {"go_to": "Living Room", "carry": [], "try": ["open case", "put egg in case"]}
+        real = core.ask
+        try:
+            core.ask = lambda *x, **k: ({"experiments": [e]}, 0.0)
+            state: dict = {"facts": [], "hyps": [], "goals": []}
+            stats, _ = core.Experiments().session(kn, state, a, SEED, core.CONFIGS["x11"])
+        finally:
+            core.ask = real
+        self.assertEqual(stats.get("gains"), 1)

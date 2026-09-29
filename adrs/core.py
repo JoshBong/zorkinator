@@ -12,7 +12,7 @@ Consolidates what survived x3-x9 (see zorkinator-vault/adrs-log.md):
 Reflection and post-mortem calls use Config.effort (default "none"); the player is always
 "none" (zorkinator.openai_chat.OpenAIChat).
 
-python -m adrs.core --config x9 --tag x10 --seeds 0 1 2 --games 16
+python -m adrs.core --config x11 --tag x11 --seeds 0 1 2 --games 16  (x10 = --config x9)
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ import re
 from collections import Counter, defaultdict, deque
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, replace
+from functools import lru_cache
 from pathlib import Path
 
 MODEL = "gpt-5.6-luna"
@@ -51,12 +52,20 @@ class Config:
     max_plans: int = 4
     death_window: int = 15
     player: str = "model"  # "explorer" = the repo's offline player (tests)
+    experiments: bool = False  # x11: when progress stalls, a save/try/restore experiment session
+    exp_after: int = 2  # non-scoring games without a new best before a session
+    exp_trials: int = 5
+    nudge: bool = False  # x11: tell the player points are good and dying is bad
 
 
 CONFIGS = {
     "base": Config("base", walls=False, plateau=False),  # x5-equivalent, effort none, cap 150
     "x9": Config("x9"),  # base + failure-driven replanning
+    # x9 with the plateau fetch-plans replaced by experiments on things whose purpose is unknown,
+    # at most 2 plans per wall, and the two nudges a player gets from the game itself
+    "x11": Config("x11", plateau=False, max_plans=2, experiments=True, nudge=True),
 }
+NUDGE = "Points going up is good; dying is bad."
 
 MOVES = {
     "n",
@@ -126,7 +135,13 @@ def inventory(game) -> frozenset[str]:
 
 
 def trace(cmds: list[str], seed: int) -> list[dict]:
-    """State after every command (index into cmds, room, inventory, score); stops at death."""
+    """State after every command (index into cmds, room, inventory, score); stops at death.
+    Deterministic per (commands, seed), so replays are memoized; callers only read the dicts."""
+    return list(_trace(tuple(cmds), seed))
+
+
+@lru_cache(maxsize=1024)
+def _trace(cmds: tuple[str, ...], seed: int) -> tuple[dict, ...]:
     from zorkinator.adapter import GameAdapter
     from zorkinator.scribe import parse_stub
 
@@ -151,7 +166,7 @@ def trace(cmds: list[str], seed: int) -> list[dict]:
                     "raw_room": p.room,
                 }
             )
-    return out
+    return tuple(out)
 
 
 _START: dict[int, str | None] = {}
@@ -550,6 +565,7 @@ class Knowledge:
         self.room_text: dict[str, str] = {}
         self.graph: dict[str, dict[str, str]] = {}
         self.zero: Counter = Counter()
+        self.found: dict[str, str] = {}  # item head -> first non-take command naming it that scored
 
     def learn(
         self,
@@ -575,6 +591,7 @@ class Knowledge:
                         "held": sorted({head(x) for x in inv}),
                         "reply": text[:140],
                         "died": "you have died" in low,
+                        "gain": (m.get("score_delta") or 0) > 0,
                     }
                 )
                 del att[:-40]
@@ -582,6 +599,10 @@ class Knowledge:
                 for h in heads:
                     if has_word(c, h):
                         self.takes.setdefault(h, room)
+            if (m.get("score_delta") or 0) > 0 and not c.startswith(TAKE):
+                for h in set(heads) | set(self.takes):
+                    if has_word(c, h):
+                        self.found.setdefault(h, c)
             if "you have died" in low and room:
                 self.deaths[norm_room(room)] += 1
             if i in states:
@@ -832,6 +853,265 @@ def compile_plan(plan: dict, archive: dict, kn: Knowledge, seed: int) -> list[st
     return route
 
 
+# --- experiments: what are things for? (x11) --------------------------------------------------
+EXPERIMENT = """You are helping a player of a text adventure work out what things are for. Points
+going up is good; dying is bad. Picking something up only tells you it can be carried, not what it
+is for. Use only what the player has seen (below), no outside knowledge of any game.
+
+THINGS THEY HAVE TAKEN OR SEEN, WHERE, AND WHAT THEY TRIED WITH EACH:
+{items}
+
+ROOMS THEY CAN GET BACK TO AND WHAT EACH LOOKED LIKE:
+{rooms}
+
+WHAT THEY HAVE LEARNED SO FAR:
+{facts}
+
+EARLIER EXPERIMENTS (what they expected -> what the game said):
+{history}
+
+Propose {n} experiments, starting with things whose purpose is still unknown. Each experiment:
+one room to go to, up to 2 things to carry there, and 1-3 commands to try there. Each must be
+something never tried before. Say what you expect to happen.
+Reply with JSON only:
+{{"experiments": [{{"thing": "...", "go_to": "room", "carry": ["..."], "try": ["command"],
+                   "expect": "..."}}]}}
+"""
+
+
+def ledger(kn: Knowledge) -> dict[str, dict]:
+    """Per item: where it was taken or seen, what was tried with it (non-take commands naming it,
+    in play and in experiments), whether one of those raised the score (purpose found)."""
+    out = {}
+    for h, at in (dict(kn.seen_at) | dict(kn.takes)).items():
+        tried = [
+            {**a, "room": room}
+            for room, atts in kn.attempts.items()
+            for a in atts
+            if has_word(a["cmd"], h) and not a["cmd"].startswith(TAKE)
+        ]
+        out[h] = {"at": at, "taken": h in kn.takes, "tried": tried, "found": kn.found.get(h)}
+    return out
+
+
+def attempt(route: list[str], tries: list[str], seed: int) -> tuple[frozenset, list[dict]]:
+    """A restore: replay the route, then try each command from there, stopping at a death. Only
+    what a player sees comes back: the game's text and the score line."""
+    from zorkinator.adapter import GameAdapter
+    from zorkinator.scribe import parse_stub
+
+    res: list[dict] = []
+    with GameAdapter() as game:
+        game.reset(seed)
+        last = 0
+        for c in route:
+            try:
+                last = game.step(c)["score"]
+            except ValueError:
+                continue
+        inv = inventory(game)
+        for c in tries:
+            try:
+                r = game.step(c)
+            except ValueError:
+                res.append(
+                    {"cmd": c, "text": "", "score": last, "delta": 0, "died": False, "bad": True}
+                )
+                continue
+            died = parse_stub(r["text"]).died or bool(r["done"])
+            res.append(
+                {
+                    "cmd": c,
+                    "text": " ".join(r["text"].split()),
+                    "score": r["score"],
+                    "delta": r["score"] - last,
+                    "died": died,
+                }
+            )
+            last = r["score"]
+            if died:
+                break
+    return inv, res
+
+
+def graft(
+    tries: list[str], room: str, carry: list[str], archive: dict, seed: int, top: int = 3
+) -> int:
+    """Insert commands that raised the score into the best routes, at their first visit to `room`
+    holding `carry`; kept only when the replay survives and ends above that spot's score."""
+    n = 0
+    ranked = sorted(
+        archive.values(), key=lambda c: (c["score"], len(c["inv"]), -len(c["traj"])), reverse=True
+    )
+    for spot in ranked[:top]:
+        r = route_for(spot, seed)
+        for s in trace(r, seed):
+            if norm_room(s["room"]) == norm_room(room) and all(holds(s["inv"], h) for h in carry):
+                cand = [*r[: s["i"] + 1], *tries, *r[s["i"] + 1 :]]
+                st = trace(cand, seed)
+                if len(st) == len(cand) and st[-1]["score"] > spot["score"]:
+                    update_archive(archive, cand, seed, st)
+                    n += 1
+                break
+    return n
+
+
+class Experiments:
+    def __init__(self):
+        self.log: list[dict] = []
+        self.done: set[tuple] = set()
+
+    def prompt(self, kn: Knowledge, state: dict, archive: dict, cfg: Config) -> str:
+        names = kn.names(archive)
+        led = ledger(kn)
+        order = sorted(led, key=lambda h: (led[h]["found"] is not None, not led[h]["taken"], h))
+        lines = []
+        for h in order:
+            e = led[h]
+            where = f"taken at {e['at']}" if e["taken"] else f"seen at {e['at']}"
+            purpose = f"`{e['found']}` raised the score" if e["found"] else "unknown"
+            tried, seen = [], set()
+            for a in reversed(e["tried"]):
+                if a["cmd"] not in seen:
+                    seen.add(a["cmd"])
+                    tried.append(
+                        f"`{a['cmd']}` at {names.get(a['room'], a['room'])} -> "
+                        f'"{a["reply"][:70]}"' + (" (died)" if a["died"] else "")
+                    )
+            lines.append(
+                f"- {h} ({where}); purpose: {purpose}; tried: "
+                + ("; ".join(tried[:4]) or "nothing yet")
+            )
+        reach = sorted(
+            {norm_room(c["room"]) for c in archive.values() if "(dark)" not in c["room"]}
+        )
+        return EXPERIMENT.format(
+            items="\n".join(lines) or "(none)",
+            rooms="\n".join(f"- {names.get(k, k)}: {kn.room_text.get(k, '')[:300]}" for k in reach)
+            or "(none)",
+            facts="\n".join(f"- [{f['where']}] {f['text']}" for f in state["facts"][-60:])
+            or "(none)",
+            history="\n".join(
+                f'- at {x["go"]} holding {x["held"]}: {x["try"]} expected "{x["expect"][:80]}" -> '
+                + "; ".join(
+                    f'"{t[1][:80]}"'
+                    + (f" [score {t[2]:+d}]" if t[2] else "")
+                    + (" (died)" if t[3] else "")
+                    for t in x["got"]
+                )
+                for x in self.log[-15:]
+            )
+            or "(none)",
+            n=cfg.exp_trials,
+        )
+
+    def session(
+        self, kn: Knowledge, state: dict, archive: dict, seed: int, cfg: Config
+    ) -> tuple[dict, float]:
+        """Propose experiments, run each from a restore, record what the game said. Anything that
+        raised the score is grafted into the best routes; deaths cost nothing."""
+        names = kn.names(archive)
+        reach = {norm_room(c["room"]) for c in archive.values() if "(dark)" not in c["room"]}
+        led = ledger(kn)
+        out, cost = ask(self.prompt(kn, state, archive, cfg), cfg, tokens=3000)
+        stats: Counter = Counter()
+        exps = out.get("experiments") if isinstance(out, dict) else None
+        for e in exps[: cfg.exp_trials] if isinstance(exps, list) else []:
+            stats["proposed"] += 1
+            try:
+                assert isinstance(e.get("try"), list) and isinstance(e.get("carry") or [], list)
+                go = names.get(norm_room(str(e.get("go_to", ""))))
+                tries = [" ".join(str(t).split())[:80] for t in e["try"]]
+                tries = [t for t in tries if t][:3]
+                carry = [head(str(x)) for x in (e.get("carry") or [])]
+                # trying something with a thing means bringing it
+                carry += [h for h in led if h not in carry and any(has_word(t, h) for t in tries)]
+                carry = carry[:2]
+            except Exception:
+                stats["invalid"] += 1
+                continue
+            if (
+                not go
+                or norm_room(go) not in reach
+                or not tries
+                or any(h not in led for h in carry)
+            ):
+                stats["invalid"] += 1
+                continue
+            room = norm_room(go)
+            key = (room, tuple(t.casefold() for t in tries), tuple(sorted(carry)))
+            atts = kn.attempts.get(room, [])
+            if key in self.done or all(
+                any(a["cmd"] == t.casefold() and set(carry) <= set(a["held"]) for a in atts)
+                for t in tries
+            ):
+                stats["repeat"] += 1
+                continue
+            route = compile_plan(
+                {"get": [{"item": h, "at": led[h]["at"]} for h in carry], "go_to": go},
+                archive,
+                kn,
+                seed,
+            )
+            if route is None:
+                stats["unreachable"] += 1
+                continue
+            inv, res = attempt(route, tries, seed)
+            self.done.add(key)
+            held = sorted({head(x) for x in inv if not x.endswith(":")})
+            stats["run"] += 1
+            for t in res:
+                c = t["cmd"].casefold()
+                kn.attempts[room].append(
+                    {
+                        "cmd": c,
+                        "held": held,
+                        "reply": t["text"][:140],
+                        "died": t["died"],
+                        "gain": t["delta"] > 0,
+                    }
+                )
+                del kn.attempts[room][:-40]
+                if t["delta"] > 0 and not c.startswith(TAKE):
+                    for h in led:
+                        if has_word(c, h):
+                            kn.found.setdefault(h, c)
+                if t["delta"] or t["died"]:
+                    state["facts"].append(
+                        {
+                            "where": go,
+                            "text": f"Experiment: holding {', '.join(held) or 'nothing'}, "
+                            f'`{t["cmd"]}` -> "{t["text"][:160]}"'
+                            + (
+                                f" [score {t['score'] - t['delta']}->{t['score']}]"
+                                if t["delta"]
+                                else ""
+                            )
+                            + (" (you died)" if t["died"] else ""),
+                        }
+                    )
+                # reporting only (the harness never shows this): a scoring put-into-the-case
+                stats["deposits"] += " in case" in c and t["delta"] > 0
+            self.log.append(
+                {
+                    "go": go,
+                    "held": held,
+                    "try": tries,
+                    "expect": str(e.get("expect", ""))[:160],
+                    "got": [(t["cmd"], t["text"][:120], t["delta"], t["died"]) for t in res],
+                }
+            )
+            stats["deaths"] += any(t["died"] for t in res)
+            ok = [k for k, t in enumerate(res) if t["delta"] > 0]
+            ok = [k for k in ok if not any(t["died"] for t in res[: k + 1])]
+            if ok:
+                good = [t["cmd"] for t in res[: ok[-1] + 1] if not t.get("bad")]
+                stats["gains"] += 1
+                stats["new_spots"] += update_archive(archive, [*route, *good], seed)
+                stats["grafted"] += graft(good, go, carry, archive, seed, top=2)
+        return dict(stats), cost
+
+
 # --- spot selection ---------------------------------------------------------------------------
 def pick_spot(
     archive: dict, hyps: list[dict], rng: random.Random, danger: dict, cfg: Config
@@ -878,11 +1158,26 @@ def chain(job) -> list[dict]:
     (out / "config.json").write_text(json.dumps(asdict(cfg), indent=1))
     state = {"facts": [], "hyps": [], "goals": []}
     archive, danger, kn, walls = {}, {}, Knowledge(), Walls(cfg)
+    exps = Experiments()
     rows, stall, best_seen, back_k, since_gain, active = [], 0, -1, 0, 0, None
     for g in range(cfg.games):
         rng = random.Random(seed * 1000 + g)
         scoring = bool(archive) and (g + 1) % cfg.scoring_every == 0
         pick, why, route, plan_text, pm_cost = None, {"mode": "cold"}, [], "", 0.0
+        exp_stats, exp_cost = {}, 0.0
+        if archive and not scoring and cfg.experiments and since_gain >= cfg.exp_after:
+            before, n0 = max(c["score"] for c in archive.values()), len(exps.log)
+            try:
+                exp_stats, exp_cost = exps.session(kn, state, archive, seed, cfg)
+            except Exception as exc:
+                exp_stats = {"exp_error": repr(exc)[:200]}
+            after = max(c["score"] for c in archive.values())
+            if after > before:
+                since_gain, exp_stats["new_best"] = 0, after
+                best_seen = max(best_seen, after)
+            with (out / "experiments.jsonl").open("a") as fh:
+                for x in exps.log[n0:]:
+                    fh.write(json.dumps({"game": g, **x}) + "\n")
         if archive and scoring:
             pick, why = best_spot(archive), {"mode": "scoring"}
             route = route_for(pick, seed)
@@ -950,7 +1245,7 @@ def chain(job) -> list[dict]:
                 pick["chosen"] += 1
                 route = route_for(pick, seed)
         ref = reference(route, seed) if route else []
-        parts = []
+        parts = [NUDGE] if cfg.nudge else []
         if state["goals"]:
             parts.append(
                 "Working theory of how this game is won (from your own games; may be "
@@ -1103,7 +1398,9 @@ def chain(job) -> list[dict]:
                 if v
             },
             "stall": stall,
-            "cost": round(r.cost_usd + rcost + pm_cost, 5),
+            "exp": exp_stats,
+            "found": sorted(kn.found),
+            "cost": round(r.cost_usd + rcost + pm_cost + exp_cost, 5),
             "goal": state["goals"][0]["theory"][:140] if state["goals"] else None,
         }
         rows.append(row)
@@ -1113,7 +1410,8 @@ def chain(job) -> list[dict]:
         print(
             f"[{tag} s{seed}] g{g} {row['kind']}: {why} -> score {r.score} peak {peak} | "
             f"+{new_cells} spots, rooms {row['rooms_known']}, best {best_now}, cleared "
-            f"{row['cleared']} plans {row['plans']} deposits {deposits}",
+            f"{row['cleared']} plans {row['plans']} deposits {deposits} exp {exp_stats} "
+            f"found {row['found']}",
             flush=True,
         )
     return rows
