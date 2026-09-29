@@ -311,6 +311,14 @@ def reference(route: list[str], seed: int) -> list[dict]:
 
 # --- speedrun wrapper (chat + per-move hook) --------------------------------------------------
 FREE = {"look", "l", "inventory", "i", "wait", "z"}  # never blocked: they read or pass time
+WALK = ("go ", "walk ", "run ", "climb ", "enter ", "exit ", "cross ", "jump ")
+
+
+def movement(c: str) -> bool:
+    """Movement is never blocked: rooms can share a name ("Forest") and some move replies don't
+    parse as a room change, so "the room didn't change" is not evidence of no effect for a move
+    (x13a run 1 blocked moves through the forest)."""
+    return c in MOVES or c in FREE or c.startswith(WALK)
 
 
 class Speedrun:
@@ -338,7 +346,7 @@ class Speedrun:
         key = (world.state.room, c, tuple(world.inventory))
         seen = self.replies.get(key, [])
         if (
-            c not in FREE
+            not movement(c)
             and len(seen) >= self.repeat_block
             and len({x.casefold() for x in seen}) == 1
         ):

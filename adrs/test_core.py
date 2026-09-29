@@ -667,6 +667,16 @@ class X13a(unittest.TestCase):
             w.state.room = "East of Chasm"
         self.assertIsNone(sr.intercept("north", w))
 
+    def test_moves_between_rooms_with_the_same_name_are_never_blocked(self) -> None:
+        sr, w = self._sr(), self.W("Forest", [])
+        for _ in range(4):
+            self.assertIsNone(sr.intercept("north", w))
+            sr.hook(w, 1, "Forest")  # a different room with the same name
+        for c in ("climb tree", "go north", "enter window"):
+            for _ in range(3):
+                self.assertIsNone(sr.intercept(c, w))
+                sr.hook(w, 1, "Same text")
+
     def test_nothing_is_blocked_during_route_replay_or_when_off(self) -> None:
         sr, w = self._sr(route=["north", "north"]), self.W("Forest", [])
         self.assertTrue(sr.active)
