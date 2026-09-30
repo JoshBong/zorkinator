@@ -1530,3 +1530,57 @@ class X20(unittest.TestCase):
         self.assertGreater(rows[-1]["refusals"], 0)
         self.assertTrue(logged)
         self.assertTrue(any(r["why"].get("refusal") for r in rows if r["kind"] == "explore"))
+
+
+class X20b(unittest.TestCase):
+    def test_refusal_reply_is_its_first_sentence(self) -> None:
+        self.assertEqual(
+            core.first_sentence("You can't go that way. Someone carrying a large bag is here."),
+            "You can't go that way.",
+        )
+        self.assertEqual(
+            core.first_sentence("Are you out of your mind?"), "Are you out of your mind?"
+        )
+        self.assertEqual(core.first_sentence("  no  end "), "no end")
+
+    def test_specific_refusals_are_offered_first(self) -> None:
+        a = {
+            f"r{i} @10": {
+                "key": f"r{i} @10",
+                "room": f"r{i}",
+                "score": 10,
+                "inv": [],
+                "traj": ["a"],
+            }
+            for i in range(12)
+        }
+        refusals = {
+            (f"r{i}", "north"): {
+                "room": f"r{i}",
+                "dir": "north",
+                "from": f"r{i} @10",
+                "reply": "You can't go that way.",
+                "handoffs": 0,
+            }
+            for i in range(11)
+        }
+        refusals[("r11", "up")] = {
+            "room": "r11",
+            "dir": "up",
+            "from": "r11 @10",
+            "reply": "The hatch is bolted.",
+            "handoffs": 0,
+        }
+        kn = core.Knowledge()
+        cfg = replace(core.CONFIGS["x20b"], specific_first=1.0)
+        picks = [
+            core.pick_refusal(a, refusals, kn, random.Random(i), cfg)[1]["refusal"][2]
+            for i in range(10)
+        ]
+        self.assertTrue(all(p == "The hatch is bolted." for p in picks))
+        cfg = replace(core.CONFIGS["x20b"], specific_first=0.0)
+        picks = [
+            core.pick_refusal(a, refusals, kn, random.Random(i), cfg)[1]["refusal"][2]
+            for i in range(10)
+        ]
+        self.assertGreater(sum(p != "The hatch is bolted." for p in picks), 5)

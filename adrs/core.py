@@ -90,6 +90,11 @@ class Config:
     # game's own refusal -- the frontier the $0 expansion cannot pass is the model's job
     explore_refusals: bool = False
     refusal_share: float = 0.5  # explore games that start at a refused exit (when any exist)
+    # x20b: choose the pool first -- a refusal whose reply is NOT the chain's generic one with
+    # this probability (x20: 189 generic x 0.2 outweighed 5 specific x 1.0, so the one refusal
+    # handoff in 8 games was a generic exit); the reply is keyed on its first sentence (event text
+    # such as a guard's arrival was appended to it); a same-named room is not a refusal
+    specific_first: float = 0.0
 
 
 CONFIGS = {
@@ -198,6 +203,26 @@ CONFIGS = {
         giveup_honored=False,
         rank_needed=True,
         explore_refusals=True,
+    ),
+    "x20b": Config(
+        "x20b",
+        manual=True,
+        doom_waits=5,
+        signals=True,
+        frontier_w=1.0,
+        deposits=True,
+        expand=True,
+        giveup_pushbacks=1,
+        giveup_score=True,
+        expand_per_level=True,
+        expand_known=False,
+        ledger_text=True,
+        giveup_sentence=False,
+        giveup_honored=False,
+        rank_needed=True,
+        explore_refusals=True,
+        refusal_share=1.0,
+        specific_first=0.8,
     ),
 }
 NUDGE = "Points going up is good; dying is bad."
@@ -1825,7 +1850,9 @@ def expand_archive(
                     died = True
                     break  # died on the move: fewer things will not help
                 end = st[-1]
-                reply = reply or end.get("text", "")
+                reply = reply or first_sentence(end.get("text", ""))
+                if end.get("raw_room") and norm_room(end["room"]) == room:
+                    reply = ""  # moved into a room with the same name (a maze): not a refusal
                 if end["room"] != "(dark)" and norm_room(end["room"]) != room:
                     new = update_archive(archive, cand, seed, st)
                     kn.graph.setdefault(spot["room"], {})[d] = end["room"]
@@ -1859,6 +1886,13 @@ def expand_archive(
     return found
 
 
+def first_sentence(text: str) -> str:
+    """A reply up to its first sentence end: what refused the move, without the event text the
+    game appends afterwards (a guard arriving, a light flickering)."""
+    m = re.match(r"(.+?[.!?])(\s|$)", " ".join(text.split()))
+    return m.group(1) if m else " ".join(text.split())[:120]
+
+
 def generic_refusal(refusals: dict) -> str | None:
     """The chain's most common refusal reply when it makes up >=30% of them -- the parser's own
     "no exit here" phrase, found by counting, not by knowing it. Such exits carry no puzzle."""
@@ -1884,6 +1918,9 @@ def pick_refusal(
     if not open_:
         return None
     top = max(c["score"] for c in archive.values()) or 1
+    specific = [r for r in open_ if not generic or _norm(r["reply"])[:60] != generic]
+    if specific and rng.random() < cfg.specific_first:
+        open_ = specific  # x20b: the pool first, then the weights within it
 
     def w(r):
         c = archive[r["from"]]
