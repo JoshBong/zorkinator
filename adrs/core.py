@@ -66,6 +66,11 @@ class Config:
     frontier_w: float = 0.0  # x14 (D1): explore weight for untried directions at a spot's room
     deposits: bool = False  # x15: treasure ledger + harness-solved return legs ("deposit" games)
     deposit_tries: int = 2  # deposit games per treasure before giving up on it
+    expand: bool = False  # x16: after each game the harness tries untried exits from spots ($0)
+    expand_budget: int = 80  # replays per game for that
+    # x16: a give-up with moves left is pushed back this many times per game (the game's own
+    # "Congratulations! You are the privileged owner…" text ended 4 x15b/bench games as a "win")
+    giveup_pushbacks: int = 0
 
 
 CONFIGS = {
@@ -88,6 +93,23 @@ CONFIGS = {
     "x14b": Config("x14b", manual=True, doom_waits=5, signals=True, frontier_w=1.0),  # + fixes
     # x14b + the round trip: things whose take scored are carried home by a replay-solved leg
     "x15": Config("x15", manual=True, doom_waits=5, signals=True, frontier_w=1.0, deposits=True),
+    # x15 never ran: replaying x14b s0 through its ledger found a leg for 0/3 treasures (no way
+    # back on the walked map; the chimney takes the treasure and the light only). x15b = x15 with
+    # reverse-edge hypotheses and larger drop sets in the solver, both replay-verified.
+    "x15b": Config("x15b", manual=True, doom_waits=5, signals=True, frontier_w=1.0, deposits=True),
+    # x15b + the harness walks untried exits from archived spots after every game (Go-Explore's
+    # exploration phase, movement only, replay-verified, $0); a refused move is retried holding
+    # only light-named things, then nothing. x14b maps had 199-284 untried compass exits each.
+    "x16": Config(
+        "x16",
+        manual=True,
+        doom_waits=5,
+        signals=True,
+        frontier_w=1.0,
+        deposits=True,
+        expand=True,
+        giveup_pushbacks=1,
+    ),
 }
 NUDGE = "Points going up is good; dying is bad."
 
@@ -1140,6 +1162,46 @@ def light_item(x: str) -> bool:
     return "light" in x.casefold()
 
 
+REVERSE = {
+    "north": "south",
+    "south": "north",
+    "east": "west",
+    "west": "east",
+    "up": "down",
+    "down": "up",
+    "northeast": "southwest",
+    "southwest": "northeast",
+    "northwest": "southeast",
+    "southeast": "northwest",
+}
+
+
+def with_reverse(graph: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
+    """The walked map plus a hypothesis for each compass/up-down edge in the other direction
+    (A north-> B implies B south-> A) where B has no walked edge for that command. A hypothesis is
+    only a candidate: the solver replays every step and prunes the ones the game refuses. The
+    x14b chains walked 31-47 rooms but almost never walked back, so no spot holding a treasure had
+    a mapped way home."""
+    out = {r: dict(d) for r, d in graph.items()}
+    for r, d in graph.items():
+        for cmd, nxt in d.items():
+            back = REVERSE.get(DIRS.get(cmd, ""))
+            if back and "(dark)" not in nxt and back not in out.setdefault(nxt, {}):
+                out[nxt][back] = r
+    return out
+
+
+def drop_sets(held: list[str]) -> list[list[str]]:
+    """What to try dropping when a step is refused, few traces first: one thing; everything but
+    one (the light first); everything; then pairs. Bounded by the solver's trace budget."""
+    singles = [[x] for x in held]
+    pairs = [[a, b] for i, a in enumerate(held) for b in held[i + 1 :]]
+    keep_one = [[y for y in held if y != x] for x in sorted(held, key=lambda x: not light_item(x))]
+    keep_one = [d for d in keep_one if len(d) > 2]
+    everything = [held] if len(held) > 2 else []
+    return [*singles, *keep_one, *everything, *pairs]
+
+
 def return_leg(
     spot: dict,
     treasure: str,
@@ -1151,14 +1213,16 @@ def return_leg(
     bad: set | None = None,
 ) -> list[str] | None:
     """A replay-verified route from the spot (holding the treasure) to the goal room, still holding
-    it. Walks the chain's own map; when a step is refused, retries it after dropping one or two of
-    the other things held (other treasures last, light next to last); an edge that still fails is
-    excluded and the path re-planned. Purely mechanical: the game's replies decide."""
+    it. Walks the chain's own map plus reverse-edge hypotheses; when a step is refused, retries it
+    after dropping other things held (one, two, all but one, all; other treasures last, light
+    next to last); an edge that still fails is excluded and the path re-planned. Purely
+    mechanical: the game's replies decide."""
     base = list(route_for(spot, seed))
     bad = bad if bad is not None else set()
     traces = 0
-    for _ in range(4):  # re-path around edges that failed on replay
-        graph = {r: {c: n for c, n in d.items() if (r, c) not in bad} for r, d in kn.graph.items()}
+    full = with_reverse(kn.graph)
+    for _ in range(8):  # re-path around edges that failed on replay
+        graph = {r: {c: n for c, n in d.items() if (r, c) not in bad} for r, d in full.items()}
         way = path(graph, spot["room"], goal)
         if way is None:
             return None
@@ -1179,10 +1243,8 @@ def return_leg(
             held = [x for x in here["inv"] if not has_word(x, treasure) and not x.endswith(":")]
             # drop other treasures last, light next to last
             held.sort(key=lambda x: (head(x) in kn.treasures, light_item(x)))
-            singles = [[x] for x in held]
-            pairs = [[a, b] for i, a in enumerate(held) for b in held[i + 1 :]]
             found = None
-            for combo in [*singles, *pairs]:
+            for combo in drop_sets(held):
                 if traces >= budget:
                     return None
                 drops = [f"drop {head(x)}" for x in combo]
@@ -1527,6 +1589,14 @@ def pick_spot(
 NOUN = goal_noun(MANUAL) or ""
 
 
+def deposit_text(treasure: str) -> str:
+    """What a deposit game tells the player at handoff (the chain and the bench use the same)."""
+    return (
+        f"You are holding the {treasure}, which scored when you took it. The manual says "
+        f"to put treasures in your {NOUN}, and this room has one."
+    )
+
+
 def next_deposit(
     archive: dict, kn: Knowledge, seed: int, cfg: Config, legs: dict
 ) -> tuple[dict, str, list[str]] | None:
@@ -1549,13 +1619,67 @@ def next_deposit(
             leg["graph_size"] = size
             bad = leg.setdefault("bad", set())
             for spot in sorted(holders, key=value, reverse=True)[:3]:
-                leg["route"] = return_leg(spot, t, kn, seed, goal, cfg.doom_waits, 120, bad)
+                leg["route"] = return_leg(spot, t, kn, seed, goal, cfg.doom_waits, 200, bad)
                 if leg["route"]:
                     leg["spot"] = spot
                     break
         if leg["route"]:
             return leg["spot"], t, leg["route"]
     return None
+
+
+def expand_archive(archive: dict, kn: Knowledge, seed: int, budget: int, done: set) -> list[dict]:
+    """Go-Explore's exploration phase done by the harness, movement only, $0: from archived spots
+    (best first) try the direction words nobody has tried from that room; a reply that lands in a
+    different lit room becomes a new cell and a map edge. When the spot holds several things and
+    the move is refused, retry once holding only light-named things and once holding nothing
+    (load-limited exits). Replay-verified; the model never sees any of it except as new spots to
+    start from. `done` remembers (room, direction) across games."""
+    found: list[dict] = []
+    traces = 0
+    for spot in sorted(archive.values(), key=value, reverse=True):
+        if "(dark)" in spot["room"]:
+            continue
+        room = norm_room(spot["room"])
+        for d in _DIRS:
+            if traces >= budget:
+                return found
+            if d in kn.tried.get(room, ()) or (room, d) in done:
+                continue
+            done.add((room, d))
+            route = route_for(spot, seed)
+            here = trace(route, seed)
+            if len(here) < len(route):
+                break
+            held = [x for x in here[-1]["inv"] if not x.endswith(":")]
+            cands = [[*route, d]]
+            if len(held) >= 2:
+                lighter = [f"drop {head(x)}" for x in held if not light_item(x)]
+                if len(lighter) < len(held):
+                    cands.append([*route, *lighter, d])
+                cands.append([*route, *[f"drop {head(x)}" for x in held], d])
+            for cand in cands:
+                st = trace(cand, seed)
+                traces += 1
+                if len(st) < len(cand):
+                    break  # died on the move: fewer things will not help
+                end = st[-1]
+                if end["room"] != "(dark)" and norm_room(end["room"]) != room:
+                    new = update_archive(archive, cand, seed, st)
+                    kn.graph.setdefault(spot["room"], {})[d] = end["room"]
+                    found.append(
+                        {
+                            "from": spot["key"],
+                            "dir": d,
+                            "to": end["room"],
+                            "score": end["score"],
+                            "drops": len(cand) - len(route) - 1,
+                            "new": new,
+                        }
+                    )
+                    break
+            kn.tried[room].add(d)
+    return found
 
 
 # --- one chain --------------------------------------------------------------------------------
@@ -1576,6 +1700,7 @@ def chain(job) -> list[dict]:
     state = {"facts": [], "hyps": [], "goals": []}
     archive, danger, kn, walls = {}, {}, Knowledge(), Walls(cfg)
     legs: dict[str, dict] = {}  # treasure -> {"route", "tries", "graph_size"}
+    expanded_done: set = set()  # (room, direction) the harness already tried
     exps = Experiments()
     rows, stall, best_seen, back_k, since_gain, active = [], 0, -1, 0, 0, None
     for g in range(cfg.games):
@@ -1603,10 +1728,7 @@ def chain(job) -> list[dict]:
         elif archive and cfg.deposits and (dep := next_deposit(archive, kn, seed, cfg, legs)):
             pick, treasure, route = dep
             why = {"mode": "deposit", "treasure": treasure}
-            plan_text = (
-                f"You are holding the {treasure}, which scored when you took it. The manual says "
-                f"to put treasures in your {NOUN}, and this room has one."
-            )
+            plan_text = deposit_text(treasure)
             active_dep = treasure
         elif archive:
             wall = walls.find(kn, archive) if cfg.walls else None
@@ -1748,6 +1870,7 @@ def chain(job) -> list[dict]:
                         context=context,
                         router=sr.hook,
                         intercept=sr.intercept if cfg.repeat_block else None,
+                        pushbacks=cfg.giveup_pushbacks,
                     ),
                     chat=sr,
                     sink=JsonlSink(out),
@@ -1817,6 +1940,12 @@ def chain(job) -> list[dict]:
             rstats = {**rstats, "signals_added": n_sig}
             rcost += sig_cost
         kn.learn(played, seed, [h["name"] for h in state["hyps"]], states)
+        expanded: list[dict] = []
+        if cfg.expand:
+            expanded = expand_archive(archive, kn, seed, cfg.expand_budget, expanded_done)
+            with (out / "expanded.jsonl").open("a") as fh:
+                for x in expanded:
+                    fh.write(json.dumps({"game": g, **x}) + "\n")
         if active_dep is not None:
             legs[active_dep]["tries"] += 1
             if active_dep in kn.deposited:
@@ -1850,6 +1979,7 @@ def chain(job) -> list[dict]:
             "handoff_death": handoff_death,
             "treasures": sorted(kn.treasures),
             "in_case": sorted(kn.deposited),
+            "legs": {t: (v["tries"], v["route"] is not None, v["done"]) for t, v in legs.items()},
             "blocked": sr.blocked,
             "cleared": sorted(walls.cleared),
             "plans": {
@@ -1860,6 +1990,7 @@ def chain(job) -> list[dict]:
             "stall": stall,
             "exp": exp_stats,
             "found": sorted(kn.found),
+            "expanded": [(x["from"], x["dir"], x["to"], x["drops"]) for x in expanded],
             "cost": round(r.cost_usd + rcost + pm_cost + exp_cost, 5),
             "goal": state["goals"][0]["theory"][:140] if state["goals"] else None,
         }

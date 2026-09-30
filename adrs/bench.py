@@ -33,6 +33,8 @@ class Puzzle:
     solved: Callable[[list[dict], list[dict]], bool]  # (model moves, engine states) -> bool
     what: str
     steps: tuple[str, ...] = ()  # reference solution when the walkthrough doesn't solve it here
+    pre: tuple[str, ...] = ()  # extra commands after the walkthrough prefix, before handoff
+    frontier: str = ""  # handoff text (default: the explore text)
 
 
 def _reached(room: str):
@@ -77,6 +79,19 @@ PUZZLES: dict[str, Puzzle] = {
             "Gallery, holding the painting",
             ("W", "N", "U", "put painting in case"),
         ),
+        # x15's deposit-mode handoff: in the goal room holding a treasure, told what the chain
+        # tells the player; does it type the deposit? (x14b: 0/35 non-egg deposit tries scored)
+        Puzzle(
+            "deposit",
+            88,
+            88,
+            12,
+            _deposit("painting"),
+            "Living Room, holding the painting",
+            ("put painting in case",),
+            ("W", "N", "U"),
+            core.deposit_text("painting"),
+        ),
         Puzzle("loud_room", 94, 96, 30, _holds("bar"), "Loud Room"),
         Puzzle("dam", 157, 166, 80, _said(r"sluice gates open"), "Dam Lobby"),
         Puzzle(
@@ -117,7 +132,7 @@ def selftest() -> dict[str, bool]:
         moves, states, last = [], [], 0
         with GameAdapter() as g:
             room = parse_stub(g.reset(SEED)).room
-            for c in wt[: p.prefix]:
+            for c in [*wt[: p.prefix], *p.pre]:
                 r = g.step(c)
                 last = r["score"]
                 room = parse_stub(r["text"]).room or room
@@ -158,7 +173,7 @@ def attempt(p: Puzzle, cfg: core.Config, tag: str, state: dict, k: int) -> dict:
     builder.ABLATE = frozenset(cfg.ablate)
     out = Path("runs/bench") / tag / p.name
     out.mkdir(parents=True, exist_ok=True)
-    route = walkthrough()[: p.prefix]
+    route = [*walkthrough()[: p.prefix], *p.pre]
     if cfg.doom_waits:
         route = core.calm_prefix(route, SEED, cfg.doom_waits)
     ref = core.reference(route, SEED)
@@ -170,7 +185,9 @@ def attempt(p: Puzzle, cfg: core.Config, tag: str, state: dict, k: int) -> dict:
         if state.get("facts")
         else []
     )
-    frontier = "You are at a spot chosen for exploring: try what no earlier game has tried."
+    frontier = p.frontier or (
+        "You are at a spot chosen for exploring: try what no earlier game has tried."
+    )
     sr = core.Speedrun(
         make_chat(cfg.player, core.MODEL, SEED), route, ref, frontier, cfg.repeat_block
     )
@@ -185,6 +202,7 @@ def attempt(p: Puzzle, cfg: core.Config, tag: str, state: dict, k: int) -> dict:
             context="\n\n".join(parts),
             router=sr.hook,
             intercept=sr.intercept if cfg.repeat_block else None,
+            pushbacks=cfg.giveup_pushbacks,
         ),
         chat=sr,
         sink=JsonlSink(out),

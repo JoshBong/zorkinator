@@ -63,6 +63,10 @@ class GameSpec:
     prompt: PromptName = "basic"
     context: str = ""  # advisory text for the prefix when no exact version is pinned
     router: Any = None  # optional callable(world, n, last_output) -> None, sets world.routed
+    intercept: Any = (
+        None  # optional callable(command, world) -> str | None: answer without the game
+    )
+    pushbacks: int = GIVEUP_PUSHBACKS  # give-ups with moves left that are pushed back per game
 
 
 @dataclass
@@ -186,7 +190,7 @@ def play_game(
             proposal = player.propose(chat, move_prompt)
             usage.add(proposal.usage)
             # Persistence: a give-up with moves left is pushed back (bounded per game).
-            if proposal.gave_up and pushbacks < GIVEUP_PUSHBACKS:
+            if proposal.gave_up and pushbacks < spec.pushbacks:
                 pushbacks += 1
                 proposal = player.propose(
                     chat,
@@ -249,6 +253,30 @@ def play_game(
                 break
 
             room_before = world.state.room
+            answered = spec.intercept(proposal.command, world) if spec.intercept else None
+            if answered is not None:
+                # A notebook command (map / recall): answered by the harness, never sent to the
+                # game, so it changes nothing in the world. It still costs a move.
+                output = answered
+                sink.move(
+                    _move(
+                        world,
+                        n,
+                        proposal.command,
+                        proposal.raw,
+                        output,
+                        0,
+                        False,
+                        latency_ms,
+                        rejections=rejections,
+                        expected=expected,
+                        surprise=surprise,
+                        warnings=warnings,
+                    )
+                )
+                if trace is not None:
+                    trace.move(n, move_prompt.tail, proposal.raw, output)
+                continue
             if not verifier.check(proposal.command, here, rules).ok:
                 output = "[Blocked: a proven rule forbids this; try something else]"
                 sink.move(

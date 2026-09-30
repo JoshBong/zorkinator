@@ -1039,3 +1039,148 @@ class X15(unittest.TestCase):
         kn = core.Knowledge()
         kn.learn(play([*NO_LAMP, "open case", "put leaflet in case"]), SEED, [])  # 0 points
         self.assertEqual(kn.deposited, set())
+
+
+class X15b(unittest.TestCase):
+    """Solver fixes found by replaying x14b s0 through the ledger before any x15 run: 0/3 treasures
+    had a leg because (a) the walked map has no way back (the player never walks back) and (b) the
+    chimney takes the treasure and the light only, which dropping 1-2 things never reaches."""
+
+    def test_reverse_edges_are_hypothesised_only_where_nothing_was_walked(self) -> None:
+        g = {"A": {"north": "B", "climb tree": "T"}, "B": {"south": "C"}, "D": {"east": "(dark)"}}
+        full = core.with_reverse(g)
+        self.assertEqual(full["B"]["south"], "C")  # walked edge kept
+        self.assertEqual(full["C"], {"north": "B"})  # hypothesis
+        self.assertNotIn("(dark)", full)
+        self.assertNotIn("T", full)  # "climb tree" has no compass reverse
+
+    def test_drop_sets_try_few_traces_first_and_keep_the_light(self) -> None:
+        held = ["a sack", "a lamp (providing light)", "a sword", "a leaflet"]
+        sets = core.drop_sets(held)
+        self.assertEqual(sets[:4], [[x] for x in held])
+        self.assertEqual(sets[4], ["a sack", "a sword", "a leaflet"])  # keep only the light
+        self.assertIn(held, sets)  # everything
+        self.assertEqual(len(sets), 4 + 4 + 1 + 6)
+        self.assertEqual(core.drop_sets(["a", "b"]), [["a"], ["b"], ["a", "b"]])
+
+    def test_return_leg_uses_a_reverse_edge_the_chain_never_walked(self) -> None:
+        # the map knows Living Room -east-> Kitchen but not the way back (as if never walked);
+        # the way back is a hypothesis the solver verifies by replay
+        walked = [*NO_LAMP, "east"]
+        kn = core.Knowledge()
+        kn.learn(play(walked), SEED, ["egg"])
+        del kn.graph["Kitchen"]["west"]
+        a: dict = {}
+        core.update_archive(a, walked, SEED)
+        spot = a["Kitchen @15"]
+        leg = core.return_leg(spot, "egg", kn, SEED, "Living Room")
+        self.assertIsNotNone(leg)
+        self.assertEqual(leg[-1], "west")
+        self.assertEqual(core.trace(leg, SEED)[-1]["room"], "Living Room")
+
+    def test_return_leg_keeps_only_the_treasure_and_the_light_for_the_chimney(self) -> None:
+        heavy = [*TO_CELLAR[:10], "east", "take sack", "take bottle", "west", *TO_CELLAR[10:]]
+        walked = [*TO_CELLAR, "south", "east", "north", "up", "west"]  # chimney walked, lightly
+        kn = core.Knowledge()
+        kn.learn(play(walked), SEED, ["painting", "egg", "lamp", "sack", "bottle"])
+        loaded = [*heavy, "south", "east", "take painting", "north"]
+        kn.learn(play(loaded), SEED, ["painting"])
+        a: dict = {}
+        core.update_archive(a, loaded, SEED)
+        spot = a["Studio @44"]
+        self.assertGreaterEqual(len(spot["inv"]), 5)
+        leg = core.return_leg(spot, "painting", kn, SEED, "Living Room")
+        self.assertIsNotNone(leg)
+        end = core.trace(leg, SEED)[-1]
+        self.assertEqual(end["room"], "Living Room")
+        self.assertTrue(core.holds(end["inv"], "painting"))
+        self.assertTrue(any(core.light_item(x) for x in end["inv"]))
+
+
+class X16(unittest.TestCase):
+    """The harness walks untried exits from archived spots after each game (movement only, $0)."""
+
+    def test_expansion_finds_rooms_nobody_walked_and_adds_them_to_the_map(self) -> None:
+        walked = list(NO_LAMP)  # north, north, tree, ..., Living Room: many exits never tried
+        kn = core.Knowledge()
+        kn.learn(play(walked), SEED, ["egg"])
+        a: dict = {}
+        core.update_archive(a, walked, SEED)
+        rooms0 = {c["room"] for c in a.values()}
+        done: set = set()
+        found = core.expand_archive(a, kn, SEED, 40, done)
+        rooms1 = {c["room"] for c in a.values()}
+        self.assertTrue(rooms1 > rooms0, (rooms0, rooms1))
+        self.assertTrue(all(f["to"] in rooms1 for f in found))
+        for f in found:  # every found edge is on the map
+            self.assertEqual(kn.graph[f["from"].split(" @")[0]][f["dir"]], f["to"])
+        self.assertTrue(done)  # (room, dir) pairs remembered
+        again = core.expand_archive(a, kn, SEED, 40, done)
+        self.assertTrue(
+            all((f["from"], f["dir"]) not in {(g["from"], g["dir"]) for g in found} for f in again)
+        )
+
+    def test_a_load_limited_exit_is_opened_by_dropping_to_the_light(self) -> None:
+        heavy = [*TO_CELLAR[:10], "east", "take sack", "take bottle", "west", *TO_CELLAR[10:]]
+        loaded = [*heavy, "south", "east", "take painting", "north"]  # Studio, 6+ things held
+        kn = core.Knowledge()
+        kn.learn(play(loaded), SEED, ["painting", "egg", "lamp", "sack", "bottle"])
+        a: dict = {c: v for c, v in {}.items()}
+        core.update_archive(a, loaded, SEED)
+        spot = a["Studio @44"]
+        self.assertNotIn("up", kn.tried.get("studio", set()))
+        done: set = set()
+        found = core.expand_archive({spot["key"]: spot}, kn, SEED, 30, done)
+        up = [f for f in found if f["from"] == "Studio @44" and f["dir"] == "up"]
+        self.assertEqual(len(up), 1, found)
+        self.assertEqual(up[0]["to"], "Kitchen")
+        self.assertGreater(up[0]["drops"], 0)
+        self.assertEqual(kn.graph["Studio"]["up"], "Kitchen")
+
+    def test_x16_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from pathlib import Path
+
+        cfg = replace(
+            core.CONFIGS["x16"], player="explorer", games=3, move_cap=40, expand_budget=20
+        )
+        real = core.ask
+        tag = "test-offline-x16"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), 3)
+        self.assertIn("expanded", rows[-1])
+
+    def test_a_give_up_with_moves_left_is_pushed_back_when_configured(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        from zorkinator.harness import GameSpec, play_game
+        from zorkinator.runner import ChatReply, JsonlSink, Usage
+        from zorkinator.world import WorldModel
+
+        class Scripted:
+            model = "scripted"
+
+            def __init__(self, replies: list[str]) -> None:
+                self.replies = replies
+
+            def complete(self, messages, archive=None):
+                text = self.replies.pop(0)
+                return ChatReply(text, Usage(), [{"role": "assistant", "content": text}])
+
+        for pushbacks, want in ((0, 2), (1, 3)):  # the final give-up is logged as a move
+            chat = Scripted(["open mailbox", "I give up", "north", "I give up"])
+            with tempfile.TemporaryDirectory() as out:
+                r = play_game(
+                    GameSpec(SEED, 10, 1.0, world=WorldModel.empty("t"), pushbacks=pushbacks),
+                    chat=chat,
+                    sink=JsonlSink(out),
+                ).record
+                moves = (Path(out) / f"{r.run_id}.moves.jsonl").read_text().splitlines()
+            self.assertEqual(r.end_reason, "gave_up")
+            self.assertEqual(len(moves), want, pushbacks)
