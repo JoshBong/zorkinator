@@ -278,6 +278,8 @@ CONFIGS = {
         expand_model_tried=True,
     ),
 }
+# x22b = x22 re-run after the best_spot dark-start fix (x22 g3/g7 started in the dark)
+CONFIGS["x22b"] = replace(CONFIGS["x22"], name="x22b")
 NUDGE = "Points going up is good; dying is bad."
 
 
@@ -517,23 +519,25 @@ def best_spot(archive: dict, needed: frozenset[str] | set[str] = frozenset()) ->
     does, the highest-score lit cell that holds them all (a needed thing no cell holds is
     ignored). x17: the model had deposited the sword and the plans said ['sword'] unreachable,
     yet both scoring games started at the guarded room's top cell, unarmed, and quit."""
-    top = max(c["score"] for c in archive.values())
-    cands = [c for c in archive.values() if c["score"] == top]
+    # x22b: a dark cell is never the scoring start while a lit one exists at the top score (x22
+    # g3: "(dark) @40" -- the cellar with the lamp off -- was the shortest top cell; the model
+    # died in 4 moves). pick_spot has filtered dark starts since x14b; this path had not.
+    lit = [c for c in archive.values() if "(dark)" not in c.get("room", "")] or list(
+        archive.values()
+    )
+    top = max(c["score"] for c in lit)
+    cands = [c for c in lit if c["score"] == top]
     live = [
         c
         for c in cands
         if not any(frozenset(o["inv"]) > frozenset(c["inv"]) for o in cands if o is not c)
     ]
-    need = {i for i in needed if any(holds(c["inv"], i) for c in archive.values())}
+    need = {i for i in needed if any(holds(c["inv"], i) for c in lit)}
     if need:
         armed = [c for c in (live or cands) if all(holds(c["inv"], i) for i in need)]
         if armed:
             return min(armed, key=lambda c: len(c["traj"]))
-        holders = [
-            c
-            for c in archive.values()
-            if "(dark)" not in c["room"] and all(holds(c["inv"], i) for i in need)
-        ]
+        holders = [c for c in lit if all(holds(c["inv"], i) for i in need)]
         if holders:
             return max(holders, key=value)
     return min(live or cands, key=lambda c: len(c["traj"]))
@@ -1783,7 +1787,9 @@ def pick_spot(
 ) -> tuple[dict, dict]:
     top = max((c["score"] for c in archive.values()), default=0) or 1
     levels = defaultdict(list)
-    lit = [c for c in archive.values() if "(dark)" not in c["room"]] or list(archive.values())
+    lit = [c for c in archive.values() if "(dark)" not in c.get("room", "")] or list(
+        archive.values()
+    )
     for c in lit:  # a dark start makes the player give up on move 1 (x14 s2 g2, g6)
         levels[c["score"]].append(c)
 

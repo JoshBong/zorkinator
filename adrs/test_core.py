@@ -1641,3 +1641,35 @@ class X22(unittest.TestCase):
         self.assertEqual(len(hit), 1)
         self.assertGreater(hit[0]["drops"], 0)
         self.assertEqual(kn.graph["Studio"]["up"], "Kitchen")
+
+
+class X22b(unittest.TestCase):
+    def test_scoring_start_is_never_dark_while_a_lit_top_cell_exists(self) -> None:
+        a = {
+            "(dark) @40": {
+                "key": "(dark) @40",
+                "room": "(dark)",
+                "score": 40,
+                "inv": ["a lamp"],
+                "traj": ["a"] * 10,
+            },
+            "Cellar @40": {
+                "key": "Cellar @40",
+                "room": "Cellar",
+                "score": 40,
+                "inv": ["a lamp"],
+                "traj": ["a"] * 30,
+            },
+            "Kitchen @15": {
+                "key": "Kitchen @15",
+                "room": "Kitchen",
+                "score": 15,
+                "inv": [],
+                "traj": ["a"] * 5,
+            },
+        }
+        self.assertEqual(core.best_spot(a)["key"], "Cellar @40")
+        del a["Cellar @40"]
+        self.assertEqual(core.best_spot(a)["key"], "Kitchen @15")  # a lower lit cell beats the dark
+        del a["Kitchen @15"]
+        self.assertEqual(core.best_spot(a)["key"], "(dark) @40")  # only when nothing lit exists
