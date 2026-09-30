@@ -14,7 +14,7 @@ from typing import Protocol
 
 from .models import HarnessVersionRecord, MemoryRevision, RuleDoc
 from .monitor import Status
-from .prompts import INITIAL_PROMPTS, PromptName
+from .prompts import INITIAL_PROMPTS, PromptName, without_giveup
 from .verifier import validate_when
 from .world import WorldModel
 
@@ -42,8 +42,14 @@ class PromptParts:
         return f"{self.prefix}\n\n{self.tail}"
 
 
-def build_prefix(world: WorldModel, version_context: str = "", prompt: PromptName = "basic") -> str:
-    """Fixed for the game: changes only between games, when the version changes."""
+def build_prefix(
+    world: WorldModel,
+    version_context: str = "",
+    prompt: PromptName = "basic",
+    giveup_sentence: bool = True,
+) -> str:
+    """Fixed for the game: changes only between games, when the version changes.
+    `giveup_sentence=False` drops the protocol's "reply with 'I give up'" sentence."""
     notes = [
         *(f"- objective: {o.text}" for o in world.objectives if o.status == "open"),
         *(f"- hypothesis: {h}" for h in world.hypotheses),
@@ -53,8 +59,11 @@ def build_prefix(world: WorldModel, version_context: str = "", prompt: PromptNam
     memory_map = f"\n\n{world.memory_map}" if world.memory_map else ""
     exact_version = f"\n\n{version_context}" if version_context else ""
     protocol = MINIMAL_PROTOCOL if "protocol" in ABLATE else HARNESS_PROTOCOL
+    initial = INITIAL_PROMPTS[prompt]
+    if not giveup_sentence:
+        initial = without_giveup(initial)
     return (
-        f"{INITIAL_PROMPTS[prompt]}\n\n{protocol}\n\nNotes from earlier games:\n{earlier}"
+        f"{initial}\n\n{protocol}\n\nNotes from earlier games:\n{earlier}"
         f"{memory_map}{exact_version}"
     )
 
@@ -191,9 +200,10 @@ def build_prompt(
     expected: str | None = None,
     cautions: Sequence[str] = (),
     warned: Sequence[str] = (),
+    giveup_sentence: bool = True,
 ) -> PromptParts:
     return PromptParts(
-        build_prefix(world, version_context, prompt),
+        build_prefix(world, version_context, prompt, giveup_sentence),
         build_tail(world, n, last_output, status, expected, cautions, warned),
     )
 

@@ -71,3 +71,17 @@ The game begins at a white house with a mailbox. Try: OPEN MAILBOX, then READ LE
 )
 
 INITIAL_PROMPTS: dict[PromptName, str] = {"basic": BASIC, "advanced": ADVANCED}
+
+# The protocol's give-up sentence (scaffolding from the paper, not the game). ADRS x19 drops it
+# from the prefix: the player typed "I give up" after reading in-game text that sounded like an
+# ending (13 games/attempts in 2026-09-30 runs), and every pushback text was ignored.
+GIVEUP_SENTENCE = (
+    "It is a tough game, so don’t give up easily, but if you believe you are completely stuck, "
+    "reply with “I give up”. "
+)
+assert GIVEUP_SENTENCE in BASIC
+
+
+def without_giveup(text: str) -> str:
+    """The prompt with the give-up sentence removed (the verbatim constants stay untouched)."""
+    return text.replace(GIVEUP_SENTENCE, "")

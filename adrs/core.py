@@ -75,6 +75,21 @@ class Config:
     # "Congratulations! You are the privileged owner…" text ended 4 x15b/bench games as a "win")
     giveup_pushbacks: int = 0
     giveup_score: bool = False  # x17: the pushback is the game's own `score` reply, not prose
+    # x19: (a) the protocol's "reply with 'I give up'" sentence is dropped from the prefix;
+    # (b) while the game's own `done` flag is false a give-up is a no-op move (nothing sent,
+    # play continues), `giveup_cap` consecutive ones end the game. Pushback text of any kind was
+    # ignored (x16 prose, x17 score line): the fix is mechanical.
+    giveup_sentence: bool = True
+    giveup_honored: bool = True
+    giveup_cap: int = 3
+    # x19: a scoring game must not start at a cell that lacks a thing the chain's own post-mortem
+    # plans named as needed (x17: scoring games started unarmed at the guarded room and quit)
+    rank_needed: bool = False
+    # x20: the harness logs every exit it tried and the game refused (room, direction, cell, the
+    # game's reply); an explore game may start at such a refused exit, the handoff quoting the
+    # game's own refusal -- the frontier the $0 expansion cannot pass is the model's job
+    explore_refusals: bool = False
+    refusal_share: float = 0.5  # explore games that start at a refused exit (when any exist)
 
 
 CONFIGS = {
@@ -145,6 +160,44 @@ CONFIGS = {
         expand_per_level=True,
         expand_known=False,
         ledger_text=True,
+    ),
+    # x18 + give-ups not honored while the game runs (and the sentence that invites them dropped)
+    # + scoring starts prefer cells holding what the chain's own plans named as needed
+    "x19": Config(
+        "x19",
+        manual=True,
+        doom_waits=5,
+        signals=True,
+        frontier_w=1.0,
+        deposits=True,
+        expand=True,
+        giveup_pushbacks=1,
+        giveup_score=True,
+        expand_per_level=True,
+        expand_known=False,
+        ledger_text=True,
+        giveup_sentence=False,
+        giveup_honored=False,
+        rank_needed=True,
+    ),
+    # x19 + refusal-targeted explore games (design/generate-round-4-2026-09-30.md)
+    "x20": Config(
+        "x20",
+        manual=True,
+        doom_waits=5,
+        signals=True,
+        frontier_w=1.0,
+        deposits=True,
+        expand=True,
+        giveup_pushbacks=1,
+        giveup_score=True,
+        expand_per_level=True,
+        expand_known=False,
+        ledger_text=True,
+        giveup_sentence=False,
+        giveup_honored=False,
+        rank_needed=True,
+        explore_refusals=True,
     ),
 }
 NUDGE = "Points going up is good; dying is bad."
@@ -244,17 +297,30 @@ def _norm(s: str) -> str:
 
 # --- engine: exact, free ----------------------------------------------------------------------
 def inventory(game) -> frozenset[str]:
-    """Items held, from `inventory` in a saved/restored engine state. Items are the INDENTED
-    lines under "You are carrying:"; the game's event messages are not indented."""
+    """Items held, from `inventory` in a saved/restored engine state."""
     env = game._env
     state = env.get_state()
     text = game.step("inventory")["text"]
     env.set_state(state)
-    return frozenset(
-        " ".join(x.split()).casefold()
-        for x in text.splitlines()
-        if x.startswith("  ") and x.strip()
-    )
+    return parse_inventory(text)
+
+
+def parse_inventory(text: str) -> frozenset[str]:
+    """Items are the INDENTED lines directly under "You are carrying:"; the game's event messages
+    are not indented -- except a death banner. `inventory` takes a turn, so a guard can kill the
+    player during the peek and "****  You have died  ****" (indented) was read as an item: in
+    x17 the unarmed guard-room cell "held" it, dominated the lamp-only cell of the goal room,
+    and two scoring games started in the fight and quit. Only the block under the header counts."""
+    items: list[str] = []
+    started = False
+    for line in text.splitlines():
+        if not started:
+            started = line.strip().casefold().startswith("you are carrying")
+            continue
+        if not line.startswith("  ") or not line.strip():
+            break
+        items.append(" ".join(line.split()).casefold())
+    return frozenset(items)
 
 
 def trace(cmds: list[str], seed: int) -> list[dict]:
@@ -287,6 +353,7 @@ def _trace(cmds: tuple[str, ...], seed: int) -> tuple[dict, ...]:
                     "inv": inventory(game),
                     "score": r["score"],
                     "raw_room": p.room,
+                    "text": " ".join(r["text"].split())[:300],
                 }
             )
     return tuple(out)
@@ -365,9 +432,13 @@ def update_archive(archive: dict, cmds: list[str], seed: int, states: list | Non
     return new
 
 
-def best_spot(archive: dict) -> dict:
+def best_spot(archive: dict, needed: frozenset[str] | set[str] = frozenset()) -> dict:
     """Top score; among those, a spot whose items are a strict subset of another's is dominated
-    (the lampless twin of a lamp-holding spot); shortest of the rest."""
+    (the lampless twin of a lamp-holding spot); shortest of the rest. With `needed` (things the
+    chain's own plans named, x19): among the top cells prefer one holding all of them; if none
+    does, the highest-score lit cell that holds them all (a needed thing no cell holds is
+    ignored). x17: the model had deposited the sword and the plans said ['sword'] unreachable,
+    yet both scoring games started at the guarded room's top cell, unarmed, and quit."""
     top = max(c["score"] for c in archive.values())
     cands = [c for c in archive.values() if c["score"] == top]
     live = [
@@ -375,7 +446,27 @@ def best_spot(archive: dict) -> dict:
         for c in cands
         if not any(frozenset(o["inv"]) > frozenset(c["inv"]) for o in cands if o is not c)
     ]
+    need = {i for i in needed if any(holds(c["inv"], i) for c in archive.values())}
+    if need:
+        armed = [c for c in (live or cands) if all(holds(c["inv"], i) for i in need)]
+        if armed:
+            return min(armed, key=lambda c: len(c["traj"]))
+        holders = [
+            c
+            for c in archive.values()
+            if "(dark)" not in c["room"] and all(holds(c["inv"], i) for i in need)
+        ]
+        if holders:
+            return max(holders, key=value)
     return min(live or cands, key=lambda c: len(c["traj"]))
+
+
+def needed_items(walls: Walls) -> frozenset[str]:
+    """Things the chain's own post-mortems asked for at a wall (plans that passed the item check:
+    seen or taken in this chain). No game knowledge: the names come from the plans' `get`."""
+    return frozenset(
+        g["item"] for plans in walls.plans.values() for p in plans for g in p.get("get", [])
+    )
 
 
 def calm_prefix(route: list[str], seed: int, waits: int, back: int = 12) -> list[str]:
@@ -1687,6 +1778,7 @@ def expand_archive(
     done: set,
     per_level: bool = False,
     known: bool = True,
+    refusals: dict | None = None,
 ) -> list[dict]:
     """Go-Explore's exploration phase done by the harness, movement only, $0: from archived spots
     (best first) try the direction words nobody has tried from that room; a reply that lands in a
@@ -1695,7 +1787,9 @@ def expand_archive(
     (load-limited exits). Replay-verified; the model never sees any of it except as new spots to
     start from. `done` remembers (room, direction) across games -- or (cell, direction) with
     `per_level`, so an exit refused from a poor cell (closed door, dark) is retried from every
-    richer cell of the same room (x16 tried "Living Room down" once, from the @5 cell)."""
+    richer cell of the same room (x16 tried "Living Room down" once, from the @5 cell).
+    `refusals` (x20) collects every (room, direction) the game refused with the reply the player
+    would have read, keyed to the richest cell it was tried from; a later success removes it."""
     found: list[dict] = []
     traces = 0
     for spot in sorted(archive.values(), key=value, reverse=True):
@@ -1723,12 +1817,15 @@ def expand_archive(
                 if len(lighter) < len(held):
                     cands.append([*route, *lighter, d])
                 cands.append([*route, *[f"drop {head(x)}" for x in held], d])
+            hit, reply, died = False, "", False
             for cand in cands:
                 st = trace(cand, seed)
                 traces += 1
                 if len(st) < len(cand):
+                    died = True
                     break  # died on the move: fewer things will not help
                 end = st[-1]
+                reply = reply or end.get("text", "")
                 if end["room"] != "(dark)" and norm_room(end["room"]) != room:
                     new = update_archive(archive, cand, seed, st)
                     kn.graph.setdefault(spot["room"], {})[d] = end["room"]
@@ -1742,9 +1839,67 @@ def expand_archive(
                             "new": new,
                         }
                     )
+                    hit = True
                     break
             kn.tried[room].add(d)
+            if refusals is not None:
+                if hit:
+                    refusals.pop((room, d), None)
+                elif not died and reply:
+                    old = refusals.get((room, d))
+                    if old is None or value(spot) > value(archive[old["from"]]):
+                        refusals[(room, d)] = {
+                            "room": spot["room"],
+                            "dir": d,
+                            "from": spot["key"],
+                            "reply": reply,
+                            "drops": len(cands) - 1,
+                            "handoffs": old["handoffs"] if old else 0,
+                        }
     return found
+
+
+def generic_refusal(refusals: dict) -> str | None:
+    """The chain's most common refusal reply when it makes up >=30% of them -- the parser's own
+    "no exit here" phrase, found by counting, not by knowing it. Such exits carry no puzzle."""
+    counts = Counter(_norm(r["reply"])[:60] for r in refusals.values())
+    if not counts:
+        return None
+    text, n = counts.most_common(1)[0]
+    return text if n >= 3 and n / sum(counts.values()) >= 0.3 else None
+
+
+def pick_refusal(
+    archive: dict, refusals: dict, kn: Knowledge, rng: random.Random, cfg: Config
+) -> tuple[dict, dict] | None:
+    """An explore start at a refused exit: the cell the harness stood in, weighted like spots
+    (score level, fewer earlier handoffs) and down-weighted when the reply is the generic one.
+    Exits the walked map has since passed are skipped."""
+    generic = generic_refusal(refusals)
+    open_ = [
+        r
+        for (room, d), r in refusals.items()
+        if d not in kn.graph.get(r["room"], {}) and r["from"] in archive
+    ]
+    if not open_:
+        return None
+    top = max(c["score"] for c in archive.values()) or 1
+
+    def w(r):
+        c = archive[r["from"]]
+        return (
+            (0.2 if generic and _norm(r["reply"])[:60] == generic else 1.0)
+            / math.sqrt(1 + r["handoffs"])
+            * (1 + cfg.score_w * c["score"] / top)
+        )
+
+    r = rng.choices(open_, weights=[w(x) for x in open_])[0]
+    r["handoffs"] += 1
+    return archive[r["from"]], {
+        "mode": "explore",
+        "level": archive[r["from"]]["score"],
+        "refusal": [r["room"], r["dir"], r["reply"][:100]],
+    }
 
 
 # --- one chain --------------------------------------------------------------------------------
@@ -1766,6 +1921,8 @@ def chain(job) -> list[dict]:
     archive, danger, kn, walls = {}, {}, Knowledge(), Walls(cfg)
     legs: dict[str, dict] = {}  # treasure -> {"route", "tries", "graph_size"}
     expanded_done: set = set()  # (room, direction) the harness already tried
+    refusals: dict = {}  # x20: (room, direction) -> the refusal the harness met there
+    refused_logged: set = set()
     exps = Experiments()
     rows, stall, best_seen, back_k, since_gain, active = [], 0, -1, 0, 0, None
     for g in range(cfg.games):
@@ -1788,7 +1945,11 @@ def chain(job) -> list[dict]:
                 for x in exps.log[n0:]:
                     fh.write(json.dumps({"game": g, **x}) + "\n")
         if archive and scoring:
-            pick, why = best_spot(archive), {"mode": "scoring"}
+            need = needed_items(walls) if cfg.rank_needed else frozenset()
+            pick, why = best_spot(archive, need), {"mode": "scoring"}
+            if need:
+                why["needed"] = sorted(need)
+                why["holds_needed"] = sorted(i for i in need if holds(pick["inv"], i))
             route = route_for(pick, seed)
         elif archive and cfg.deposits and (dep := next_deposit(archive, kn, seed, cfg, legs)):
             pick, treasure, route = dep
@@ -1856,6 +2017,15 @@ def chain(job) -> list[dict]:
                     if on_path:
                         back_k = min(back_k + 1, len(on_path))
                         pick, why = on_path[-back_k], {"mode": f"backtrack-{back_k}"}
+                if (
+                    pick is None
+                    and cfg.explore_refusals
+                    and refusals
+                    and rng.random() < cfg.refusal_share
+                ):
+                    picked = pick_refusal(archive, refusals, kn, rng, cfg)
+                    if picked:
+                        pick, why = picked
                 if pick is None:
                     pick, why = pick_spot(archive, state["hyps"], rng, danger, cfg, kn.tried)
                 pick["chosen"] += 1
@@ -1919,6 +2089,13 @@ def chain(job) -> list[dict]:
                 frontier += (
                     f"\nAlso test your working theory of the goal: {state['goals'][0]['test']}"
                 )
+            if why.get("refusal"):
+                _room, _dir, _reply = why["refusal"]
+                frontier = (
+                    f"You are at a spot chosen for exploring. From here, `{_dir}` got: "
+                    f'"{_reply}" -- no game of yours has gone that way yet. If you can get '
+                    "through, do.\n" + frontier
+                )
         result, sr = None, None
         for _ in range(3):
             try:
@@ -1938,6 +2115,9 @@ def chain(job) -> list[dict]:
                         intercept=sr.intercept if cfg.repeat_block else None,
                         pushbacks=cfg.giveup_pushbacks,
                         pushback_score=cfg.giveup_score,
+                        giveup_honored=cfg.giveup_honored,
+                        giveup_cap=cfg.giveup_cap,
+                        giveup_sentence=cfg.giveup_sentence,
                     ),
                     chat=sr,
                     sink=JsonlSink(out),
@@ -2017,10 +2197,17 @@ def chain(job) -> list[dict]:
                 expanded_done,
                 cfg.expand_per_level,
                 cfg.expand_known,
+                refusals if cfg.explore_refusals else None,
             )
             with (out / "expanded.jsonl").open("a") as fh:
                 for x in expanded:
                     fh.write(json.dumps({"game": g, **x}) + "\n")
+            if cfg.explore_refusals:
+                with (out / "refused.jsonl").open("a") as fh:
+                    for k, x in refusals.items():
+                        if (k, x["from"]) not in refused_logged:
+                            refused_logged.add((k, x["from"]))
+                            fh.write(json.dumps({"game": g, **x}) + "\n")
         if active_dep is not None:
             legs[active_dep]["tries"] += 1
             if active_dep in kn.deposited:
@@ -2045,6 +2232,8 @@ def chain(job) -> list[dict]:
             "score": r.score,
             "peak": peak,
             "moves": r.moves,
+            "end": r.end_reason,
+            "giveups": sum(m["command"] == "I give up" for m in moves),
             "new_cells": new_cells,
             "rooms_known": len({c["room"] for c in archive.values()}),
             "best": best_now,
@@ -2066,6 +2255,14 @@ def chain(job) -> list[dict]:
             "exp": exp_stats,
             "found": sorted(kn.found),
             "expanded": [(x["from"], x["dir"], x["to"], x["drops"]) for x in expanded],
+            "refusals": len(refusals),
+            # refused exits since passed: by the harness (dropped from `refusals`) or by the
+            # model in play (the direction is now on the walked map from that room)
+            "converted": sorted(
+                f"{room} {d}"
+                for (room, d), _ in refused_logged
+                if (room, d) not in refusals or d in kn.graph.get(refusals[(room, d)]["room"], {})
+            ),
             "cost": round(r.cost_usd + rcost + pm_cost + exp_cost, 5),
             "goal": state["goals"][0]["theory"][:140] if state["goals"] else None,
         }

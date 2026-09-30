@@ -70,6 +70,11 @@ class GameSpec:
     # x17: push back with the game's own reply to `score` (peeked, state restored) instead of
     # harness prose -- x16's "Don't give up yet" was ignored both times it fired
     pushback_score: bool = False
+    # x19: while the game's own `done` flag is false a give-up is not honored -- it is logged as
+    # a move that sends nothing and play continues; `giveup_cap` consecutive give-ups end the game
+    giveup_honored: bool = True
+    giveup_cap: int = 3
+    giveup_sentence: bool = True  # x19 False: the prefix omits "reply with 'I give up'"
 
 
 @dataclass
@@ -143,6 +148,7 @@ def play_game(
     warned: list[str] = []  # cautions the previous command matched
     monitor = Monitor(stuck_after=spec.stuck_after)
     pushbacks = 0
+    giveups = 0  # consecutive give-ups not honored (x19)
     usage = Usage()
     moves = 0
     died = False
@@ -161,7 +167,9 @@ def play_game(
         flush()
         status = monitor.status
         if trace is not None:
-            trace.prefix(builder.build_prefix(world, version_context, spec.prompt))
+            trace.prefix(
+                builder.build_prefix(world, version_context, spec.prompt, spec.giveup_sentence)
+            )
         if progress is not None:
             progress.start(run_id, chat.model, spec.seed, spec.move_cap, spec.usd_cap)
             progress.opening(world)
@@ -188,6 +196,7 @@ def play_game(
                 expected=expected,
                 cautions=_cautions(rules, here),
                 warned=warned,
+                giveup_sentence=spec.giveup_sentence,
             )
             t0 = time.monotonic()
             proposal = player.propose(chat, move_prompt)
@@ -251,8 +260,12 @@ def play_game(
                     trace.move(n, move_prompt.tail, proposal.raw, "")
                 if progress is not None:
                     progress.event("model gave up")
-                end_reason = "gave_up"
-                break
+                giveups += 1
+                if spec.giveup_honored or giveups >= spec.giveup_cap:
+                    end_reason = "gave_up"
+                    break
+                continue  # not honored: nothing was sent, the game is where it was
+            giveups = 0
 
             room_before = world.state.room
             answered = spec.intercept(proposal.command, world) if spec.intercept else None

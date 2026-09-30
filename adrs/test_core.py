@@ -6,6 +6,8 @@ The scripted routes below exercise the mechanics only; none of this is shown to 
 from __future__ import annotations
 
 import collections
+import json
+import random
 import subprocess
 import sys
 import unittest
@@ -1293,3 +1295,238 @@ class X18(unittest.TestCase):
             core.ask = real
             shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
         self.assertEqual(len(rows), 3)
+
+
+class X19(unittest.TestCase):
+    """Give-ups are not honored while the game runs; scoring starts hold plan-named things;
+    the inventory peek never reads the game's event text as an item."""
+
+    DEATH_PEEK = (
+        "You are carrying:\n  A brass lantern (providing light)\nThe flat of the troll's axe "
+        "hits you delicately on the head, knocking you out.\nConquering his fears, the troll "
+        "puts you to death.\nIt appears that that last blow was too much for you. I'm afraid "
+        "you are dead.\n \n   ****  You have died  **** \n\nNow, let's take a look here..."
+    )
+
+    def test_inventory_reads_only_the_block_under_the_header(self) -> None:
+        # the exact peek text from x17 s0 g2 (move 43, unarmed in the guard room)
+        self.assertEqual(
+            core.parse_inventory(self.DEATH_PEEK), {"a brass lantern (providing light)"}
+        )
+        nested = (
+            "You are carrying:\n  A glass bottle\n  The glass bottle contains:\n"
+            "    A quantity of water\n  A lunch\n"
+        )
+        self.assertEqual(
+            core.parse_inventory(nested),
+            {"a glass bottle", "the glass bottle contains:", "a quantity of water", "a lunch"},
+        )
+        self.assertEqual(core.parse_inventory("You are empty-handed.\n"), frozenset())
+        # engine check: the real peek agrees with the parser on a plain state
+        from zorkinator.adapter import GameAdapter
+
+        with GameAdapter() as g:
+            g.reset(SEED)
+            for c in NO_LAMP:
+                g.step(c)
+            self.assertTrue(core.holds(core.inventory(g), "egg"))
+
+    def test_a_phantom_item_no_longer_dominates_the_goal_room_cell(self) -> None:
+        # x17's archive after g2, reduced: the goal-room cell held the light only; the guard-room
+        # cell "held" the light plus the death banner and was picked as the scoring start
+        a = {
+            "goal @50": {
+                "key": "goal @50",
+                "room": "goal",
+                "score": 50,
+                "inv": ["a light"],
+                "traj": ["a"] * 36,
+            },
+            "guard @50": {
+                "key": "guard @50",
+                "room": "guard",
+                "score": 50,
+                "inv": ["a light", "**** you have died ****"],
+                "traj": ["a"] * 44,
+            },
+        }
+        self.assertEqual(core.best_spot(a)["key"], "guard @50")  # the old outcome, for the record
+        a["guard @50"]["inv"] = sorted(core.parse_inventory(self.DEATH_PEEK))
+        self.assertEqual(core.best_spot(a)["key"], "goal @50")
+
+    def test_scoring_start_prefers_a_cell_holding_what_the_plans_named(self) -> None:
+        armed = [*TO_CELLAR[:10], "take sword", *TO_CELLAR[10:]]  # Cellar @40 with the sword
+        unarmed_deeper = [*TO_CELLAR, "south"]  # East of Chasm @40, no sword
+        a: dict = {}
+        core.update_archive(a, unarmed_deeper, SEED)
+        top = core.best_spot(a)
+        self.assertFalse(core.holds(top["inv"], "sword"))
+        # no top cell holds the sword: the highest-score lit holder is the start instead
+        core.update_archive(a, armed[:12], SEED)  # Living Room @15 holding the sword
+        pick = core.best_spot(a, {"sword"})
+        self.assertTrue(core.holds(pick["inv"], "sword"))
+        self.assertEqual(pick["room"], "Living Room")
+        self.assertEqual(core.best_spot(a)["score"], 40)  # without `needed`: unchanged
+        # a top cell holding it wins over the deeper unarmed one
+        core.update_archive(a, armed, SEED)
+        pick = core.best_spot(a, {"sword"})
+        self.assertEqual((pick["room"], pick["score"]), ("Cellar", 40))
+        # a needed thing no cell holds is ignored
+        self.assertEqual(core.best_spot(a, {"unicorn"})["key"], core.best_spot(a)["key"])
+
+    def test_needed_items_come_from_the_chains_own_plans(self) -> None:
+        w = core.Walls(core.CONFIGS["x19"])
+        w.plans["troll room"].append(
+            {
+                "need": "a weapon",
+                "get": [{"item": "sword", "at": "Living Room"}],
+                "result": "unreachable",
+            }
+        )
+        w.plans["__plateau__"].append({"need": "(no valid plan)", "get": [], "result": "no-plan"})
+        self.assertEqual(core.needed_items(w), {"sword"})
+        self.assertEqual(core.needed_items(core.Walls(core.CONFIGS["x19"])), frozenset())
+
+    def test_the_prefix_can_omit_the_give_up_sentence(self) -> None:
+        from zorkinator import builder
+        from zorkinator.world import WorldModel
+
+        w = WorldModel.empty("t")
+        self.assertIn("I give up", builder.build_prefix(w))
+        self.assertNotIn("give up", builder.build_prefix(w, giveup_sentence=False))
+        self.assertIn("text adventure game Zork", builder.build_prefix(w, giveup_sentence=False))
+
+    def test_a_give_up_is_a_no_op_while_the_game_runs(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        from zorkinator.harness import GameSpec, play_game
+        from zorkinator.runner import ChatReply, JsonlSink, Usage
+        from zorkinator.world import WorldModel
+
+        class Scripted:
+            model = "scripted"
+
+            def __init__(self, replies: list[str]) -> None:
+                self.replies = replies
+
+            def complete(self, messages, archive=None):
+                text = self.replies.pop(0)
+                return ChatReply(text, Usage(), [{"role": "assistant", "content": text}])
+
+        chat = Scripted(["I give up", "north", "I give up", "I give up", "east", "I give up"] * 2)
+        with tempfile.TemporaryDirectory() as out:
+            r = play_game(
+                GameSpec(SEED, 10, 1.0, world=WorldModel.empty("t"), giveup_honored=False),
+                chat=chat,
+                sink=JsonlSink(out),
+            ).record
+            moves = [
+                json.loads(x)
+                for x in (Path(out) / f"{r.run_id}.moves.jsonl").read_text().splitlines()
+            ]
+        self.assertEqual(r.end_reason, "cap")
+        self.assertEqual(
+            [m["command"] for m in moves][:6],
+            ["I give up", "north", "I give up", "I give up", "east", "I give up"],
+        )
+        self.assertEqual(moves[4]["room"], "North of House")  # play went on after the give-ups
+        # three in a row end the game
+        chat = Scripted(["north", "I give up", "I give up", "I give up", "east"])
+        with tempfile.TemporaryDirectory() as out:
+            r = play_game(
+                GameSpec(SEED, 10, 1.0, world=WorldModel.empty("t"), giveup_honored=False),
+                chat=chat,
+                sink=JsonlSink(out),
+            ).record
+        self.assertEqual((r.end_reason, r.moves), ("gave_up", 4))
+
+    def test_x19_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from pathlib import Path
+
+        cfg = replace(
+            core.CONFIGS["x19"], player="explorer", games=4, move_cap=40, expand_budget=20
+        )
+        real = core.ask
+        tag = "test-offline-x19"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), 4)
+        self.assertIn("giveups", rows[-1])
+        self.assertEqual(rows[3]["kind"], "scoring")
+
+
+class X20(unittest.TestCase):
+    """Expansion records the exits the game refused; explore games can start at one."""
+
+    def test_expansion_records_refusals_with_the_games_reply(self) -> None:
+        kn = core.Knowledge()
+        kn.learn(play(list(NO_LAMP)), SEED, ["egg"])
+        a: dict = {}
+        core.update_archive(a, list(NO_LAMP), SEED)
+        refusals: dict = {}
+        core.expand_archive(a, kn, SEED, 200, set(), per_level=True, known=False, refusals=refusals)
+        self.assertTrue(refusals)
+        for (room, d), r in refusals.items():
+            self.assertEqual(core.norm_room(r["room"]), room)
+            self.assertEqual(r["dir"], d)
+            self.assertIn(r["from"], a)
+            self.assertTrue(r["reply"])
+            self.assertNotIn(d, kn.graph.get(r["room"], {}))
+        # the parser's generic phrase is found by counting, not by knowing it
+        generic = core.generic_refusal(refusals)
+        self.assertTrue(generic)
+        self.assertGreaterEqual(
+            sum(core._norm(r["reply"])[:60] == generic for r in refusals.values()), 3
+        )
+        # a refused exit the map has since passed is not offered again
+        rng = random.Random(1)
+        cfg = core.CONFIGS["x20"]
+        first = core.pick_refusal(a, refusals, kn, rng, cfg)
+        self.assertIsNotNone(first)
+        spot, why = first
+        self.assertEqual(why["mode"], "explore")
+        self.assertEqual(
+            spot["key"], refusals[(core.norm_room(why["refusal"][0]), why["refusal"][1])]["from"]
+        )
+        for (_room, d), r in list(refusals.items()):
+            kn.graph.setdefault(r["room"], {})[d] = "Somewhere"
+        self.assertIsNone(core.pick_refusal(a, refusals, kn, rng, cfg))
+
+    def test_generic_refusal_needs_a_majority(self) -> None:
+        r = {("a", "north"): {"reply": "no"}, ("b", "south"): {"reply": "locked"}}
+        self.assertIsNone(core.generic_refusal(r))
+        r = {(str(i), "north"): {"reply": "You can't go that way."} for i in range(4)}
+        r[("z", "up")] = {"reply": "The door is locked."}
+        self.assertEqual(core.generic_refusal(r), "you can't go that way.")
+
+    def test_x20_chain_runs_end_to_end_and_logs_refusals(self) -> None:
+        import shutil
+        from pathlib import Path
+
+        cfg = replace(
+            core.CONFIGS["x20"],
+            player="explorer",
+            games=4,
+            move_cap=40,
+            expand_budget=30,
+            refusal_share=1.0,
+        )
+        real = core.ask
+        tag = "test-offline-x20"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            rows = core.chain((cfg, tag, SEED))
+            logged = (Path("runs/adrs") / tag / "s0" / "refused.jsonl").read_text().splitlines()
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), 4)
+        self.assertGreater(rows[-1]["refusals"], 0)
+        self.assertTrue(logged)
+        self.assertTrue(any(r["why"].get("refusal") for r in rows if r["kind"] == "explore"))
