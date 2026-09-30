@@ -1619,3 +1619,25 @@ class X21(unittest.TestCase):
             core.ask = real
             shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
         self.assertEqual(len(rows), 4)
+
+
+class X22(unittest.TestCase):
+    def test_expansion_retries_a_model_tried_exit_lighter(self) -> None:
+        # the chain's route holds egg + lamp + others at the load-limited spot; the model tried
+        # the direction loaded, so x16-x21 never retried it
+        route = [*TO_CELLAR, "south", "east", "take painting", "north"]
+        kn = core.Knowledge()
+        kn.learn(play(route), SEED, ["egg", "painting"])
+        a: dict = {}
+        core.update_archive(a, route, SEED)
+        studio = next(k for k in a if k.startswith("Studio @"))
+        kn.tried["studio"].add("up")
+        found = core.expand_archive(a, kn, SEED, 300, set(), per_level=True, known=False)
+        self.assertNotIn((studio, "up"), {(f["from"], f["dir"]) for f in found})
+        found = core.expand_archive(
+            a, kn, SEED, 300, set(), per_level=True, known=False, model_tried=True
+        )
+        hit = [f for f in found if f["from"] == studio and f["dir"] == "up"]
+        self.assertEqual(len(hit), 1)
+        self.assertGreater(hit[0]["drops"], 0)
+        self.assertEqual(kn.graph["Studio"]["up"], "Kitchen")

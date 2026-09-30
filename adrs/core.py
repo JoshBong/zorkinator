@@ -100,6 +100,10 @@ class Config:
     # cell -- and every later scoring start -- was unarmed; text (x18) and ranking (x19) did not
     # stop it). The game continues and the map still learns; only the archive stops there.
     archive_cut_junk: bool = False
+    # x22: expansion runs its drop retries on directions the model tried loaded (x21: the model
+    # typed `up` at the load-limited exit in g0, so the harness never retried it lighter and no
+    # treasure had a way home for the whole chain)
+    expand_model_tried: bool = False
 
 
 CONFIGS = {
@@ -250,6 +254,28 @@ CONFIGS = {
         refusal_share=1.0,
         specific_first=1.0,
         archive_cut_junk=True,
+    ),
+    "x22": Config(
+        "x22",
+        manual=True,
+        doom_waits=5,
+        signals=True,
+        frontier_w=1.0,
+        deposits=True,
+        expand=True,
+        giveup_pushbacks=1,
+        giveup_score=True,
+        expand_per_level=True,
+        expand_known=False,
+        ledger_text=True,
+        giveup_sentence=False,
+        giveup_honored=False,
+        rank_needed=True,
+        explore_refusals=True,
+        refusal_share=1.0,
+        specific_first=1.0,
+        archive_cut_junk=True,
+        expand_model_tried=True,
     ),
 }
 NUDGE = "Points going up is good; dying is bad."
@@ -1852,6 +1878,7 @@ def expand_archive(
     per_level: bool = False,
     known: bool = True,
     refusals: dict | None = None,
+    model_tried: bool = False,
 ) -> list[dict]:
     """Go-Explore's exploration phase done by the harness, movement only, $0: from archived spots
     (best first) try the direction words nobody has tried from that room; a reply that lands in a
@@ -1873,18 +1900,21 @@ def expand_archive(
             if traces >= budget:
                 return found
             key = (spot["key"], d) if per_level else (room, d)
-            if key in done or (d in kn.tried.get(room, ()) and (room, d) not in done):
+            by_model = d in kn.tried.get(room, ()) and (room, d) not in done
+            if key in done or (by_model and not model_tried):
                 continue  # the model tried it here; the harness only retries its own refusals
             if not known and d in kn.graph.get(spot["room"], {}):
                 continue  # already on the map: nothing to learn (x17 re-found 4 known edges)
-            done.add(key)
-            done.add((room, d))
             route = route_for(spot, seed)
             here = trace(route, seed)
             if len(here) < len(route):
                 break
             held = [x for x in here[-1]["inv"] if not x.endswith(":")]
-            cands = [[*route, d]]
+            if by_model and len(held) < 2:
+                continue  # nothing to drop: the model's own reply stands (x22)
+            done.add(key)
+            done.add((room, d))
+            cands = [] if by_model else [[*route, d]]  # x22: the model's plain try stands
             if len(held) >= 2:
                 lighter = [f"drop {head(x)}" for x in held if not light_item(x)]
                 if len(lighter) < len(held):
@@ -2290,6 +2320,7 @@ def chain(job) -> list[dict]:
                 cfg.expand_per_level,
                 cfg.expand_known,
                 refusals if cfg.explore_refusals else None,
+                cfg.expand_model_tried,
             )
             with (out / "expanded.jsonl").open("a") as fh:
                 for x in expanded:
