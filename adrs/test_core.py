@@ -1584,3 +1584,38 @@ class X20b(unittest.TestCase):
             for i in range(10)
         ]
         self.assertGreater(sum(p != "The hatch is bolted." for p in picks), 5)
+
+
+class X21(unittest.TestCase):
+    def test_archive_stops_at_a_zero_point_deposit_that_removed_a_thing(self) -> None:
+        cmds = [*NO_LAMP, "open case", "put egg in case", "take sword", "put sword in case", "east"]
+        played = play(cmds)
+        states = core.trace(cmds, SEED)
+        cut = core.junk_deposit_index(played, states)
+        self.assertEqual(cmds[cut], "put sword in case")
+        self.assertEqual(played[cut][1]["score_delta"], 0)
+        # a refused deposit removes nothing and is not a cut
+        cmds2 = [*NO_LAMP, "put egg in case", "east"]
+        self.assertIsNone(core.junk_deposit_index(play(cmds2), core.trace(cmds2, SEED)))
+        a: dict = {}
+        core.update_archive(a, cmds[:cut], SEED, [st for st in states if st["i"] < cut])
+        self.assertNotIn("Kitchen @20", a)  # the walk after the junk deposit is not archived
+        self.assertIn("Living Room @20", a)
+        self.assertTrue(core.holds(a["Living Room @20"]["inv"], "sword"))
+
+    def test_x21_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from pathlib import Path
+
+        cfg = replace(
+            core.CONFIGS["x21"], player="explorer", games=4, move_cap=40, expand_budget=20
+        )
+        real = core.ask
+        tag = "test-offline-x21"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), 4)

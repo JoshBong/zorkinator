@@ -95,6 +95,11 @@ class Config:
     # handoff in 8 games was a generic exit); the reply is keyed on its first sentence (event text
     # such as a guard's arrival was appended to it); a same-named room is not a refusal
     specific_first: float = 0.0
+    # x21: a game's trajectory is archived only up to its first 0-point deposit that removed a
+    # held thing (x17 g2, x18 g1, x20b g1: the sword went into the case for 0 and every later
+    # cell -- and every later scoring start -- was unarmed; text (x18) and ranking (x19) did not
+    # stop it). The game continues and the map still learns; only the archive stops there.
+    archive_cut_junk: bool = False
 
 
 CONFIGS = {
@@ -223,6 +228,28 @@ CONFIGS = {
         explore_refusals=True,
         refusal_share=1.0,
         specific_first=0.8,
+    ),
+    # x20b + the archive stops at a junk deposit + a specific refusal whenever one is open
+    "x21": Config(
+        "x21",
+        manual=True,
+        doom_waits=5,
+        signals=True,
+        frontier_w=1.0,
+        deposits=True,
+        expand=True,
+        giveup_pushbacks=1,
+        giveup_score=True,
+        expand_per_level=True,
+        expand_known=False,
+        ledger_text=True,
+        giveup_sentence=False,
+        giveup_honored=False,
+        rank_needed=True,
+        explore_refusals=True,
+        refusal_share=1.0,
+        specific_first=1.0,
+        archive_cut_junk=True,
     ),
 }
 NUDGE = "Points going up is good; dying is bad."
@@ -1037,6 +1064,27 @@ class Knowledge:
             norm_room(c["room"]): c["room"] for c in archive.values() if "(dark)" not in c["room"]
         }
         return out
+
+
+def junk_deposit_index(played: list[tuple[str, dict]], states: list) -> int | None:
+    """Index of the first put-into-the-goal-container that scored nothing and removed a held
+    thing (the game's own "Done." for 0 points), else None. Purely the game's data."""
+    if not NOUN:
+        return None
+    by_i = {st["i"]: st for st in states}
+    inv: frozenset = frozenset()
+    for i, (cmd, m) in enumerate(played):
+        c = cmd.casefold().strip()
+        new_inv = by_i[i]["inv"] if i in by_i else inv
+        if (
+            c.startswith(PUT)
+            and NOUN.split()[-1] in c.split()
+            and (m.get("score_delta") or 0) == 0
+            and (inv - new_inv)
+        ):
+            return i
+        inv = new_inv
+    return None
 
 
 def path(graph: dict, start: str, goal: str) -> list[str] | None:
@@ -2178,7 +2226,14 @@ def chain(job) -> list[dict]:
             t, b = danger.get(pick["key"], (0, 0))
             danger[pick["key"]] = (t + 1, b + died_soon)
         best_before = max((c["score"] for c in archive.values()), default=-1)
-        new_cells = update_archive(archive, [c for c, _ in played], seed, states)
+        cut = junk_deposit_index(played, states) if cfg.archive_cut_junk else None
+        if cut is None:
+            new_cells = update_archive(archive, [c for c, _ in played], seed, states)
+        else:
+            why["archive_cut"] = cut
+            new_cells = update_archive(
+                archive, [c for c, _ in played[:cut]], seed, [st for st in states if st["i"] < cut]
+            )
         best_now = max((c["score"] for c in archive.values()), default=-1)
         if not scoring:
             if new_cells == 0 and best_now <= best_seen:
@@ -2279,7 +2334,7 @@ def chain(job) -> list[dict]:
             "deposits_scored": deposits,
             "handoff_death": handoff_death,
             "treasures": sorted(kn.treasures),
-            "in_case": sorted(kn.deposited),
+            "in_case": sorted(kn.deposited & set(kn.treasures)),  # heads of scored takes only
             "legs": {t: (v["tries"], v["route"] is not None, v["done"]) for t, v in legs.items()},
             "blocked": sr.blocked,
             "cleared": sorted(walls.cleared),
