@@ -63,6 +63,7 @@ class Config:
     doom_waits: int = 0  # x12: hand over only where this many idle turns survive
     repeat_block: int = 0  # x13a: block a command after this many identical replies (0 = off)
     signals: bool = False  # x13b: learn warning messages from own deaths, pin them when they recur
+    frontier_w: float = 0.0  # x14 (D1): explore weight for untried directions at a spot's room
 
 
 CONFIGS = {
@@ -79,6 +80,9 @@ CONFIGS = {
     # x12 + danger signals: x12's player knew "lamps run out" and "dark kills" but died ~200 moves
     # after "your lamp appears a bit dimmer" -- the warning scrolls away; pin it when it recurs
     "x13b": Config("x13b", manual=True, doom_waits=5, signals=True),
+    # x13b + D1: spots weighted by untried directions; trajectory ranking by dominance not item
+    # count (the latter is a global fix -- every config gets it from this commit on)
+    "x14": Config("x14", manual=True, doom_waits=5, signals=True, frontier_w=1.0),
 }
 NUDGE = "Points going up is good; dying is bad."
 # Verbatim from the Zork I manual (Infocom, Mastertronic ed.): what every buyer read before playing.
@@ -121,6 +125,30 @@ MOVES = {
     "z",
 }
 TAKE = ("take ", "get ", "pick up ", "grab ")
+_DIRS = [
+    "north",
+    "south",
+    "east",
+    "west",
+    "northeast",
+    "northwest",
+    "southeast",
+    "southwest",
+    "up",
+    "down",
+]
+DIRS = {d: d for d in _DIRS} | {
+    "n": "north",
+    "s": "south",
+    "e": "east",
+    "w": "west",
+    "ne": "northeast",
+    "nw": "northwest",
+    "se": "southeast",
+    "sw": "southwest",
+    "u": "up",
+    "d": "down",
+}
 _MARKER = re.compile(r"\s*\[score -?\d+->-?\d+\]\s*")
 
 
@@ -215,8 +243,25 @@ def spot_key(room: str, score: int) -> str:
 
 
 def better(new: tuple, old: tuple) -> bool:
-    """(score, items held, -length): higher score, then more items, then shorter."""
-    return new > old
+    """(score, items held, length). Higher score wins. At equal score a trajectory that holds
+    everything the other holds and more wins (keeps the lamp); otherwise the shorter one wins.
+    Item COUNT is never a reason: ranking by count made 28/45 x13b routes drop the egg from the
+    tree so the "broken clockwork canary" would list as an extra item."""
+    s1, i1, l1 = new
+    s2, i2, l2 = old
+    if s1 != s2:
+        return s1 > s2
+    a, b = frozenset(i1), frozenset(i2)
+    if a > b:
+        return True
+    if b > a:
+        return False
+    return l1 < l2
+
+
+def value(c: dict) -> tuple:
+    """Sort key for spots across keys: score, then shorter route."""
+    return (c["score"], -len(c["traj"]))
 
 
 def update_archive(archive: dict, cmds: list[str], seed: int, states: list | None = None) -> int:
@@ -238,8 +283,8 @@ def update_archive(archive: dict, cmds: list[str], seed: int, states: list | Non
             }
             new += 1
         elif better(
-            (st["score"], len(st["inv"]), -len(traj)),
-            (cur["score"], len(cur["inv"]), -len(cur["traj"])),
+            (st["score"], st["inv"], len(traj)),
+            (cur["score"], cur["inv"], len(cur["traj"])),
         ):
             cur.update(score=st["score"], inv=sorted(st["inv"]), traj=traj, route=None, chosen=0)
         if k not in seen:
@@ -249,7 +294,16 @@ def update_archive(archive: dict, cmds: list[str], seed: int, states: list | Non
 
 
 def best_spot(archive: dict) -> dict:
-    return max(archive.values(), key=lambda c: (c["score"], len(c["inv"]), -len(c["traj"])))
+    """Top score; among those, a spot whose items are a strict subset of another's is dominated
+    (the lampless twin of a lamp-holding spot); shortest of the rest."""
+    top = max(c["score"] for c in archive.values())
+    cands = [c for c in archive.values() if c["score"] == top]
+    live = [
+        c
+        for c in cands
+        if not any(frozenset(o["inv"]) > frozenset(c["inv"]) for o in cands if o is not c)
+    ]
+    return min(live or cands, key=lambda c: len(c["traj"]))
 
 
 def calm_prefix(route: list[str], seed: int, waits: int, back: int = 12) -> list[str]:
@@ -707,6 +761,7 @@ class Knowledge:
         self.room_text: dict[str, str] = {}
         self.graph: dict[str, dict[str, str]] = {}
         self.zero: Counter = Counter()
+        self.tried: dict[str, set[str]] = defaultdict(set)  # room -> directions attempted
         self.found: dict[str, str] = {}  # item head -> first non-take command naming it that scored
 
     def learn(
@@ -725,6 +780,9 @@ class Knowledge:
             c = cmd.casefold().strip()
             text = " ".join((m.get("text") or "").split())
             low = text.casefold()
+            d = DIRS.get(c.removeprefix("go ").removeprefix("walk "))
+            if room and d and "(dark)" not in room:
+                self.tried[norm_room(room)].add(d)
             if room and c not in MOVES and not c.startswith(("go ", "walk ")):
                 att = self.attempts[norm_room(room)]
                 att.append(
@@ -968,12 +1026,7 @@ def compile_plan(
     items = [g["item"] for g in plan["get"]]
     spots = sorted(
         (c for c in archive.values() if norm_room(c["room"]) == norm_room(plan["go_to"])),
-        key=lambda c: (
-            sum(holds(c["inv"], i) for i in items),
-            c["score"],
-            len(c["inv"]),
-            -len(c["traj"]),
-        ),
+        key=lambda c: (sum(holds(c["inv"], i) for i in items), *value(c)),
         reverse=True,
     )
     for spot in spots[:tries]:
@@ -1125,9 +1178,7 @@ def graft(
     """Insert commands that raised the score into the best routes, at their first visit to `room`
     holding `carry`; kept only when the replay survives and ends above that spot's score."""
     n = 0
-    ranked = sorted(
-        archive.values(), key=lambda c: (c["score"], len(c["inv"]), -len(c["traj"])), reverse=True
-    )
+    ranked = sorted(archive.values(), key=value, reverse=True)
     for spot in ranked[:top]:
         r = route_for(spot, seed)
         for s in trace(r, seed):
@@ -1308,7 +1359,12 @@ class Experiments:
 
 # --- spot selection ---------------------------------------------------------------------------
 def pick_spot(
-    archive: dict, hyps: list[dict], rng: random.Random, danger: dict, cfg: Config
+    archive: dict,
+    hyps: list[dict],
+    rng: random.Random,
+    danger: dict,
+    cfg: Config,
+    tried: dict | None = None,
 ) -> tuple[dict, dict]:
     top = max((c["score"] for c in archive.values()), default=0) or 1
     levels = defaultdict(list)
@@ -1319,10 +1375,13 @@ def pick_spot(
         open_here = sum(
             h["status"] == "open" and norm_room(h["where"]) == norm_room(c["room"]) for h in hyps
         )
+        # untried directions here (of 10): a room whose exits are all tried is not a frontier
+        untried = len(_DIRS) - len((tried or {}).get(norm_room(c["room"]), ())) if tried else 0
         e = (
             1 / math.sqrt(1 + c["chosen"])
             + 1 / math.sqrt(1 + c["seen"])
             + 0.5 * min(open_here, 4) / 4
+            + cfg.frontier_w * untried / len(_DIRS)
         )
         trips, bad = danger.get(c["key"], (0, 0))
         return e * (1 - 0.7 * bad / trips) if trips >= 2 else e
@@ -1437,7 +1496,7 @@ def chain(job) -> list[dict]:
                         back_k = min(back_k + 1, len(on_path))
                         pick, why = on_path[-back_k], {"mode": f"backtrack-{back_k}"}
                 if pick is None:
-                    pick, why = pick_spot(archive, state["hyps"], rng, danger, cfg)
+                    pick, why = pick_spot(archive, state["hyps"], rng, danger, cfg, kn.tried)
                 pick["chosen"] += 1
                 route = route_for(pick, seed)
         if route and cfg.doom_waits:

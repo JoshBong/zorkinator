@@ -5,9 +5,11 @@ The scripted routes below exercise the mechanics only; none of this is shown to 
 
 from __future__ import annotations
 
+import collections
 import subprocess
 import sys
 import unittest
+from dataclasses import replace
 from typing import ClassVar
 
 from adrs import core
@@ -802,3 +804,74 @@ class X13b(unittest.TestCase):
             core.ask = real
             shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
         self.assertEqual(len(rows), 2)
+
+
+class X14D1(unittest.TestCase):
+    """D1: trajectory ranking by dominance (never item count) and frontier-weighted spot choice."""
+
+    CLEAN: ClassVar[list[str]] = [
+        "north",
+        "north",
+        "climb tree",
+        "take egg",
+        "down",
+    ]  # Forest Path @5
+    BROKEN: ClassVar[list[str]] = [
+        "open mailbox",
+        "take leaflet",
+        "north",
+        "north",
+        "climb tree",
+        "take egg",
+        "drop egg",  # breaks it; a broken canary appears
+        "down",
+        "take canary",
+    ]
+
+    def test_better_never_rewards_item_count(self) -> None:
+        self.assertTrue(core.better((5, {"egg"}, 5), (5, {"leaflet", "canary"}, 9)))  # shorter
+        self.assertFalse(core.better((5, {"leaflet", "canary"}, 9), (5, {"egg"}, 5)))
+        self.assertTrue(core.better((5, {"egg", "lamp"}, 9), (5, {"egg"}, 5)))  # superset wins
+        self.assertFalse(core.better((5, {"egg"}, 5), (5, {"egg", "lamp"}, 9)))
+        self.assertTrue(core.better((6, {"egg"}, 50), (5, {"egg", "lamp"}, 5)))  # score first
+
+    def test_archive_keeps_the_route_that_does_not_break_the_egg(self) -> None:
+        end = core.trace(self.BROKEN, SEED)[-1]
+        self.assertEqual(end["room"], "Forest Path")
+        self.assertTrue(any("canary" in x for x in end["inv"]))
+        for order in ((self.CLEAN, self.BROKEN), (self.BROKEN, self.CLEAN)):
+            a: dict = {}
+            for r in order:
+                core.update_archive(a, r, SEED)
+            self.assertEqual(a["Forest Path @5"]["traj"], self.CLEAN, order)
+
+    def test_untried_directions_are_learned_and_weighted(self) -> None:
+        kn = core.Knowledge()
+        kn.learn(play(["north", "go south", "e", "look"]), SEED, [])
+        self.assertEqual(kn.tried["west of house"], {"north"})
+        self.assertIn("south", kn.tried["north of house"])
+        import random
+
+        def spot(key, room):
+            return {
+                "key": key,
+                "room": room,
+                "inv": [],
+                "score": 0,
+                "traj": [],
+                "seen": 1,
+                "chosen": 0,
+            }
+
+        a = {"A": spot("A", "Closed"), "B": spot("B", "Open")}
+        tried = {"closed": set(core._DIRS), "open": set()}
+        cfg = core.CONFIGS["x14"]
+        picks = collections.Counter(
+            core.pick_spot(a, [], random.Random(i), {}, cfg, tried)[0]["key"] for i in range(300)
+        )
+        self.assertGreater(picks["B"], 170)  # ~63%: frontier bonus 1.0 on a base weight of ~1.7
+        off = replace(cfg, frontier_w=0.0)
+        picks0 = collections.Counter(
+            core.pick_spot(a, [], random.Random(i), {}, off, tried)[0]["key"] for i in range(300)
+        )
+        self.assertLess(abs(picks0["A"] - picks0["B"]), 60)
