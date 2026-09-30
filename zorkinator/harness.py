@@ -67,6 +67,9 @@ class GameSpec:
         None  # optional callable(command, world) -> str | None: answer without the game
     )
     pushbacks: int = GIVEUP_PUSHBACKS  # give-ups with moves left that are pushed back per game
+    # x17: push back with the game's own reply to `score` (peeked, state restored) instead of
+    # harness prose -- x16's "Don't give up yet" was ignored both times it fired
+    pushback_score: bool = False
 
 
 @dataclass
@@ -192,14 +195,13 @@ def play_game(
             # Persistence: a give-up with moves left is pushed back (bounded per game).
             if proposal.gave_up and pushbacks < spec.pushbacks:
                 pushbacks += 1
-                proposal = player.propose(
-                    chat,
-                    move_prompt,
-                    feedback=(
-                        f"Don't give up yet: {spec.move_cap - n} moves remain. Pick a place you "
-                        "have not fully explored or an object you have not used, and try it."
-                    ),
+                feedback = (
+                    f"Don't give up yet: {spec.move_cap - n} moves remain. Pick a place you "
+                    "have not fully explored or an object you have not used, and try it."
                 )
+                if spec.pushback_score:
+                    feedback = "Game output:\n" + game.peek("score")
+                proposal = player.propose(chat, move_prompt, feedback=feedback)
                 usage.add(proposal.usage)
             # Hard rules block and the Player retries with the reason (max 3 tries). Soft rules
             # never re-prompt: the Player saw them as cautions above; a match is logged on the

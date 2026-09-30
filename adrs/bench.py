@@ -203,6 +203,7 @@ def attempt(p: Puzzle, cfg: core.Config, tag: str, state: dict, k: int) -> dict:
             router=sr.hook,
             intercept=sr.intercept if cfg.repeat_block else None,
             pushbacks=cfg.giveup_pushbacks,
+            pushback_score=cfg.giveup_score,
         ),
         chat=sr,
         sink=JsonlSink(out),

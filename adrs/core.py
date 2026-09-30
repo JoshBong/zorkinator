@@ -68,9 +68,11 @@ class Config:
     deposit_tries: int = 2  # deposit games per treasure before giving up on it
     expand: bool = False  # x16: after each game the harness tries untried exits from spots ($0)
     expand_budget: int = 80  # replays per game for that
+    expand_per_level: bool = False  # x17: retry a refused exit from each new score level of a room
     # x16: a give-up with moves left is pushed back this many times per game (the game's own
     # "Congratulations! You are the privileged owner…" text ended 4 x15b/bench games as a "win")
     giveup_pushbacks: int = 0
+    giveup_score: bool = False  # x17: the pushback is the game's own `score` reply, not prose
 
 
 CONFIGS = {
@@ -109,6 +111,21 @@ CONFIGS = {
         deposits=True,
         expand=True,
         giveup_pushbacks=1,
+    ),
+    # x16 + expansion retries a refused exit at every new score level of its room (x16 tried each
+    # (room, direction) once, from whichever cell came first) + the give-up pushback is the game's
+    # own `score` line (x16: harness prose ignored 2/2)
+    "x17": Config(
+        "x17",
+        manual=True,
+        doom_waits=5,
+        signals=True,
+        frontier_w=1.0,
+        deposits=True,
+        expand=True,
+        giveup_pushbacks=1,
+        giveup_score=True,
+        expand_per_level=True,
     ),
 }
 NUDGE = "Points going up is good; dying is bad."
@@ -1628,13 +1645,17 @@ def next_deposit(
     return None
 
 
-def expand_archive(archive: dict, kn: Knowledge, seed: int, budget: int, done: set) -> list[dict]:
+def expand_archive(
+    archive: dict, kn: Knowledge, seed: int, budget: int, done: set, per_level: bool = False
+) -> list[dict]:
     """Go-Explore's exploration phase done by the harness, movement only, $0: from archived spots
     (best first) try the direction words nobody has tried from that room; a reply that lands in a
     different lit room becomes a new cell and a map edge. When the spot holds several things and
     the move is refused, retry once holding only light-named things and once holding nothing
     (load-limited exits). Replay-verified; the model never sees any of it except as new spots to
-    start from. `done` remembers (room, direction) across games."""
+    start from. `done` remembers (room, direction) across games -- or (cell, direction) with
+    `per_level`, so an exit refused from a poor cell (closed door, dark) is retried from every
+    richer cell of the same room (x16 tried "Living Room down" once, from the @5 cell)."""
     found: list[dict] = []
     traces = 0
     for spot in sorted(archive.values(), key=value, reverse=True):
@@ -1644,8 +1665,10 @@ def expand_archive(archive: dict, kn: Knowledge, seed: int, budget: int, done: s
         for d in _DIRS:
             if traces >= budget:
                 return found
-            if d in kn.tried.get(room, ()) or (room, d) in done:
-                continue
+            key = (spot["key"], d) if per_level else (room, d)
+            if key in done or (d in kn.tried.get(room, ()) and (room, d) not in done):
+                continue  # the model tried it here; the harness only retries its own refusals
+            done.add(key)
             done.add((room, d))
             route = route_for(spot, seed)
             here = trace(route, seed)
@@ -1871,6 +1894,7 @@ def chain(job) -> list[dict]:
                         router=sr.hook,
                         intercept=sr.intercept if cfg.repeat_block else None,
                         pushbacks=cfg.giveup_pushbacks,
+                        pushback_score=cfg.giveup_score,
                     ),
                     chat=sr,
                     sink=JsonlSink(out),
@@ -1942,7 +1966,9 @@ def chain(job) -> list[dict]:
         kn.learn(played, seed, [h["name"] for h in state["hyps"]], states)
         expanded: list[dict] = []
         if cfg.expand:
-            expanded = expand_archive(archive, kn, seed, cfg.expand_budget, expanded_done)
+            expanded = expand_archive(
+                archive, kn, seed, cfg.expand_budget, expanded_done, cfg.expand_per_level
+            )
             with (out / "expanded.jsonl").open("a") as fh:
                 for x in expanded:
                     fh.write(json.dumps({"game": g, **x}) + "\n")

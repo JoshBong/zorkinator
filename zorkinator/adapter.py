@@ -53,6 +53,15 @@ class GameAdapter:
         )
         return cast(StepResultPayload, result.model_dump())
 
+    def peek(self, cmd: str) -> str:
+        """The game's reply to `cmd` with the game state restored afterwards (no time passes)."""
+        if self._env is None:
+            raise RuntimeError("reset() first")
+        saved = self._env.get_state()  # type: ignore[attr-defined]
+        text = self.step(cmd)["text"]
+        self._env.set_state(saved)  # type: ignore[attr-defined]
+        return text
+
     def close(self) -> None:
         """Release the active Jericho environment, if any."""
         if self._env is not None:

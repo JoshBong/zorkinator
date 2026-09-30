@@ -1184,3 +1184,65 @@ class X16(unittest.TestCase):
                 moves = (Path(out) / f"{r.run_id}.moves.jsonl").read_text().splitlines()
             self.assertEqual(r.end_reason, "gave_up")
             self.assertEqual(len(moves), want, pushbacks)
+
+
+class X17(unittest.TestCase):
+    """Expansion retries a refused exit from richer cells; the give-up pushback is game text."""
+
+    def test_a_refused_exit_is_retried_from_a_richer_cell_of_the_same_room(self) -> None:
+        # x16 remembered (room, direction) after any refusal; with per_level the memory is per
+        # cell, so a later cell of the same room retries it. (The minimizer keeps only room,
+        # score and inventory, so a "door now open" state cannot be shown with a fixture; the
+        # keying rule is tested on a plain edge instead.)
+        kn = core.Knowledge()
+        kn.learn(play(list(NO_LAMP)), SEED, ["egg"])
+        a: dict = {}
+        core.update_archive(a, list(NO_LAMP), SEED)
+        kitchen = next(k for k in a if k.startswith("Kitchen @"))
+        blocked = core.expand_archive(a, kn, SEED, 200, {("kitchen", "east")})
+        self.assertNotIn(("east"), {f["dir"] for f in blocked if f["from"] == kitchen})
+        retried = core.expand_archive(a, kn, SEED, 200, {("kitchen", "east")}, per_level=True)
+        self.assertIn((kitchen, "east"), {(f["from"], f["dir"]) for f in retried})
+        self.assertEqual(kn.graph["Kitchen"]["east"], "Behind House")
+        # the model's own tries are never retried by the harness
+        kn.tried["kitchen"].add("east")
+        again = core.expand_archive(a, kn, SEED, 200, set(), per_level=True)
+        self.assertNotIn("east", {f["dir"] for f in again if f["from"] == kitchen})
+
+    def test_the_give_up_pushback_can_be_the_games_score_line(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        from zorkinator.harness import GameSpec, play_game
+        from zorkinator.runner import ChatReply, JsonlSink, Usage
+        from zorkinator.world import WorldModel
+
+        class Scripted:
+            model = "scripted"
+
+            def __init__(self, replies: list[str]) -> None:
+                self.replies, self.seen = replies, []
+
+            def complete(self, messages, archive=None):
+                self.seen.append(str(messages[-1]["content"]))
+                text = self.replies.pop(0)
+                return ChatReply(text, Usage(), [{"role": "assistant", "content": text}])
+
+        chat = Scripted(["open mailbox", "I give up", "north", "I give up"])
+        with tempfile.TemporaryDirectory() as out:
+            r = play_game(
+                GameSpec(
+                    SEED,
+                    10,
+                    1.0,
+                    world=WorldModel.empty("t"),
+                    pushbacks=1,
+                    pushback_score=True,
+                ),
+                chat=chat,
+                sink=JsonlSink(out),
+            ).record
+            moves = (Path(out) / f"{r.run_id}.moves.jsonl").read_text().splitlines()
+        self.assertEqual(len(moves), 3)  # open mailbox, north, the final give-up
+        self.assertTrue(any("Your score is" in m and "Don't give up" not in m for m in chat.seen))
+        self.assertIn("in 1 move", "".join(chat.seen))  # peeked: no time passed for `score`
