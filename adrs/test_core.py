@@ -923,3 +923,119 @@ class X14b(unittest.TestCase):
         self.assertTrue(core.holds(end["inv"], "sword"))
         self.assertEqual(end["room"], "Cellar")  # one step short of the troll, on purpose
         self.assertEqual(len(core.trace([*route, *["wait"] * 5], SEED)), len(route) + 5)
+
+
+class X15(unittest.TestCase):
+    """The round trip: treasures (scoring takes) are carried to the manual's container by a
+    replay-solved return leg; the chimney needs a light load (x14b: 122 refusals, 23 climbs)."""
+
+    TO_STUDIO: ClassVar[list[str]] = [*TO_CELLAR, "south", "east", "take painting", "north"]
+
+    def test_goal_noun_is_read_from_the_manual(self) -> None:
+        self.assertEqual(core.goal_noun(core.MANUAL), "trophy case")
+        self.assertIsNone(core.goal_noun("nothing here"))
+
+    def test_ledger_learns_treasures_deposits_and_the_goal_room(self) -> None:
+        kn = core.Knowledge()
+        kn.learn(play([*NO_LAMP, "open case", "put egg in case"]), SEED, ["egg", "case"])
+        self.assertEqual(kn.treasures, {"egg": "Up a Tree"})
+        self.assertEqual(kn.deposited, {"egg"})
+        a: dict = {}
+        core.update_archive(a, list(NO_LAMP), SEED)
+        self.assertEqual(kn.goal_room(a, core.NOUN), "Living Room")
+        kn2 = core.Knowledge()
+        kn2.learn(play(list(NO_LAMP)), SEED, [])
+        self.assertEqual(kn2.goal_room(a, core.NOUN), "Living Room")  # from the room's own text
+
+    def test_return_leg_drops_the_egg_to_climb_the_chimney(self) -> None:
+        # the chain has walked the chimney once (light load) so the edge exists on its map
+        walked = [
+            *NO_LAMP,
+            "take lamp",
+            "turn on lamp",
+            "east",
+            "up",
+            "down",
+            "west",
+            "move rug",
+            "open trap door",
+            "down",
+            "south",
+            "east",
+            "north",
+            "up",
+            "west",
+        ]
+        kn = core.Knowledge()
+        kn.learn(play(walked), SEED, ["painting", "egg", "lamp"])
+        self.assertEqual(kn.graph.get("Studio", {}).get("up"), "Kitchen")
+        a: dict = {}
+        core.update_archive(a, self.TO_STUDIO, SEED)
+        kn.learn(play(self.TO_STUDIO), SEED, ["painting"])
+        spot = a["Studio @44"]
+        self.assertTrue(core.holds(spot["inv"], "painting") and core.holds(spot["inv"], "egg"))
+        leg = core.return_leg(spot, "painting", kn, SEED, "Living Room")
+        self.assertIsNotNone(leg)
+        end = core.trace(leg, SEED)[-1]
+        self.assertEqual(end["room"], "Living Room")
+        self.assertTrue(core.holds(end["inv"], "painting"))
+        self.assertTrue(any(x.startswith("drop") for x in leg))
+        self.assertFalse(any("lamp" in x or "lantern" in x for x in leg if x.startswith("drop")))
+
+    def test_next_deposit_picks_an_undeposited_treasure_with_a_leg(self) -> None:
+        walked = [
+            *NO_LAMP,
+            "take lamp",
+            "turn on lamp",
+            "east",
+            "up",
+            "down",
+            "west",
+            "move rug",
+            "open trap door",
+            "down",
+            "south",
+            "east",
+            "north",
+            "up",
+            "west",
+        ]
+        kn = core.Knowledge()
+        kn.learn(play(walked), SEED, ["painting", "egg", "lamp"])
+        kn.learn(play(self.TO_STUDIO), SEED, ["painting"])
+        a: dict = {}
+        core.update_archive(a, self.TO_STUDIO, SEED)
+        legs: dict = {}
+        dep = core.next_deposit(a, kn, SEED, core.CONFIGS["x15"], legs)
+        self.assertIsNotNone(dep)
+        _spot, treasure, route = dep
+        self.assertIn(treasure, ("egg", "painting"))
+        self.assertEqual(core.trace(route, SEED)[-1]["room"], "Living Room")
+        kn.deposited |= {"egg", "painting"}
+        self.assertIsNone(core.next_deposit(a, kn, SEED, core.CONFIGS["x15"], legs))
+
+    def test_x15_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from pathlib import Path
+
+        cfg = replace(core.CONFIGS["x15"], player="explorer", games=3, move_cap=40)
+        real = core.ask
+        tag = "test-offline-x15"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), 3)
+        self.assertIn("in_case", rows[-1])
+
+    def test_ledger_is_phrasing_independent(self) -> None:
+        for cmd in ("put egg into case", "insert egg in case", "put the egg in the trophy case"):
+            kn = core.Knowledge()
+            kn.learn(play([*NO_LAMP, "open case", cmd]), SEED, [])
+            self.assertEqual(kn.deposited, {"egg"}, cmd)
+            self.assertEqual(kn.deposit_room, "Living Room")
+        kn = core.Knowledge()
+        kn.learn(play([*NO_LAMP, "open case", "put leaflet in case"]), SEED, [])  # 0 points
+        self.assertEqual(kn.deposited, set())

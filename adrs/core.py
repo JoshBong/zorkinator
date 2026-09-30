@@ -64,6 +64,8 @@ class Config:
     repeat_block: int = 0  # x13a: block a command after this many identical replies (0 = off)
     signals: bool = False  # x13b: learn warning messages from own deaths, pin them when they recur
     frontier_w: float = 0.0  # x14 (D1): explore weight for untried directions at a spot's room
+    deposits: bool = False  # x15: treasure ledger + harness-solved return legs ("deposit" games)
+    deposit_tries: int = 2  # deposit games per treasure before giving up on it
 
 
 CONFIGS = {
@@ -84,8 +86,18 @@ CONFIGS = {
     # count (the latter is a global fix -- every config gets it from this commit on)
     "x14": Config("x14", manual=True, doom_waits=5, signals=True, frontier_w=1.0),
     "x14b": Config("x14b", manual=True, doom_waits=5, signals=True, frontier_w=1.0),  # + fixes
+    # x14b + the round trip: things whose take scored are carried home by a replay-solved leg
+    "x15": Config("x15", manual=True, doom_waits=5, signals=True, frontier_w=1.0, deposits=True),
 }
 NUDGE = "Points going up is good; dying is bad."
+
+
+def goal_noun(manual: str) -> str:
+    """The container the manual says treasures go in ("put them in your trophy case")."""
+    m = re.search(r"put (?:them|treasures?) in(?:to)? your ([a-z]+(?: [a-z]+)?)", manual, re.I)
+    return m.group(1).casefold() if m else None
+
+
 # Verbatim from the Zork I manual (Infocom, Mastertronic ed.): what every buyer read before playing.
 MANUAL = (
     "From the game's manual: \"The object of Zork I is to find the treasures of the Great "
@@ -126,6 +138,7 @@ MOVES = {
     "z",
 }
 TAKE = ("take ", "get ", "pick up ", "grab ")
+PUT = ("put ", "insert ", "place ")
 _DIRS = [
     "north",
     "south",
@@ -764,6 +777,10 @@ class Knowledge:
         self.zero: Counter = Counter()
         self.tried: dict[str, set[str]] = defaultdict(set)  # room -> directions attempted
         self.found: dict[str, str] = {}  # item head -> first non-take command naming it that scored
+        # the manual's loop: a scoring take marks a treasure; a scoring put-in-<goal> deposits it
+        self.treasures: dict[str, str] = {}  # head -> room where the scoring take happened
+        self.deposited: set[str] = set()
+        self.deposit_room: str | None = None  # room whose own text names the manual's container
 
     def learn(
         self,
@@ -800,6 +817,16 @@ class Knowledge:
                 for h in heads:
                     if has_word(c, h):
                         self.takes.setdefault(h, room)
+            gained = (m.get("score_delta") or 0) > 0
+            new_inv = states[i]["inv"] if i in states else inv
+            if gained and c.startswith(TAKE):
+                for x in new_inv - inv:  # what actually entered the inventory
+                    self.treasures.setdefault(head(x), room)
+            if gained and NOUN and NOUN.split()[-1] in c.split() and c.startswith(PUT):
+                for x in inv - new_inv:  # what actually left it
+                    self.deposited.add(head(x))
+                if room:
+                    self.deposit_room = self.deposit_room or room
             if (m.get("score_delta") or 0) > 0 and not c.startswith(TAKE):
                 for h in set(heads) | set(self.takes):
                     if has_word(c, h):
@@ -817,6 +844,17 @@ class Knowledge:
                         if room and "(dark)" not in room:
                             self.graph.setdefault(room, {})[c] = new_room
                 room, inv = new_room, states[i]["inv"]
+
+    def goal_room(self, archive: dict, noun: str) -> str | None:
+        """Where deposits go: a room that scored a deposit, else a walked room whose own description
+        names the manual's container."""
+        if self.deposit_room:
+            return self.deposit_room
+        names = self.names(archive)
+        for k, text in self.room_text.items():
+            if noun in text.casefold():
+                return names.get(k, k)
+        return None
 
     def names(self, archive: dict) -> dict[str, str]:
         out = {norm_room(r): r for r in self.graph}
@@ -1095,6 +1133,89 @@ def _compile_from(
     if not all(holds(last["inv"], g["item"]) for g in plan["get"]):
         return None
     return final
+
+
+# --- the round trip (x15): carry a treasure to the manual's container ----------------------------
+def light_item(x: str) -> bool:
+    return "light" in x.casefold()
+
+
+def return_leg(
+    spot: dict,
+    treasure: str,
+    kn: Knowledge,
+    seed: int,
+    goal: str,
+    waits: int = 0,
+    budget: int = 120,
+    bad: set | None = None,
+) -> list[str] | None:
+    """A replay-verified route from the spot (holding the treasure) to the goal room, still holding
+    it. Walks the chain's own map; when a step is refused, retries it after dropping one or two of
+    the other things held (other treasures last, light next to last); an edge that still fails is
+    excluded and the path re-planned. Purely mechanical: the game's replies decide."""
+    base = list(route_for(spot, seed))
+    bad = bad if bad is not None else set()
+    traces = 0
+    for _ in range(4):  # re-path around edges that failed on replay
+        graph = {r: {c: n for c, n in d.items() if (r, c) not in bad} for r, d in kn.graph.items()}
+        way = path(graph, spot["room"], goal)
+        if way is None:
+            return None
+        route, cur, broke = base, spot["room"], False
+        for step in way:
+            expect = graph[cur][step]
+            cand = [*route, step]
+            st = trace(cand, seed)
+            traces += 1
+            if (
+                len(st) == len(cand)
+                and norm_room(st[-1]["room"]) == norm_room(expect)
+                and holds(st[-1]["inv"], treasure)
+            ):
+                route, cur = cand, expect
+                continue
+            here = trace(route, seed)[-1]
+            held = [x for x in here["inv"] if not has_word(x, treasure) and not x.endswith(":")]
+            # drop other treasures last, light next to last
+            held.sort(key=lambda x: (head(x) in kn.treasures, light_item(x)))
+            singles = [[x] for x in held]
+            pairs = [[a, b] for i, a in enumerate(held) for b in held[i + 1 :]]
+            found = None
+            for combo in [*singles, *pairs]:
+                if traces >= budget:
+                    return None
+                drops = [f"drop {head(x)}" for x in combo]
+                cand = [*route, *drops, step]
+                st = trace(cand, seed)
+                traces += 1
+                if (
+                    len(st) == len(cand)
+                    and norm_room(st[-1]["room"]) == norm_room(expect)
+                    and holds(st[-1]["inv"], treasure)
+                ):
+                    found = cand
+                    break
+            if found is None:
+                bad.add((cur, step))  # remembered across calls via the caller's set
+                broke = True
+                break
+            route, cur = found, expect
+        if broke:
+            if traces >= budget:
+                return None
+            continue
+        end = trace(route, seed)
+        if len(end) < len(route) or norm_room(end[-1]["room"]) != norm_room(goal):
+            return None
+        if not holds(end[-1]["inv"], treasure):
+            return None
+        final = calm_prefix(route, seed, waits) if waits else route
+        last = trace(final, seed)[-1]
+        if norm_room(last["room"]) != norm_room(goal) or not holds(last["inv"], treasure):
+            return None
+        return final
+    return None
 
 
 # --- experiments: what are things for? (x11) --------------------------------------------------
@@ -1403,6 +1524,40 @@ def pick_spot(
     return c, {"mode": "explore", "level": level}
 
 
+NOUN = goal_noun(MANUAL) or ""
+
+
+def next_deposit(
+    archive: dict, kn: Knowledge, seed: int, cfg: Config, legs: dict
+) -> tuple[dict, str, list[str]] | None:
+    """A treasure taken but never deposited, held at some archived spot, with a solved return leg.
+    Legs are re-solved only when the walked map has grown since the last failure."""
+    goal = kn.goal_room(archive, NOUN) if NOUN else None
+    if goal is None:
+        return None
+    size = sum(len(v) for v in kn.graph.values())
+    for t in sorted(kn.treasures):
+        if t in kn.deposited:
+            continue
+        leg = legs.setdefault(t, {"route": None, "tries": 0, "graph_size": -1, "done": False})
+        if leg["done"] or leg["tries"] >= cfg.deposit_tries:
+            continue
+        holders = [c for c in archive.values() if holds(c["inv"], t) and "(dark)" not in c["room"]]
+        if not holders:
+            continue
+        if leg["route"] is None and leg["graph_size"] != size:
+            leg["graph_size"] = size
+            bad = leg.setdefault("bad", set())
+            for spot in sorted(holders, key=value, reverse=True)[:3]:
+                leg["route"] = return_leg(spot, t, kn, seed, goal, cfg.doom_waits, 120, bad)
+                if leg["route"]:
+                    leg["spot"] = spot
+                    break
+        if leg["route"]:
+            return leg["spot"], t, leg["route"]
+    return None
+
+
 # --- one chain --------------------------------------------------------------------------------
 def chain(job) -> list[dict]:
     cfg, tag, seed = job
@@ -1420,12 +1575,14 @@ def chain(job) -> list[dict]:
     (out / "config.json").write_text(json.dumps(asdict(cfg), indent=1))
     state = {"facts": [], "hyps": [], "goals": []}
     archive, danger, kn, walls = {}, {}, Knowledge(), Walls(cfg)
+    legs: dict[str, dict] = {}  # treasure -> {"route", "tries", "graph_size"}
     exps = Experiments()
     rows, stall, best_seen, back_k, since_gain, active = [], 0, -1, 0, 0, None
     for g in range(cfg.games):
         rng = random.Random(seed * 1000 + g)
         scoring = bool(archive) and (g + 1) % cfg.scoring_every == 0
         pick, why, route, plan_text, pm_cost = None, {"mode": "cold"}, [], "", 0.0
+        active_dep = None
         exp_stats, exp_cost = {}, 0.0
         if archive and not scoring and cfg.experiments and since_gain >= cfg.exp_after:
             before, n0 = max(c["score"] for c in archive.values()), len(exps.log)
@@ -1443,6 +1600,14 @@ def chain(job) -> list[dict]:
         if archive and scoring:
             pick, why = best_spot(archive), {"mode": "scoring"}
             route = route_for(pick, seed)
+        elif archive and cfg.deposits and (dep := next_deposit(archive, kn, seed, cfg, legs)):
+            pick, treasure, route = dep
+            why = {"mode": "deposit", "treasure": treasure}
+            plan_text = (
+                f"You are holding the {treasure}, which scored when you took it. The manual says "
+                f"to put treasures in your {NOUN}, and this room has one."
+            )
+            active_dep = treasure
         elif archive:
             wall = walls.find(kn, archive) if cfg.walls else None
             if (
@@ -1598,7 +1763,7 @@ def chain(job) -> list[dict]:
             moves = [json.loads(line) for line in fh]
         played = [(m["command"], m) for m in moves if m["command"] != "I give up"]
         states = trace([c for c, _ in played], seed)  # traced once, shared below
-        if pick is not None and route and why["mode"] not in ("plan", "scoring"):
+        if pick is not None and route and why["mode"] not in ("plan", "scoring", "deposit"):
             died_soon = any(
                 "you have died" in (m.get("text") or "").casefold()
                 for m in moves[sr.i : sr.i + cfg.death_window]
@@ -1611,7 +1776,7 @@ def chain(job) -> list[dict]:
         if not scoring:
             if new_cells == 0 and best_now <= best_seen:
                 stall += 1
-                if pick is not None and why["mode"] != "plan":
+                if pick is not None and why["mode"] not in ("plan", "deposit"):
                     kn.zero[norm_room(pick["room"])] += 1
             else:
                 stall, back_k = 0, 0
@@ -1652,6 +1817,10 @@ def chain(job) -> list[dict]:
             rstats = {**rstats, "signals_added": n_sig}
             rcost += sig_cost
         kn.learn(played, seed, [h["name"] for h in state["hyps"]], states)
+        if active_dep is not None:
+            legs[active_dep]["tries"] += 1
+            if active_dep in kn.deposited:
+                legs[active_dep]["done"] = True
         peak = max((m.get("score", 0) for m in moves), default=0)
         # died within 3 of the model's own moves after the harness handed over (x10 s2: 5 games)
         handoff_death = bool(route) and any(
@@ -1679,6 +1848,8 @@ def chain(job) -> list[dict]:
             "reflect": rstats,
             "deposits_scored": deposits,
             "handoff_death": handoff_death,
+            "treasures": sorted(kn.treasures),
+            "in_case": sorted(kn.deposited),
             "blocked": sr.blocked,
             "cleared": sorted(walls.cleared),
             "plans": {
@@ -1700,7 +1871,7 @@ def chain(job) -> list[dict]:
             f"[{tag} s{seed}] g{g} {row['kind']}: {why} -> score {r.score} peak {peak} | "
             f"+{new_cells} spots, rooms {row['rooms_known']}, best {best_now}, cleared "
             f"{row['cleared']} plans {row['plans']} deposits {deposits} exp {exp_stats} "
-            f"found {row['found']}",
+            f"found {row['found']} in_case {row['in_case']}",
             flush=True,
         )
     return rows
@@ -1712,8 +1883,13 @@ def main() -> None:
     p.add_argument("--tag", required=True)
     p.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     p.add_argument("--games", type=int, default=None)
+    p.add_argument("--moves", type=int, default=None, help="move cap per game (frugal runs)")
     a = p.parse_args()
-    cfg = CONFIGS[a.config] if a.games is None else replace(CONFIGS[a.config], games=a.games)
+    cfg = CONFIGS[a.config]
+    if a.games is not None:
+        cfg = replace(cfg, games=a.games)
+    if a.moves is not None:
+        cfg = replace(cfg, move_cap=a.moves)
     with ProcessPoolExecutor(len(a.seeds)) as ex:
         rows = [r for rs in ex.map(chain, [(cfg, a.tag, s) for s in a.seeds]) for r in rs]
     print(
