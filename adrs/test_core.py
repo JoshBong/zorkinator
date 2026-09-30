@@ -1246,3 +1246,50 @@ class X17(unittest.TestCase):
         self.assertEqual(len(moves), 3)  # open mailbox, north, the final give-up
         self.assertTrue(any("Your score is" in m and "Don't give up" not in m for m in chat.seen))
         self.assertIn("in 1 move", "".join(chat.seen))  # peeked: no time passed for `score`
+
+
+class X18(unittest.TestCase):
+    def test_deposit_text_names_what_never_scored_from_the_ledger(self) -> None:
+        held = [
+            "a painting",
+            "a sword",
+            "a brass lantern (providing light)",
+            "a jewel-encrusted egg",
+        ]
+        t = core.deposit_text("painting", held, {"painting", "egg"})
+        self.assertIn("holding the painting", t)
+        self.assertIn("Also scored when taken: a jewel-encrusted egg", t)
+        self.assertIn("Taking these never scored: a sword, a brass lantern (providing light)", t)
+        self.assertNotIn("sword", core.deposit_text("painting"))  # x15-x17 text unchanged
+        self.assertNotIn(
+            "never scored", core.deposit_text("painting", ["a painting"], {"painting"})
+        )
+
+    def test_expansion_skips_exits_already_on_the_map(self) -> None:
+        kn = core.Knowledge()
+        kn.learn(play(list(NO_LAMP)), SEED, ["egg"])
+        a: dict = {}
+        core.update_archive(a, list(NO_LAMP), SEED)
+        kitchen = next(k for k in a if k.startswith("Kitchen @"))
+        kn.graph.setdefault("Kitchen", {})["east"] = "Behind House"  # as if walked
+        found = core.expand_archive(a, kn, SEED, 200, set(), per_level=True, known=False)
+        self.assertNotIn((kitchen, "east"), {(f["from"], f["dir"]) for f in found})
+        found = core.expand_archive(a, kn, SEED, 200, set(), per_level=True, known=True)
+        self.assertIn((kitchen, "east"), {(f["from"], f["dir"]) for f in found})
+
+    def test_x18_chain_runs_end_to_end(self) -> None:
+        import shutil
+        from pathlib import Path
+
+        cfg = replace(
+            core.CONFIGS["x18"], player="explorer", games=3, move_cap=40, expand_budget=20
+        )
+        real = core.ask
+        tag = "test-offline-x18"
+        try:
+            core.ask = lambda *x, **k: ({"facts_add": []}, 0.0)
+            rows = core.chain((cfg, tag, SEED))
+        finally:
+            core.ask = real
+            shutil.rmtree(Path("runs/adrs") / tag, ignore_errors=True)
+        self.assertEqual(len(rows), 3)

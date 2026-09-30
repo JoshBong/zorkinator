@@ -69,6 +69,8 @@ class Config:
     expand: bool = False  # x16: after each game the harness tries untried exits from spots ($0)
     expand_budget: int = 80  # replays per game for that
     expand_per_level: bool = False  # x17: retry a refused exit from each new score level of a room
+    expand_known: bool = True  # x18 sets False: never re-try a (room, direction) already mapped
+    ledger_text: bool = False  # x18: the deposit handoff says which held things never scored
     # x16: a give-up with moves left is pushed back this many times per game (the game's own
     # "Congratulations! You are the privileged owner…" text ended 4 x15b/bench games as a "win")
     giveup_pushbacks: int = 0
@@ -126,6 +128,23 @@ CONFIGS = {
         giveup_pushbacks=1,
         giveup_score=True,
         expand_per_level=True,
+    ),
+    # x17 + the deposit handoff names what the player carries that never scored when taken (its
+    # own ledger; x17 g2 put the sword in the case and lost the troll for the rest of the chain)
+    # + expansion never re-tries an exit already on the map (x17 spent its budget re-finding 4)
+    "x18": Config(
+        "x18",
+        manual=True,
+        doom_waits=5,
+        signals=True,
+        frontier_w=1.0,
+        deposits=True,
+        expand=True,
+        giveup_pushbacks=1,
+        giveup_score=True,
+        expand_per_level=True,
+        expand_known=False,
+        ledger_text=True,
     ),
 }
 NUDGE = "Points going up is good; dying is bad."
@@ -1606,12 +1625,27 @@ def pick_spot(
 NOUN = goal_noun(MANUAL) or ""
 
 
-def deposit_text(treasure: str) -> str:
-    """What a deposit game tells the player at handoff (the chain and the bench use the same)."""
-    return (
+def deposit_text(treasure: str, held: list[str] | None = None, treasures: set | None = None) -> str:
+    """What a deposit game tells the player at handoff (the chain and the bench use the same).
+    With `held` (what it carries) and `treasures` (its ledger), it also says which of the other
+    things it carries never scored when taken -- its own data (x17 g2: after the painting it put
+    the sword in the case, 0 points, and every later game met the troll unarmed)."""
+    text = (
         f"You are holding the {treasure}, which scored when you took it. The manual says "
         f"to put treasures in your {NOUN}, and this room has one."
     )
+    if held is not None and treasures is not None:
+        other = [x for x in held if not x.endswith(":") and not has_word(x, treasure)]
+        scored = [x for x in other if head(x) in treasures]
+        junk = [x for x in other if head(x) not in treasures]
+        if scored:
+            text += f" Also scored when taken: {', '.join(scored)}."
+        if junk:
+            text += (
+                f" Taking these never scored: {', '.join(junk)}; in your games nothing put in the "
+                f"{NOUN} has scored unless taking it scored."
+            )
+    return text
 
 
 def next_deposit(
@@ -1646,7 +1680,13 @@ def next_deposit(
 
 
 def expand_archive(
-    archive: dict, kn: Knowledge, seed: int, budget: int, done: set, per_level: bool = False
+    archive: dict,
+    kn: Knowledge,
+    seed: int,
+    budget: int,
+    done: set,
+    per_level: bool = False,
+    known: bool = True,
 ) -> list[dict]:
     """Go-Explore's exploration phase done by the harness, movement only, $0: from archived spots
     (best first) try the direction words nobody has tried from that room; a reply that lands in a
@@ -1668,6 +1708,8 @@ def expand_archive(
             key = (spot["key"], d) if per_level else (room, d)
             if key in done or (d in kn.tried.get(room, ()) and (room, d) not in done):
                 continue  # the model tried it here; the harness only retries its own refusals
+            if not known and d in kn.graph.get(spot["room"], {}):
+                continue  # already on the map: nothing to learn (x17 re-found 4 known edges)
             done.add(key)
             done.add((room, d))
             route = route_for(spot, seed)
@@ -1751,7 +1793,8 @@ def chain(job) -> list[dict]:
         elif archive and cfg.deposits and (dep := next_deposit(archive, kn, seed, cfg, legs)):
             pick, treasure, route = dep
             why = {"mode": "deposit", "treasure": treasure}
-            plan_text = deposit_text(treasure)
+            held = sorted(trace(route, seed)[-1]["inv"]) if cfg.ledger_text else None
+            plan_text = deposit_text(treasure, held, set(kn.treasures) if cfg.ledger_text else None)
             active_dep = treasure
         elif archive:
             wall = walls.find(kn, archive) if cfg.walls else None
@@ -1967,7 +2010,13 @@ def chain(job) -> list[dict]:
         expanded: list[dict] = []
         if cfg.expand:
             expanded = expand_archive(
-                archive, kn, seed, cfg.expand_budget, expanded_done, cfg.expand_per_level
+                archive,
+                kn,
+                seed,
+                cfg.expand_budget,
+                expanded_done,
+                cfg.expand_per_level,
+                cfg.expand_known,
             )
             with (out / "expanded.jsonl").open("a") as fh:
                 for x in expanded:
