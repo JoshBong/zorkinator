@@ -83,6 +83,7 @@ CONFIGS = {
     # x13b + D1: spots weighted by untried directions; trajectory ranking by dominance not item
     # count (the latter is a global fix -- every config gets it from this commit on)
     "x14": Config("x14", manual=True, doom_waits=5, signals=True, frontier_w=1.0),
+    "x14b": Config("x14b", manual=True, doom_waits=5, signals=True, frontier_w=1.0),  # + fixes
 }
 NUDGE = "Points going up is good; dying is bad."
 # Verbatim from the Zork I manual (Infocom, Mastertronic ed.): what every buyer read before playing.
@@ -1017,7 +1018,7 @@ def died_holding(wall: str, played: list[tuple[str, dict]], states: list, items:
 
 
 def compile_plan(
-    plan: dict, archive: dict, kn: Knowledge, seed: int, tries: int = 4
+    plan: dict, archive: dict, kn: Knowledge, seed: int, tries: int = 4, waits: int = 0
 ) -> list[str] | None:
     """Splice each pickup into a route that already reaches go_to (it does the state steps on the
     way), at the first point it is in the item's room, else a walked-map detour there and back.
@@ -1030,7 +1031,7 @@ def compile_plan(
         reverse=True,
     )
     for spot in spots[:tries]:
-        route = _compile_from(list(route_for(spot, seed)), plan, kn, seed)
+        route = _compile_from(list(route_for(spot, seed)), plan, kn, seed, waits)
         if route is not None:
             return route
     # things that only become takeable after events (a dead guard's weapon): start from a route
@@ -1059,7 +1060,9 @@ def compile_plan(
     return None
 
 
-def _compile_from(route: list[str], plan: dict, kn: Knowledge, seed: int) -> list[str] | None:
+def _compile_from(
+    route: list[str], plan: dict, kn: Knowledge, seed: int, waits: int = 0
+) -> list[str] | None:
     for g in plan["get"]:
         st = trace(route, seed)
         rooms = [norm_room(x["room"]) for x in st]
@@ -1078,17 +1081,20 @@ def _compile_from(route: list[str], plan: dict, kn: Knowledge, seed: int) -> lis
         if spliced is None:
             return None
         chk = trace(spliced, seed)
-        if len(chk) < len(spliced) or not holds(chk[-1]["inv"], g["item"]):
+        if len(chk) < len(spliced) - 1 or not holds(chk[-1]["inv"], g["item"]):
             return None
         route = spliced
     end = trace(route, seed)
-    if (
-        len(end) < len(route)
-        or norm_room(end[-1]["room"]) != norm_room(plan["go_to"])
-        or not all(holds(end[-1]["inv"], g["item"]) for g in plan["get"])
+    if len(end) < len(route) - 1 or not any(
+        norm_room(x["room"]) == norm_room(plan["go_to"]) for x in end
     ):
         return None
-    return route
+    # hand over at the calm point before the wall, holding everything the plan needs
+    final = calm_prefix(route[: len(end)], seed, waits) if waits else route[: len(end)]
+    last = trace(final, seed)[-1]
+    if not all(holds(last["inv"], g["item"]) for g in plan["get"]):
+        return None
+    return final
 
 
 # --- experiments: what are things for? (x11) --------------------------------------------------
@@ -1368,7 +1374,8 @@ def pick_spot(
 ) -> tuple[dict, dict]:
     top = max((c["score"] for c in archive.values()), default=0) or 1
     levels = defaultdict(list)
-    for c in archive.values():
+    lit = [c for c in archive.values() if "(dark)" not in c["room"]] or list(archive.values())
+    for c in lit:  # a dark start makes the player give up on move 1 (x14 s2 g2, g6)
         levels[c["score"]].append(c)
 
     def explore(c):
@@ -1451,7 +1458,7 @@ def chain(job) -> list[dict]:
                 if not pending:
                     plans, pm_cost = walls.postmortem(wall, kn, state, archive, cfg)
                     for p in plans:
-                        p["route"] = compile_plan(p, archive, kn, seed)
+                        p["route"] = compile_plan(p, archive, kn, seed, waits=cfg.doom_waits)
                         p["result"] = None if p["route"] else "unreachable"
                         walls.plans[wall].append(p)
                     pending = [p for p in walls.plans[wall] if p["result"] is None]
@@ -1488,6 +1495,7 @@ def chain(job) -> list[dict]:
                             c
                             for c in archive.values()
                             if c["key"] != best["key"]
+                            and "(dark)" not in c["room"]
                             and best["traj"][: len(c["traj"])] == c["traj"]
                         ],
                         key=lambda c: len(c["traj"]),

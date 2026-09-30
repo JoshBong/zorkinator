@@ -875,3 +875,51 @@ class X14D1(unittest.TestCase):
             core.pick_spot(a, [], random.Random(i), {}, off, tried)[0]["key"] for i in range(300)
         )
         self.assertLess(abs(picks0["A"] - picks0["B"]), 60)
+
+
+class X14b(unittest.TestCase):
+    """x14 run 1: dark spots chosen as explore starts ("I give up" on move 1); the sword plan was
+    'unreachable' because the spliced route died on its last step."""
+
+    def test_explore_never_starts_in_the_dark_when_a_lit_spot_exists(self) -> None:
+        import random
+
+        a = {
+            "d": {
+                "key": "d",
+                "room": "(dark)",
+                "inv": [],
+                "score": 40,
+                "traj": ["a"],
+                "seen": 1,
+                "chosen": 0,
+            },
+            "l": {
+                "key": "l",
+                "room": "Cellar",
+                "inv": [],
+                "score": 5,
+                "traj": ["a"],
+                "seen": 9,
+                "chosen": 9,
+            },
+        }
+        picks = {
+            core.pick_spot(a, [], random.Random(i), {}, core.CONFIGS["x14b"])[0]["key"]
+            for i in range(50)
+        }
+        self.assertEqual(picks, {"l"})
+
+    def test_plan_to_a_wall_hands_over_at_the_calm_point_holding_the_item(self) -> None:
+        to_troll = [*TO_CELLAR, "north"]
+        a: dict = {}
+        core.update_archive(a, to_troll, SEED)
+        kn = core.Knowledge()
+        kn.learn(play(to_troll), SEED, ["sword", "troll"])
+        plan = {"get": [{"item": "sword", "at": "Living Room"}], "go_to": "The Troll Room"}
+        route = core.compile_plan(plan, a, kn, SEED, waits=5)
+        self.assertIsNotNone(route)
+        end = core.trace(route, SEED)[-1]
+        self.assertTrue(core.holds(end["inv"], "sword"))
+        self.assertEqual(end["room"], "Cellar")  # one step short of the troll, on purpose
+        self.assertEqual(len(core.trace([*route, *["wait"] * 5], SEED)), len(route) + 5)
