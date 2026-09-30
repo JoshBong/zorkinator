@@ -1591,7 +1591,9 @@ def chain(job) -> list[dict]:
             "you have died" in (m.get("text") or "").casefold() for m in moves[sr.i : sr.i + 3]
         )
         deposits = sum(
-            " in case" in m["command"].casefold() and (m.get("score_delta") or 0) > 0 for m in moves
+            re.search(r" in (the )?(trophy )?case\b", m["command"].casefold()) is not None
+            and (m.get("score_delta") or 0) > 0
+            for m in moves
         )
         row = {
             "seed": seed,
