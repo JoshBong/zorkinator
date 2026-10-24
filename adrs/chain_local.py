@@ -103,7 +103,9 @@ def apply_edits(notebook: list[dict], ops: dict) -> list[dict]:
     return out[-MAX_EDIT_NOTES:]
 
 
-def reflect(notebook: list[dict], record, moves_file: Path) -> tuple[list[dict], float]:
+def reflect(
+    notebook: list[dict], record, moves_file: Path, extra: str = ""
+) -> tuple[list[dict], float]:
     from openai import OpenAI
 
     from zorkinator.openai_chat import OPENAI_PRICES
@@ -118,6 +120,7 @@ def reflect(notebook: list[dict], record, moves_file: Path) -> tuple[list[dict],
         moves=record.moves,
         transcript=transcript(moves_file),
     )
+    prompt += extra
     client = OpenAI(max_retries=8)
     for _ in range(3):
         r = client.responses.create(

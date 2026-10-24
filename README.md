@@ -97,8 +97,9 @@ Baseline, the paper's loop with Claude Haiku 4.5, seed 0, 500-move cap (full num
 - Two identical baseline setups differed by about 8 points, so a harness gain has to clear the higher baseline
   to count.
 
-The versioned harness chain runs end to end on Atlas (a two-game smoke chain passed). Full harness results
-will be added here.
+Harness results (Go-Explore archive, route replay, evidence-only notebook; versions x4 to x22) are in
+[`results/adrs/README.md`](results/adrs/README.md). Headline so far, x10 on development seeds 0-2: scoring-game
+mean 55.1 vs 40.8 for the bare loop, best run 78. Work in progress; no unseen-seed evaluation yet.
 
 ## Quickstart
 
